@@ -20,7 +20,7 @@ namespace exqudens::vulkan {
   TEST(Tests, test2) {
     std::cout << std::format("executableDir: '{}'", TestConfiguration::getExecutableDir()) << std::endl;
     std::cout << std::format("executableFile: '{}'", TestConfiguration::getExecutableFile()) << std::endl;
-    std::vector<std::vector<unsigned char>> image1 = TestUtils::readPng(
+    std::vector<std::vector<std::vector<unsigned char>>> image1 = TestUtils::readPng(
         std::filesystem::path(TestConfiguration::getExecutableDir())
             .append("resources")
             .append("png")
@@ -28,8 +28,10 @@ namespace exqudens::vulkan {
             .make_preferred()
             .string()
     );
-    ASSERT_EQ(640, image1.size());
-    ASSERT_EQ(480, image1[0].size());
+    ASSERT_EQ(480, image1.size());
+    ASSERT_EQ(640, image1[0].size());
+    ASSERT_EQ(4, image1[0][0].size());
+    std::cout << "size OK!" << std::endl;
     TestUtils::writePng(
         image1,
         std::filesystem::path(TestConfiguration::getExecutableDir())

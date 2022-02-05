@@ -28,10 +28,11 @@ namespace exqudens::vulkan {
         }
       }
 
-      static std::vector<std::vector<unsigned char>> readPng(const std::string& path) {
-        std::vector<std::vector<unsigned char>> image;
+      static std::vector<std::vector<std::vector<unsigned char>>> readPng(const std::string& path) {
+        std::vector<std::vector<std::vector<unsigned char>>> image;
         std::vector<unsigned char> pixels;
-        unsigned int width, height, error;
+        unsigned int width, height, depth, error;
+        depth = 4;
         error = lodepng::decode(pixels, width, height, path);
         if (error) {
           throw std::runtime_error(
@@ -47,19 +48,27 @@ namespace exqudens::vulkan {
               + lodepng_error_text(error)
           );
         }
-        image.resize(width);
-        for (unsigned int x = 0; x < width; x++) {
-          image[x].resize(height);
-          for (unsigned int y = 0; y < height; y++) {
-            unsigned int i = x + (x * y);
-            image[x][y] = pixels[i];
+        unsigned int yMultiplier = width * depth;
+        image.resize(height);
+        for (unsigned int y = 0; y < height; y++) {
+          image[y].resize(width);
+          for (unsigned int x = 0; x < width; x++) {
+            image[y][x].resize(depth);
+            for (unsigned int z = 0; z < depth; z++) {
+              unsigned int yOffset = y * yMultiplier;
+              unsigned int xOffset = x * depth;
+              unsigned int zOffset = z;
+              unsigned int offset = yOffset + xOffset + zOffset;
+              unsigned int i = offset;
+              image[y][x][z] = pixels[i];
+            }
           }
         }
         return image;
       }
 
-      static void writePng(const std::vector<std::vector<unsigned char>>& image, const std::string& path) {
-        if (image.empty() || image[0].empty()) {
+      static void writePng(const std::vector<std::vector<std::vector<unsigned char>>>& image, const std::string& path) {
+        if (image.empty() || image[0].empty() || image[0][0].empty()) {
           throw std::runtime_error(
               std::string(__FUNCTION__)
               + "("
@@ -67,18 +76,21 @@ namespace exqudens::vulkan {
               + ":"
               + std::to_string(__LINE__)
               + "): "
-              + "image.empty() || image[0].empty()"
+              + "image.empty() || image[0].empty() || image[0][0].empty()"
           );
         }
-        unsigned int width = image.size();
-        unsigned int height = image[0].size();
+        unsigned int height = image.size();
+        unsigned int width = image[0].size();
+        unsigned int depth = image[0][0].size();
         std::vector<unsigned char> pixels;
-        pixels.resize(width * height);
+        pixels.resize(width * height * depth);
         unsigned int i = 0;
-        for (unsigned int x = 0; x < width; x++) {
-          for (unsigned int y = 0; y < height; y++) {
-            pixels[i] = image[x][y];
-            i++;
+        for (unsigned int y = 0; y < height; y++) {
+          for (unsigned int x = 0; x < width; x++) {
+            for (unsigned int z = 0; z < depth; z++) {
+              pixels[i] = image[y][x][z];
+              i++;
+            }
           }
         }
         unsigned int error = lodepng::encode(path, pixels, width, height);
