@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #include "exqudens/vulkan/Export.hpp"
 #include "exqudens/vulkan/model/StringVector.hpp"
 
@@ -7,29 +9,35 @@ namespace exqudens::vulkan {
 
   struct EXQUDENS_VULKAN_EXPORT Configuration {
 
-    StringVector extensions;
+    bool validationLayersEnabled = false;
+    StringVector validationLayers = StringVector();
+    StringVector extensions = StringVector();
+    StringVector deviceExtensions = StringVector();
 
     Configuration() = default;
 
-    explicit Configuration(
-        const StringVector& extensions
+    Configuration(
+        bool validationLayersEnabled,
+        StringVector validationLayers,
+        StringVector extensions,
+        StringVector deviceExtensions
     ):
-        extensions(StringVector(extensions.values))
+        validationLayersEnabled(validationLayersEnabled),
+        validationLayers(std::move(validationLayers)),
+        extensions(std::move(extensions)),
+        deviceExtensions(std::move(deviceExtensions))
     {
     }
 
-    Configuration(
-        const Configuration& object
-    ):
-        Configuration(object.extensions)
-    {
+    Configuration(const Configuration& object): Configuration(
+        object.validationLayersEnabled,
+        object.validationLayers,
+        object.extensions,
+        object.deviceExtensions
+    ) {
     }
 
-    Configuration(
-        Configuration&& object
-    ) noexcept:
-        Configuration()
-    {
+    Configuration(Configuration&& object) noexcept: Configuration() {
       swap(*this, object);
     }
 
@@ -39,7 +47,10 @@ namespace exqudens::vulkan {
     }
 
     friend void swap(Configuration& first, Configuration& second) {
+      std::swap(first.validationLayersEnabled, second.validationLayersEnabled);
+      std::swap(first.validationLayers, second.validationLayers);
       std::swap(first.extensions, second.extensions);
+      std::swap(first.deviceExtensions, second.deviceExtensions);
     }
 
     virtual ~Configuration() = default;

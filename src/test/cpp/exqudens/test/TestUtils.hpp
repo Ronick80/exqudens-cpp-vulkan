@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <stdexcept>
+#include <algorithm>
 #include <filesystem>
 
 #include <lodepng.h>
@@ -13,9 +14,29 @@ namespace exqudens::vulkan {
 
     public:
 
+      static std::string join(
+          const std::vector<std::string>& strings,
+          const std::string& delimiter = "",
+          const std::string& prefix = "",
+          const std::string& suffix = ""
+      ) {
+        try {
+          std::string result;
+          for (size_t i = 0; i < strings.size(); i++) {
+            result += strings[i];
+            if (i < strings.size() - 1) {
+              result += delimiter;
+            }
+          }
+          return std::string() + prefix + result + suffix;
+        } catch (...) {
+          throw std::runtime_error("Unexpected error!");
+        }
+      }
+
       static std::vector<std::string> toStringVector(
           const std::exception& exception,
-          std::vector<std::string> previous = {}
+          std::vector<std::string> previous
       ) {
         previous.emplace_back(exception.what());
         try {
@@ -23,6 +44,33 @@ namespace exqudens::vulkan {
           return previous;
         } catch (const std::exception& e) {
           return toStringVector(e, previous);
+        } catch (...) {
+          throw std::runtime_error("Unexpected error!");
+        }
+      }
+
+      static std::vector<std::string> toStringVector(const std::exception& exception) {
+        try {
+          return toStringVector(exception, {});
+        } catch (...) {
+          throw std::runtime_error("Unexpected error!");
+        }
+      }
+
+      static std::vector<std::string> toStackTrace(const std::exception& exception) {
+        try {
+          std::vector<std::string> elements = toStringVector(exception);
+          std::ranges::reverse(elements);
+          return elements;
+        } catch (...) {
+          throw std::runtime_error("Unexpected error!");
+        }
+      }
+
+      static std::string toString(const std::exception& e) {
+        try {
+          std::vector<std::string> stackTrace = toStackTrace(e);
+          return join(stackTrace, "\n");
         } catch (...) {
           throw std::runtime_error("Unexpected error!");
         }

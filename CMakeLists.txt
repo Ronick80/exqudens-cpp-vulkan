@@ -111,6 +111,8 @@ endif()
 
 add_library("${PROJECT_NAME}"
     "src/main/cpp/exqudens/vulkan/Macros.hpp"
+    "src/main/cpp/exqudens/vulkan/Logger.hpp"
+    "src/main/cpp/exqudens/vulkan/Logger.cpp"
     "src/main/cpp/exqudens/vulkan/Functions.hpp"
     "src/main/cpp/exqudens/vulkan/Functions.cpp"
     "src/main/cpp/exqudens/vulkan/model/StringVector.hpp"
