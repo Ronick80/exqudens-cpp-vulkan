@@ -1,5 +1,5 @@
-#include "exqudens/test/Application.hpp"
+#include "exqudens/test/TestApplication.hpp"
 
 int main(int argc, char** argv) {
-  return exqudens::test::Application::run(&argc, argv);
+  return exqudens::vulkan::TestApplication::run(&argc, argv);
 }

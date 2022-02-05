@@ -19,7 +19,8 @@ set_conan_settings(CONAN_SETTINGS
     "${CMAKE_MSVC_RUNTIME_LIBRARY}"
     "${CMAKE_CXX_STANDARD}"
     "${CMAKE_BUILD_TYPE}"
-    #"gtest:compiler.runtime=MT" # error with 'shared' preset
+    "vulkan:build_type=Release"
+    "vulkan:compiler.runtime=MD"
 )
 
 set_conan_options(CONAN_OPTIONS
@@ -86,9 +87,12 @@ foreach(
         file(REMOVE "${CONAN_INSTALL_PREFIX}/FindGTest.cmake")
         list(APPEND NOT_FOUND_PACKAGE_NAMES "${cmakePackageName}")
         find_package("${cmakePackageName}" "${cmakePackageVersion}" EXACT QUIET CONFIG)
+    elseif("vulkan" STREQUAL "${conanPackageName}")
+        list(APPEND NOT_FOUND_PACKAGE_NAMES "${cmakePackageName}")
+        find_package("${cmakePackageName}" "${cmakePackageVersion}" EXACT QUIET)
     elseif("lodepng" STREQUAL "${conanPackageName}")
         list(APPEND NOT_FOUND_PACKAGE_NAMES "${cmakePackageName}")
-        find_package("${cmakePackageName}" EXACT QUIET)
+        find_package("${cmakePackageName}" QUIET)
     else()
         list(APPEND NOT_FOUND_PACKAGE_NAMES "${cmakePackageName}")
         find_package("${cmakePackageName}" "${cmakePackageVersion}" EXACT QUIET CONFIG)
@@ -122,6 +126,9 @@ target_include_directories("${PROJECT_NAME}" PUBLIC
     "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/generated/main>"
     "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/main/cpp>"
     "$<INSTALL_INTERFACE:include>"
+)
+target_link_libraries("${PROJECT_NAME}" PUBLIC
+    "Vulkan::Vulkan"
 )
 set_target_properties("${PROJECT_NAME}" PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY                "${PROJECT_BINARY_DIR}/main/bin"
@@ -186,8 +193,9 @@ install(
 )
 
 add_library("test-lib" INTERFACE
-    "src/test/cpp/exqudens/test/Application.hpp"
-    "src/test/cpp/exqudens/test/Utils.hpp"
+    "src/test/cpp/exqudens/test/TestApplication.hpp"
+    "src/test/cpp/exqudens/test/TestConfiguration.hpp"
+    "src/test/cpp/exqudens/test/TestUtils.hpp"
     "src/test/cpp/exqudens/test/Tests.hpp"
 )
 target_include_directories("test-lib" INTERFACE
@@ -200,6 +208,7 @@ target_link_libraries("test-lib" INTERFACE
     "GTest::gtest"
     "GTest::gmock_main"
     "GTest::gtest_main"
+    "lodepng::lodepng"
 )
 set_target_properties("test-lib" PROPERTIES
     CXX_STANDARD 23
@@ -236,12 +245,16 @@ if("${BUILD_SHARED_LIBS}")
         COMMAND "${CMAKE_COMMAND}" -E rm -f "$<TARGET_PROPERTY:test-app,RUNTIME_OUTPUT_DIRECTORY>/*"
         COMMAND "${CMAKE_COMMAND}" -E copy_directory "$<TARGET_PROPERTY:${PROJECT_NAME},RUNTIME_OUTPUT_DIRECTORY>" "$<TARGET_PROPERTY:test-app,RUNTIME_OUTPUT_DIRECTORY>"
         COMMAND "${CMAKE_COMMAND}" -E copy_directory "${CONAN_INSTALL_PREFIX}/bin" "$<TARGET_PROPERTY:test-app,RUNTIME_OUTPUT_DIRECTORY>"
+        COMMAND "${CMAKE_COMMAND}" -E make_directory "$<TARGET_PROPERTY:test-app,RUNTIME_OUTPUT_DIRECTORY>/resources"
+        COMMAND "${CMAKE_COMMAND}" -E copy_directory "${PROJECT_SOURCE_DIR}/src/test/resources" "$<TARGET_PROPERTY:test-app,RUNTIME_OUTPUT_DIRECTORY>/resources"
         VERBATIM
     )
 else()
     add_custom_command(TARGET "test-app"
         PRE_BUILD
         COMMAND "${CMAKE_COMMAND}" -E rm -f "$<TARGET_PROPERTY:test-app,RUNTIME_OUTPUT_DIRECTORY>/*"
+        COMMAND "${CMAKE_COMMAND}" -E make_directory "$<TARGET_PROPERTY:test-app,RUNTIME_OUTPUT_DIRECTORY>/resources"
+        COMMAND "${CMAKE_COMMAND}" -E copy_directory "${PROJECT_SOURCE_DIR}/src/test/resources" "$<TARGET_PROPERTY:test-app,RUNTIME_OUTPUT_DIRECTORY>/resources"
         VERBATIM
     )
 endif()
