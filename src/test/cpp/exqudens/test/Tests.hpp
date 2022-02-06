@@ -10,8 +10,8 @@
 
 #include <gtest/gtest.h>
 
-#include "exqudens/test/TestConfiguration.hpp"
-#include "exqudens/test/TestUtils.hpp"
+#include "exqudens/TestConfiguration.hpp"
+#include "exqudens/TestUtils.hpp"
 #include "exqudens/vulkan/Functions.hpp"
 
 namespace exqudens::vulkan {
@@ -68,7 +68,7 @@ namespace exqudens::vulkan {
   TEST(Tests, test3) {
     try {
       std::ostringstream stream;
-      Configuration configuration = Functions::createConfiguration();
+      Configuration configuration = Functions::createConfiguration(false);
       Logger logger = Functions::createLogger();
       VkInstance instance = Functions::createInstance(configuration, logger);
       std::this_thread::sleep_for(std::chrono::seconds(5));

@@ -195,9 +195,11 @@ install(
 )
 
 add_library("test-lib" INTERFACE
-    "src/test/cpp/exqudens/test/TestApplication.hpp"
-    "src/test/cpp/exqudens/test/TestConfiguration.hpp"
-    "src/test/cpp/exqudens/test/TestUtils.hpp"
+    "src/test/cpp/exqudens/TestApplication.hpp"
+    "src/test/cpp/exqudens/TestConfiguration.hpp"
+    "src/test/cpp/exqudens/TestMacros.hpp"
+    "src/test/cpp/exqudens/TestUtils.hpp"
+    "src/test/cpp/exqudens/test/TestUtilsTests.hpp"
     "src/test/cpp/exqudens/test/Tests.hpp"
 )
 target_include_directories("test-lib" INTERFACE

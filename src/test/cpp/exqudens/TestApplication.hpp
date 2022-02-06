@@ -3,7 +3,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "exqudens/test/TestConfiguration.hpp"
+#include "exqudens/TestConfiguration.hpp"
+#include "exqudens/test/TestUtilsTests.hpp"
 #include "exqudens/test/Tests.hpp"
 
 namespace exqudens::vulkan {
