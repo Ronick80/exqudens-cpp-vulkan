@@ -116,7 +116,9 @@ add_library("${PROJECT_NAME}"
     "src/main/cpp/exqudens/vulkan/Functions.hpp"
     "src/main/cpp/exqudens/vulkan/Functions.cpp"
     "src/main/cpp/exqudens/vulkan/model/StringVector.hpp"
+    "src/main/cpp/exqudens/vulkan/model/StringVector.cpp"
     "src/main/cpp/exqudens/vulkan/model/Configuration.hpp"
+    "src/main/cpp/exqudens/vulkan/model/Configuration.cpp"
 )
 generate_export_header("${PROJECT_NAME}" BASE_NAME "EXQUDENS_VULKAN" EXPORT_FILE_NAME
     "generated/main/exqudens/vulkan/Export.hpp"

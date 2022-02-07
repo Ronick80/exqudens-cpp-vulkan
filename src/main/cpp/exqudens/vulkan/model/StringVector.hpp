@@ -1,11 +1,7 @@
 #pragma once
 
 #include <string>
-#include <utility>
 #include <vector>
-#include <utility>
-#include <iterator>
-#include <algorithm>
 
 #include "exqudens/vulkan/Export.hpp"
 
@@ -16,53 +12,21 @@ namespace exqudens::vulkan {
     std::vector<std::string> values;
     std::vector<const char*> pointers;
 
-    static std::vector<const char*> toPointers(const std::vector<std::string>& values) {
-      std::vector<const char*> result;
-      std::transform(
-        values.begin(),
-        values.end(),
-        std::back_inserter(result),
-        [](const std::string& s) -> const char* { return s.c_str(); }
-      );
-      return result;
-    }
+    static std::vector<const char*> toPointers(const std::vector<std::string>& values);
 
     explicit StringVector(
         std::vector<std::string> values
-    ):
-        values(std::move(values))
-    {
-      pointers = toPointers(this->values);
-    }
+    );
+    StringVector();
+    StringVector(const StringVector& object);
+    StringVector(StringVector&& object) noexcept;
 
-    StringVector() = default;
+    StringVector& operator=(const StringVector& object);
+    StringVector& operator=(StringVector&& object) noexcept;
 
-    StringVector(
-        const StringVector& object
-    ):
-        StringVector(object.values)
-    {
-    }
+    friend void swap(StringVector& first, StringVector& second);
 
-    StringVector(
-        StringVector&& object
-    ) noexcept:
-        StringVector()
-    {
-      swap(*this, object);
-    }
-
-    StringVector& operator=(StringVector object) {
-      swap(*this, object);
-      return *this;
-    }
-
-    friend void swap(StringVector& first, StringVector& second) {
-      std::swap(first.values, second.values);
-      std::swap(first.pointers, second.pointers);
-    }
-
-    virtual ~StringVector() = default;
+    virtual ~StringVector();
 
   };
 

@@ -68,7 +68,7 @@ namespace exqudens::vulkan {
   TEST(Tests, test3) {
     try {
       std::ostringstream stream;
-      Configuration configuration = Functions::createConfiguration(false);
+      Configuration configuration = Functions::createConfiguration();
       Logger logger = Functions::createLogger();
       VkInstance instance = Functions::createInstance(configuration, logger);
       std::this_thread::sleep_for(std::chrono::seconds(5));

@@ -14,46 +14,22 @@ namespace exqudens::vulkan {
     StringVector extensions = StringVector();
     StringVector deviceExtensions = StringVector();
 
-    Configuration() = default;
-
     Configuration(
         bool validationLayersEnabled,
         StringVector validationLayers,
         StringVector extensions,
         StringVector deviceExtensions
-    ):
-        validationLayersEnabled(validationLayersEnabled),
-        validationLayers(std::move(validationLayers)),
-        extensions(std::move(extensions)),
-        deviceExtensions(std::move(deviceExtensions))
-    {
-    }
+    );
+    Configuration();
+    Configuration(const Configuration& object);
+    Configuration(Configuration&& object) noexcept;
 
-    Configuration(const Configuration& object): Configuration(
-        object.validationLayersEnabled,
-        object.validationLayers,
-        object.extensions,
-        object.deviceExtensions
-    ) {
-    }
+    Configuration& operator=(const Configuration& object);
+    Configuration& operator=(Configuration&& object) noexcept;
 
-    Configuration(Configuration&& object) noexcept: Configuration() {
-      swap(*this, object);
-    }
+    friend void swap(Configuration& first, Configuration& second);
 
-    Configuration& operator=(Configuration object) {
-      swap(*this, object);
-      return *this;
-    }
-
-    friend void swap(Configuration& first, Configuration& second) {
-      std::swap(first.validationLayersEnabled, second.validationLayersEnabled);
-      std::swap(first.validationLayers, second.validationLayers);
-      std::swap(first.extensions, second.extensions);
-      std::swap(first.deviceExtensions, second.deviceExtensions);
-    }
-
-    virtual ~Configuration() = default;
+    virtual ~Configuration();
 
   };
 
