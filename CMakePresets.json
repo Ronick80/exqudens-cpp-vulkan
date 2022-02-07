@@ -229,6 +229,11 @@
         "verbosity": "verbose",
         "outputOnFailure": true
       },
+      "filter": {
+        "exclude": {
+          "name": "UiTests.test1"
+        }
+      },
       "execution": {
         "noTestsAction": "error",
         "stopOnFailure": true

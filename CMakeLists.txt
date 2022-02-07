@@ -280,7 +280,6 @@ enable_testing()
 include(GoogleTest)
 gtest_discover_tests("test-app"
     WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/test/bin"
-    TEST_FILTER "*-UiTests.*"
     PROPERTIES ENVIRONMENT "PARENT_PATH=;PATH="
 )
 
