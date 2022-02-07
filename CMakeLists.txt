@@ -21,6 +21,8 @@ set_conan_settings(CONAN_SETTINGS
     "${CMAKE_BUILD_TYPE}"
     "vulkan:build_type=Release"
     "vulkan:compiler.runtime=MD"
+    "glfw:build_type=Release"
+    "glfw:compiler.runtime=${CONAN_RELEASE_COMPILER_RUNTIME}"
 )
 
 set_conan_options(CONAN_OPTIONS
@@ -93,6 +95,9 @@ foreach(
     elseif("lodepng" STREQUAL "${conanPackageName}")
         list(APPEND NOT_FOUND_PACKAGE_NAMES "${cmakePackageName}")
         find_package("${cmakePackageName}" QUIET)
+    elseif("glfw" STREQUAL "${conanPackageName}")
+        list(APPEND NOT_FOUND_PACKAGE_NAMES "${cmakePackageName}")
+        find_package("${cmakePackageName}" QUIET)
     else()
         list(APPEND NOT_FOUND_PACKAGE_NAMES "${cmakePackageName}")
         find_package("${cmakePackageName}" "${cmakePackageVersion}" EXACT QUIET CONFIG)
@@ -119,6 +124,10 @@ add_library("${PROJECT_NAME}"
     "src/main/cpp/exqudens/vulkan/model/StringVector.cpp"
     "src/main/cpp/exqudens/vulkan/model/Configuration.hpp"
     "src/main/cpp/exqudens/vulkan/model/Configuration.cpp"
+    "src/main/cpp/exqudens/vulkan/model/QueueFamilyIndices.hpp"
+    "src/main/cpp/exqudens/vulkan/model/QueueFamilyIndices.cpp"
+    "src/main/cpp/exqudens/vulkan/model/SwapChainSupportDetails.hpp"
+    "src/main/cpp/exqudens/vulkan/model/SwapChainSupportDetails.cpp"
 )
 generate_export_header("${PROJECT_NAME}" BASE_NAME "EXQUDENS_VULKAN" EXPORT_FILE_NAME
     "generated/main/exqudens/vulkan/Export.hpp"
@@ -203,6 +212,7 @@ add_library("test-lib" INTERFACE
     "src/test/cpp/exqudens/TestUtils.hpp"
     "src/test/cpp/exqudens/test/TestUtilsTests.hpp"
     "src/test/cpp/exqudens/test/Tests.hpp"
+    "src/test/cpp/exqudens/test/UiTests.hpp"
 )
 target_include_directories("test-lib" INTERFACE
     "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/test/cpp>"
@@ -215,6 +225,7 @@ target_link_libraries("test-lib" INTERFACE
     "GTest::gmock_main"
     "GTest::gtest_main"
     "lodepng::lodepng"
+    "glfw::glfw"
 )
 set_target_properties("test-lib" PROPERTIES
     CXX_STANDARD 23
@@ -269,6 +280,7 @@ enable_testing()
 include(GoogleTest)
 gtest_discover_tests("test-app"
     WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/test/bin"
+    TEST_FILTER "*-UiTests.*"
     PROPERTIES ENVIRONMENT "PARENT_PATH=;PATH="
 )
 

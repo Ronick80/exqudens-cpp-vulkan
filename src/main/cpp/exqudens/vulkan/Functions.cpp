@@ -1,6 +1,8 @@
 #include "exqudens/vulkan/Functions.hpp"
 #include "exqudens/vulkan/Macros.hpp"
 
+#include <set>
+#include <cstdlib>
 #include <filesystem>
 #include <stdexcept>
 #include <iostream>
@@ -182,6 +184,107 @@ namespace exqudens::vulkan {
     }
   }
 
+  VkDebugUtilsMessengerEXT Functions::createDebugMessenger(Logger& logger, VkInstance& instance) {
+    try {
+      VkDebugUtilsMessengerEXT debugMessenger;
+      VkResult result;
+
+      auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+
+      if (func != nullptr) {
+        VkDebugUtilsMessengerCreateInfoEXT createInfo;
+        populateDebugMessengerCreateInfo(createInfo, logger);
+        result = func(instance, &createInfo, nullptr, &debugMessenger);
+      } else {
+        result = VK_ERROR_EXTENSION_NOT_PRESENT;
+      }
+
+      if (result != VK_SUCCESS) {
+        throw std::runtime_error(CALL_INFO() + ": failed to set up debug messenger!");
+      }
+
+      return debugMessenger;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  /*VkSurfaceKHR Functions::createSurface(GLFWwindow*& window, VkInstance& instance) {
+    try {
+      VkSurfaceKHR surface;
+      if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
+        throw std::runtime_error(CALL_INFO() + ": failed to create window surface!");
+      }
+      return surface;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }*/
+
+  VkPhysicalDevice Functions::createPhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface, StringVector& deviceExtensions) {
+    try {
+      VkPhysicalDevice physicalDevice;
+      uint32_t deviceCount = 0;
+      vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+
+      if (deviceCount == 0) {
+        throw std::runtime_error(CALL_INFO() + ": failed to find GPUs with Vulkan support!");
+      }
+
+      std::vector<VkPhysicalDevice> devices(deviceCount);
+      vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+
+      for (VkPhysicalDevice& object : devices) {
+        if (isDeviceSuitable(object, surface, deviceExtensions)) {
+          physicalDevice = object;
+          break;
+        }
+      }
+
+      if (physicalDevice == VK_NULL_HANDLE) {
+        throw std::runtime_error(CALL_INFO() + ": failed to find a suitable GPU!");
+      }
+
+      return physicalDevice;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  void Functions::setEnvironmentVariable(const std::string& name, const std::string& value) {
+#ifdef _WIN32
+    _putenv_s(name.c_str(), value.c_str());
+#elif _WIN64
+    _putenv_s(name.c_str(), value.c_str());
+#endif
+  }
+
+  std::optional<std::string> Functions::getEnvironmentVariable(const std::string& name) {
+    std::optional<std::string> value;
+#ifdef _WIN32
+    char* buffer;
+    size_t size;
+    errno_t error = _dupenv_s(&buffer, &size, name.c_str());
+    if (error) {
+      return value;
+    }
+    if (buffer != nullptr) {
+      value.emplace(std::string(buffer));
+    }
+#elif _WIN64
+    char* buffer;
+    size_t size;
+    errno_t error = _dupenv_s(&buffer, &size, name.c_str());
+    if (error) {
+      return value;
+    }
+    if (buffer != nullptr) {
+      value.emplace(std::string(buffer));
+    }
+#endif
+    return value;
+  }
+
   bool Functions::checkValidationLayerSupport(const std::vector<std::string>& validationLayers) {
     uint32_t layerCount;
     vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -208,12 +311,125 @@ namespace exqudens::vulkan {
   }
 
   void Functions::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& object, Logger& logger) {
-    object = {};
-    object.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-    object.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-    object.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-    object.pfnUserCallback = &Logger::call;
-    object.pUserData = &logger;
+    try {
+      object = {};
+      object.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+      object.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+      object.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+      object.pfnUserCallback = &Logger::call;
+      object.pUserData = &logger;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  bool Functions::isDeviceSuitable(VkPhysicalDevice& physicalDevice, VkSurfaceKHR& surface, StringVector& deviceExtensions) {
+    try {
+      QueueFamilyIndices familyIndices = findQueueFamilies(physicalDevice, surface);
+
+      bool extensionsSupported = checkDeviceExtensionSupport(physicalDevice, deviceExtensions);
+
+      bool swapChainAdequate = false;
+      if (extensionsSupported) {
+        SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice, surface);
+        swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+      }
+
+      VkPhysicalDeviceFeatures supportedFeatures;
+      vkGetPhysicalDeviceFeatures(physicalDevice, &supportedFeatures);
+
+      return familyIndices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  QueueFamilyIndices Functions::findQueueFamilies(VkPhysicalDevice& physicalDevice, VkSurfaceKHR& surface) {
+    try {
+      QueueFamilyIndices familyIndices;
+
+      uint32_t queueFamilyCount = 0;
+      vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
+
+      std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+      vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
+
+      int i = 0;
+      for (const auto& queueFamily : queueFamilies) {
+        if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+          familyIndices.graphicsFamily = i;
+        }
+
+        if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) {
+          familyIndices.transferFamily = i;
+        }
+
+        VkBool32 presentSupport = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &presentSupport);
+
+        if (presentSupport) {
+          familyIndices.presentFamily = i;
+        }
+
+        if (familyIndices.isComplete()) {
+          break;
+        }
+
+        i++;
+      }
+
+      return familyIndices;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  bool Functions::checkDeviceExtensionSupport(VkPhysicalDevice& physicalDevice, StringVector& deviceExtensions) {
+    try {
+      uint32_t extensionCount;
+      vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
+
+      std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+      vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableExtensions.data());
+
+      std::set<std::string> requiredExtensions(deviceExtensions.pointers.begin(), deviceExtensions.pointers.end());
+
+      for (const auto& extension : availableExtensions) {
+        requiredExtensions.erase(extension.extensionName);
+      }
+
+      return requiredExtensions.empty();
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  SwapChainSupportDetails Functions::querySwapChainSupport(VkPhysicalDevice& physicalDevice, VkSurfaceKHR& surface) {
+    try {
+      SwapChainSupportDetails details;
+
+      vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &details.capabilities);
+
+      uint32_t formatCount;
+      vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr);
+
+      if (formatCount != 0) {
+        details.formats.resize(formatCount);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, details.formats.data());
+      }
+
+      uint32_t presentModeCount;
+      vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
+
+      if (presentModeCount != 0) {
+        details.presentModes.resize(presentModeCount);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, details.presentModes.data());
+      }
+
+      return details;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
   }
 
 }

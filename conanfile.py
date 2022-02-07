@@ -10,8 +10,10 @@ required_conan_version = ">=1.43.0"
 class ConanConfiguration(ConanFile):
     requires = [
         "vulkan/1.2.182.0",
+        # "glm/0.9.9.8",
         ("gtest/1.11.0", "private"),
-        ("lodepng/cci.20200615", "private")
+        ("lodepng/cci.20200615", "private"),
+        ("glfw/3.3.4", "private")
     ]
     settings = "arch", "os", "compiler", "build_type"
     options = {"shared": [True, False]}
@@ -35,8 +37,9 @@ class ConanConfiguration(ConanFile):
     def configure(self):
         try:
             self.options["vulkan"].shared = True
-            self.options["lodepng"].shared = self.options.shared
             self.options["gtest"].shared = self.options.shared
+            self.options["lodepng"].shared = self.options.shared
+            self.options["glfw"].shared = self.options.shared
         except Exception as e:
             error(format_exc())
             raise e

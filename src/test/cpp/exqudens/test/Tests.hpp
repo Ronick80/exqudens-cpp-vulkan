@@ -1,8 +1,10 @@
 #pragma once
 
+#include <string>
+#include <vector>
+#include <map>
 #include <exception>
 #include <sstream>
-#include <string>
 #include <thread>
 #include <chrono>
 #include <format>
@@ -69,10 +71,21 @@ namespace exqudens::vulkan {
     try {
       std::ostringstream stream;
       Configuration configuration = Functions::createConfiguration();
-      Logger logger = Functions::createLogger();
+      Logger logger = Functions::createLogger(stream);
+      std::map<std::string, std::string> environmentVariables = Functions::createEnvironmentVariables(TestConfiguration::getExecutableDir());
+      for (auto const& [name, value] : environmentVariables) {
+        Functions::setEnvironmentVariable(name, value);
+      }
+
       VkInstance instance = Functions::createInstance(configuration, logger);
-      std::this_thread::sleep_for(std::chrono::seconds(5));
+      VkDebugUtilsMessengerEXT debugMessenger = Functions::createDebugMessenger(logger, instance);
+
+      //std::this_thread::sleep_for(std::chrono::seconds(5));
+
+      auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+      func(instance, debugMessenger, nullptr);
       vkDestroyInstance(instance, nullptr);
+      std::cout << stream.str();
     } catch (const std::exception& e) {
       FAIL() << TestUtils::toString(e);
     }

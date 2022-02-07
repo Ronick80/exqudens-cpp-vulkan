@@ -1,5 +1,7 @@
 #include "exqudens/vulkan/model/Configuration.hpp"
 
+#include <utility>
+
 namespace exqudens::vulkan {
 
   Configuration::Configuration(
