@@ -8,27 +8,29 @@
 
 namespace exqudens::vulkan {
 
-  struct EXQUDENS_VULKAN_EXPORT SwapChainSupportDetails {
+  class EXQUDENS_VULKAN_EXPORT SwapChainSupportDetails {
 
-    VkSurfaceCapabilitiesKHR capabilities = {};
-    std::vector<VkSurfaceFormatKHR> formats;
-    std::vector<VkPresentModeKHR> presentModes;
+    public:
 
-    SwapChainSupportDetails(
-        VkSurfaceCapabilitiesKHR capabilities,
-        std::vector<VkSurfaceFormatKHR> formats,
-        std::vector<VkPresentModeKHR> presentModes
-    );
-    SwapChainSupportDetails();
-    SwapChainSupportDetails(const SwapChainSupportDetails& object);
-    SwapChainSupportDetails(SwapChainSupportDetails&& object) noexcept;
+      VkSurfaceCapabilitiesKHR capabilities = {};
+      std::vector<VkSurfaceFormatKHR> formats;
+      std::vector<VkPresentModeKHR> presentModes;
 
-    SwapChainSupportDetails& operator=(const SwapChainSupportDetails& object);
-    SwapChainSupportDetails& operator=(SwapChainSupportDetails&& object) noexcept;
+      SwapChainSupportDetails(
+          VkSurfaceCapabilitiesKHR capabilities,
+          std::vector<VkSurfaceFormatKHR> formats,
+          std::vector<VkPresentModeKHR> presentModes
+      );
+      SwapChainSupportDetails();
+      SwapChainSupportDetails(const SwapChainSupportDetails& object);
+      SwapChainSupportDetails(SwapChainSupportDetails&& object) noexcept;
 
-    friend void swap(SwapChainSupportDetails& first, SwapChainSupportDetails& second);
+      SwapChainSupportDetails& operator=(const SwapChainSupportDetails& object);
+      SwapChainSupportDetails& operator=(SwapChainSupportDetails&& object) noexcept;
 
-    virtual ~SwapChainSupportDetails();
+      friend void swap(SwapChainSupportDetails& first, SwapChainSupportDetails& second);
+
+      virtual ~SwapChainSupportDetails();
 
   };
 

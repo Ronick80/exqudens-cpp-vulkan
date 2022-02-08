@@ -7,26 +7,28 @@
 
 namespace exqudens::vulkan {
 
-  struct EXQUDENS_VULKAN_EXPORT StringVector {
+  class EXQUDENS_VULKAN_EXPORT StringVector {
 
-    std::vector<std::string> values;
-    std::vector<const char*> pointers;
+    public:
 
-    static std::vector<const char*> toPointers(const std::vector<std::string>& values);
+      std::vector<std::string> values;
+      std::vector<const char*> pointers;
 
-    explicit StringVector(
-        std::vector<std::string> values
-    );
-    StringVector();
-    StringVector(const StringVector& object);
-    StringVector(StringVector&& object) noexcept;
+      static std::vector<const char*> toPointers(const std::vector<std::string>& values);
 
-    StringVector& operator=(const StringVector& object);
-    StringVector& operator=(StringVector&& object) noexcept;
+      explicit StringVector(
+          std::vector<std::string> values
+      );
+      StringVector();
+      StringVector(const StringVector& object);
+      StringVector(StringVector&& object) noexcept;
 
-    friend void swap(StringVector& first, StringVector& second);
+      StringVector& operator=(const StringVector& object);
+      StringVector& operator=(StringVector&& object) noexcept;
 
-    virtual ~StringVector();
+      friend void swap(StringVector& first, StringVector& second);
+
+      virtual ~StringVector();
 
   };
 

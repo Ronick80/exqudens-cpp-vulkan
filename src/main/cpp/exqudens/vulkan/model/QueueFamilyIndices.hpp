@@ -7,29 +7,31 @@
 
 namespace exqudens::vulkan {
 
-  struct EXQUDENS_VULKAN_EXPORT QueueFamilyIndices {
+  class EXQUDENS_VULKAN_EXPORT QueueFamilyIndices {
 
-    std::optional<uint32_t> transferFamily;
-    std::optional<uint32_t> graphicsFamily;
-    std::optional<uint32_t> presentFamily;
+    public:
 
-    QueueFamilyIndices(
-        std::optional<uint32_t> transferFamily,
-        std::optional<uint32_t> graphicsFamily,
-        std::optional<uint32_t> presentFamily
-    );
-    QueueFamilyIndices();
-    QueueFamilyIndices(const QueueFamilyIndices& object);
-    QueueFamilyIndices(QueueFamilyIndices&& object) noexcept;
+      std::optional<uint32_t> transferFamily;
+      std::optional<uint32_t> graphicsFamily;
+      std::optional<uint32_t> presentFamily;
 
-    QueueFamilyIndices& operator=(const QueueFamilyIndices& object);
-    QueueFamilyIndices& operator=(QueueFamilyIndices&& object) noexcept;
+      QueueFamilyIndices(
+          std::optional<uint32_t> transferFamily,
+          std::optional<uint32_t> graphicsFamily,
+          std::optional<uint32_t> presentFamily
+      );
+      QueueFamilyIndices();
+      QueueFamilyIndices(const QueueFamilyIndices& object);
+      QueueFamilyIndices(QueueFamilyIndices&& object) noexcept;
 
-    friend void swap(QueueFamilyIndices& first, QueueFamilyIndices& second);
+      QueueFamilyIndices& operator=(const QueueFamilyIndices& object);
+      QueueFamilyIndices& operator=(QueueFamilyIndices&& object) noexcept;
 
-    bool isComplete();
+      friend void swap(QueueFamilyIndices& first, QueueFamilyIndices& second);
 
-    virtual ~QueueFamilyIndices();
+      bool isComplete();
+
+      virtual ~QueueFamilyIndices();
 
   };
 
