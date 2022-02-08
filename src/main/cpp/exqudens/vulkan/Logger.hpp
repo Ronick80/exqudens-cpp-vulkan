@@ -3,15 +3,13 @@
 #include <string>
 #include <functional>
 
-#include "vulkan/vulkan.h"
+#include <vulkan/vulkan.h>
+
+#include "exqudens/vulkan/Export.hpp"
 
 namespace exqudens::vulkan {
 
-  class Logger {
-
-    private:
-
-      std::function<void(VkDebugUtilsMessageSeverityFlagBitsEXT, VkDebugUtilsMessageTypeFlagsEXT, const std::string&)> function;
+  class EXQUDENS_VULKAN_EXPORT Logger {
 
     public:
 
@@ -21,6 +19,8 @@ namespace exqudens::vulkan {
           const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
           void* userData
       );
+
+      std::function<void(VkDebugUtilsMessageSeverityFlagBitsEXT, VkDebugUtilsMessageTypeFlagsEXT, const std::string&)> function;
 
       explicit Logger(
           std::function<void(VkDebugUtilsMessageSeverityFlagBitsEXT, VkDebugUtilsMessageTypeFlagsEXT, const std::string&)> function

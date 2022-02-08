@@ -38,22 +38,23 @@ namespace exqudens::vulkan {
 
   TEST(Tests, test2) {
     try {
-      std::ostringstream stream;
-      Configuration configuration = Functions::createConfiguration();
-      Logger logger = Functions::createLogger(stream);
       std::map<std::string, std::string> environmentVariables = Functions::createEnvironmentVariables(TestConfiguration::getExecutableDir());
+
       for (auto const& [name, value] : environmentVariables) {
         Functions::setEnvironmentVariable(name, value);
       }
 
+      Configuration configuration = Functions::createConfiguration();
+      std::ostringstream stream;
+      Logger logger = Functions::createLogger(stream);
+
       VkInstance instance = Functions::createInstance(configuration, logger);
-      VkDebugUtilsMessengerEXT debugMessenger = Functions::createDebugMessenger(logger, instance);
+      VkDebugUtilsMessengerEXT debugUtilsMessenger = Functions::createDebugUtilsMessenger(logger, instance);
 
       //std::this_thread::sleep_for(std::chrono::seconds(5));
 
-      auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-      func(instance, debugMessenger, nullptr);
-      vkDestroyInstance(instance, nullptr);
+      Functions::destroyDebugUtilsMessenger(instance, debugUtilsMessenger);
+      Functions::destroyInstance(instance);
       std::cout << stream.str();
     } catch (const std::exception& e) {
       FAIL() << TestUtils::toString(e);

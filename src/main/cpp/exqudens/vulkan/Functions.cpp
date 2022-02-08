@@ -9,13 +9,39 @@
 
 namespace exqudens::vulkan {
 
+  std::map<std::string, std::string> Functions::createEnvironmentVariables(const std::string& executableDirPath) {
+    try {
+      std::map<std::string, std::string> environmentVariables;
+      environmentVariables["VK_LAYER_PATH"] = std::filesystem::path(executableDirPath).make_preferred().string();
+      return environmentVariables;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
   Configuration Functions::createConfiguration() {
     try {
+      std::string applicationName = "Exqudens Application";
+      unsigned int applicationVersionMajor = 1;
+      unsigned int applicationVersionMinor = 0;
+      unsigned int applicationVersionPatch = 0;
+      std::string engineName = "Engine Application";
+      unsigned int engineVersionMajor = 1;
+      unsigned int engineVersionMinor = 0;
+      unsigned int engineVersionPatch = 0;
       bool validationLayersEnabled = true;
       std::vector<std::string> validationLayers = {"VK_LAYER_KHRONOS_validation"};
       std::vector<std::string> extensions = {VK_EXT_DEBUG_UTILS_EXTENSION_NAME};
       std::vector<std::string> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
       return createConfiguration(
+          applicationName,
+          applicationVersionMajor,
+          applicationVersionMinor,
+          applicationVersionPatch,
+          engineName,
+          engineVersionMajor,
+          engineVersionMinor,
+          engineVersionPatch,
           validationLayersEnabled,
           validationLayers,
           extensions,
@@ -28,6 +54,14 @@ namespace exqudens::vulkan {
 
   Configuration Functions::createConfiguration(const bool& validationLayersEnabled) {
     try {
+      std::string applicationName = "Exqudens Application";
+      unsigned int applicationVersionMajor = 1;
+      unsigned int applicationVersionMinor = 0;
+      unsigned int applicationVersionPatch = 0;
+      std::string engineName = "Engine Application";
+      unsigned int engineVersionMajor = 1;
+      unsigned int engineVersionMinor = 0;
+      unsigned int engineVersionPatch = 0;
       std::vector<std::string> validationLayers;
       if (validationLayersEnabled) {
         validationLayers = {"VK_LAYER_KHRONOS_validation"};
@@ -35,6 +69,14 @@ namespace exqudens::vulkan {
       std::vector<std::string> extensions = {VK_EXT_DEBUG_UTILS_EXTENSION_NAME};
       std::vector<std::string> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
       return createConfiguration(
+          applicationName,
+          applicationVersionMajor,
+          applicationVersionMinor,
+          applicationVersionPatch,
+          engineName,
+          engineVersionMajor,
+          engineVersionMinor,
+          engineVersionPatch,
           validationLayersEnabled,
           validationLayers,
           extensions,
@@ -46,13 +88,29 @@ namespace exqudens::vulkan {
   }
 
   Configuration Functions::createConfiguration(
+      std::string applicationName,
+      unsigned int applicationVersionMajor,
+      unsigned int applicationVersionMinor,
+      unsigned int applicationVersionPatch,
+      std::string engineName,
+      unsigned int engineVersionMajor,
+      unsigned int engineVersionMinor,
+      unsigned int engineVersionPatch,
       const bool& validationLayersEnabled,
-      const std::vector<std::string>& validationLayers,
+      const std::vector<std::string>&validationLayers,
       const std::vector<std::string>& extensions,
       const std::vector<std::string>& deviceExtensions
   ) {
     try {
       Configuration configuration;
+      configuration.applicationName = applicationName;
+      configuration.applicationVersionMajor = applicationVersionMajor;
+      configuration.applicationVersionMinor = applicationVersionMinor;
+      configuration.applicationVersionPatch = applicationVersionPatch;
+      configuration.engineName = engineName;
+      configuration.engineVersionMajor = engineVersionMajor;
+      configuration.engineVersionMinor = engineVersionMinor;
+      configuration.engineVersionPatch = engineVersionPatch;
       configuration.validationLayersEnabled = validationLayersEnabled;
       configuration.validationLayers = StringVector(validationLayers);
       configuration.extensions = StringVector(extensions);
@@ -63,67 +121,70 @@ namespace exqudens::vulkan {
     }
   }
 
-  std::map<std::string, std::string> Functions::createEnvironmentVariables(const std::string& executableDirPath) {
-    std::map<std::string, std::string> environmentVariables;
-    environmentVariables["VK_LAYER_PATH"] = std::filesystem::path(executableDirPath).make_preferred().string();
-    return environmentVariables;
-  }
-
   Logger Functions::createLogger() {
-    return createLogger(std::cout);
+    try {
+      return createLogger(std::cout);
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
   }
 
   Logger Functions::createLogger(std::ostream& stream) {
-    std::function<void(
-        VkDebugUtilsMessageSeverityFlagBitsEXT,
-        VkDebugUtilsMessageTypeFlagsEXT,
-        std::string
-    )> function = [&stream](
-        VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-        VkDebugUtilsMessageTypeFlagsEXT messageType,
-        std::string message
-    ) {
-      //std::string function = std::string("(") + __FUNCTION__ + ")";
+    try {
+      std::function < void(
+          VkDebugUtilsMessageSeverityFlagBitsEXT,
+          VkDebugUtilsMessageTypeFlagsEXT,
+          std::string
+      ) > function = [&stream](
+          VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+          VkDebugUtilsMessageTypeFlagsEXT messageType,
+          std::string message
+      ) {
+        //std::string function = std::string("(") + __FUNCTION__ + ")";
 
-      std::string level;
-      if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT == messageSeverity) {
-        level = "[VERBOSE]";
-      } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT == messageSeverity) {
-        level = "[INFO]";
-      } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT == messageSeverity) {
-        level = "[WARNING]";
-      } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT == messageSeverity) {
-        level = "[ERROR]";
-      } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT == messageSeverity) {
-        level = "[MAX]";
-      }
+        std::string level;
+        if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT == messageSeverity) {
+          level = "[VERBOSE]";
+        } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT == messageSeverity) {
+          level = "[INFO]";
+        } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT == messageSeverity) {
+          level = "[WARNING]";
+        } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT == messageSeverity) {
+          level = "[ERROR]";
+        } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT == messageSeverity) {
+          level = "[MAX]";
+        }
 
-      std::string type;
-      if (VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT == messageType) {
-        type = "(GENERAL)";
-      } else if (VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT == messageType) {
-        type = "(VALIDATION)";
-      } else if (VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT == messageType) {
-        type = "(PERFORMANCE)";
-      } else if (VK_DEBUG_UTILS_MESSAGE_TYPE_FLAG_BITS_MAX_ENUM_EXT == messageType) {
-        type = "(MAX)";
-      }
+        std::string type;
+        if (VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT == messageType) {
+          type = "(GENERAL)";
+        } else if (VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT == messageType) {
+          type = "(VALIDATION)";
+        } else if (VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT == messageType) {
+          type = "(PERFORMANCE)";
+        } else if (VK_DEBUG_UTILS_MESSAGE_TYPE_FLAG_BITS_MAX_ENUM_EXT == messageType) {
+          type = "(MAX)";
+        }
 
-      std::string line;
+        std::string line;
 
-      //line += function;
-      //line += " ";
-      line += level;
-      line += " ";
-      line += type;
-      line += " ";
-      line += "validation layer:";
-      line += " ";
-      line += message;
+        //line += function;
+        //line += " ";
+        line += level;
+        line += " ";
+        line += type;
+        line += " ";
+        line += "validation layer:";
+        line += " ";
+        line += message;
 
-      stream << line << std::endl;
-    };
-    return Logger(function);
+        stream << line << std::endl;
+      };
+
+      return Logger(function);
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
   }
 
   Logger Functions::createLogger(
@@ -131,14 +192,13 @@ namespace exqudens::vulkan {
           VkDebugUtilsMessageSeverityFlagBitsEXT,
           VkDebugUtilsMessageTypeFlagsEXT,
           const std::string&
-      )>& logFunction
+      )>& function
   ) {
-    std::function<void(
-        VkDebugUtilsMessageSeverityFlagBitsEXT,
-        VkDebugUtilsMessageTypeFlagsEXT,
-        std::string
-    )> function = logFunction;
-    return Logger(function);
+    try {
+      return Logger(function);
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
   }
 
   VkInstance Functions::createInstance(Configuration& configuration, Logger& logger) {
@@ -184,9 +244,9 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkDebugUtilsMessengerEXT Functions::createDebugMessenger(Logger& logger, VkInstance& instance) {
+  VkDebugUtilsMessengerEXT Functions::createDebugUtilsMessenger(Logger& logger, VkInstance& instance) {
     try {
-      VkDebugUtilsMessengerEXT debugMessenger;
+      VkDebugUtilsMessengerEXT debugUtilsMessenger;
       VkResult result;
 
       auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
@@ -194,7 +254,7 @@ namespace exqudens::vulkan {
       if (func != nullptr) {
         VkDebugUtilsMessengerCreateInfoEXT createInfo;
         populateDebugMessengerCreateInfo(createInfo, logger);
-        result = func(instance, &createInfo, nullptr, &debugMessenger);
+        result = func(instance, &createInfo, nullptr, &debugUtilsMessenger);
       } else {
         result = VK_ERROR_EXTENSION_NOT_PRESENT;
       }
@@ -203,7 +263,7 @@ namespace exqudens::vulkan {
         throw std::runtime_error(CALL_INFO() + ": failed to set up debug messenger!");
       }
 
-      return debugMessenger;
+      return debugUtilsMessenger;
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -286,28 +346,32 @@ namespace exqudens::vulkan {
   }
 
   bool Functions::checkValidationLayerSupport(const std::vector<std::string>& validationLayers) {
-    uint32_t layerCount;
-    vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+    try {
+      uint32_t layerCount;
+      vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 
-    std::vector<VkLayerProperties> availableLayers(layerCount);
-    vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+      std::vector<VkLayerProperties> availableLayers(layerCount);
+      vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
-    for (const std::string& layerName : validationLayers) {
-      bool layerFound = false;
+      for (const std::string& layerName: validationLayers) {
+        bool layerFound = false;
 
-      for (const auto& layerProperties : availableLayers) {
-        if (layerName == std::string(layerProperties.layerName)) {
-          layerFound = true;
-          break;
+        for (const auto& layerProperties: availableLayers) {
+          if (layerName == std::string(layerProperties.layerName)) {
+            layerFound = true;
+            break;
+          }
+        }
+
+        if (!layerFound) {
+          return false;
         }
       }
 
-      if (!layerFound) {
-        return false;
-      }
+      return true;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
-
-    return true;
   }
 
   void Functions::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& object, Logger& logger) {
@@ -427,6 +491,27 @@ namespace exqudens::vulkan {
       }
 
       return details;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  void Functions::destroyDebugUtilsMessenger(VkInstance& instance, VkDebugUtilsMessengerEXT& debugUtilsMessenger) {
+    try {
+      if (debugUtilsMessenger != nullptr) {
+        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+        func(instance, debugUtilsMessenger, nullptr);
+      }
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  void Functions::destroyInstance(VkInstance& instance) {
+    try {
+      if (instance != nullptr) {
+        vkDestroyInstance(instance, nullptr);
+      }
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
