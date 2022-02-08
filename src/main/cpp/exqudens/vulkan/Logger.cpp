@@ -20,7 +20,7 @@ namespace exqudens::vulkan {
       std::function<void(
           VkDebugUtilsMessageSeverityFlagBitsEXT,
           VkDebugUtilsMessageTypeFlagsEXT,
-          std::string
+          const std::string&
       )> function
   ):
       function(std::move(function))

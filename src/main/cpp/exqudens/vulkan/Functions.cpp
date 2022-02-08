@@ -130,7 +130,7 @@ namespace exqudens::vulkan {
       const std::function<void(
           VkDebugUtilsMessageSeverityFlagBitsEXT,
           VkDebugUtilsMessageTypeFlagsEXT,
-          std::string
+          const std::string&
       )>& logFunction
   ) {
     std::function<void(

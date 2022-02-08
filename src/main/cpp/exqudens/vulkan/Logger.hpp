@@ -11,7 +11,7 @@ namespace exqudens::vulkan {
 
     private:
 
-      std::function<void(VkDebugUtilsMessageSeverityFlagBitsEXT, VkDebugUtilsMessageTypeFlagsEXT, std::string)> function;
+      std::function<void(VkDebugUtilsMessageSeverityFlagBitsEXT, VkDebugUtilsMessageTypeFlagsEXT, const std::string&)> function;
 
     public:
 
@@ -23,7 +23,7 @@ namespace exqudens::vulkan {
       );
 
       explicit Logger(
-          std::function<void(VkDebugUtilsMessageSeverityFlagBitsEXT, VkDebugUtilsMessageTypeFlagsEXT, std::string)> function
+          std::function<void(VkDebugUtilsMessageSeverityFlagBitsEXT, VkDebugUtilsMessageTypeFlagsEXT, const std::string&)> function
       );
       Logger() = default;
       Logger(const Logger& object);
