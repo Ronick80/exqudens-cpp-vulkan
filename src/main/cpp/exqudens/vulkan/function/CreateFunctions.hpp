@@ -27,21 +27,6 @@ namespace exqudens::vulkan {
       virtual std::map<std::string, std::string> createEnvironmentVariables(const std::string& executableDirPath);
 
       virtual Configuration createConfiguration();
-      virtual Configuration createConfiguration(const bool& validationLayersEnabled);
-      virtual Configuration createConfiguration(
-          std::string applicationName,
-          unsigned int applicationVersionMajor,
-          unsigned int applicationVersionMinor,
-          unsigned int applicationVersionPatch,
-          std::string engineName,
-          unsigned int engineVersionMajor,
-          unsigned int engineVersionMinor,
-          unsigned int engineVersionPatch,
-          const bool& validationLayersEnabled,
-          const std::vector<std::string>& validationLayers,
-          const std::vector<std::string>& extensions,
-          const std::vector<std::string>& deviceExtensions
-      );
 
       virtual Logger createLogger();
       virtual Logger createLogger(std::ostream& stream);
@@ -57,11 +42,11 @@ namespace exqudens::vulkan {
 
       virtual VkDebugUtilsMessengerEXT createDebugUtilsMessenger(VkInstance& instance, Logger& logger);
 
+      virtual VkPhysicalDevice createPhysicalDevice(VkInstance& instance, Configuration& configuration);
       virtual VkPhysicalDevice createPhysicalDevice(
           VkInstance& instance,
-          VkSurfaceKHR& surface,
-          StringVector& deviceExtensions,
-          bool transferFamilyRequired
+          Configuration& configuration,
+          VkSurfaceKHR& surface
       );
 
       virtual ~CreateFunctions();

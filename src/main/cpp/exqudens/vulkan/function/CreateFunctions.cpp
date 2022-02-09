@@ -38,10 +38,15 @@ namespace exqudens::vulkan {
       unsigned int engineVersionMinor = 0;
       unsigned int engineVersionPatch = 0;
       bool validationLayersEnabled = true;
-      std::vector<std::string> validationLayers = {"VK_LAYER_KHRONOS_validation"};
-      std::vector<std::string> extensions = {VK_EXT_DEBUG_UTILS_EXTENSION_NAME};
-      std::vector<std::string> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-      return createConfiguration(
+      StringVector validationLayers = StringVector({"VK_LAYER_KHRONOS_validation"});
+      StringVector extensions = StringVector({VK_EXT_DEBUG_UTILS_EXTENSION_NAME});
+      StringVector deviceExtensions = StringVector({VK_KHR_SWAPCHAIN_EXTENSION_NAME});
+      bool computeQueueFamilyRequired = true;
+      bool transferQueueFamilyRequired = true;
+      bool graphicsQueueFamilyRequired = true;
+      bool presentQueueFamilyRequired = true;
+      bool anisotropyRequired = true;
+      return {
           applicationName,
           applicationVersionMajor,
           applicationVersionMinor,
@@ -53,77 +58,13 @@ namespace exqudens::vulkan {
           validationLayersEnabled,
           validationLayers,
           extensions,
-          deviceExtensions
-      );
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
-
-  Configuration CreateFunctions::createConfiguration(const bool& validationLayersEnabled) {
-    try {
-      std::string applicationName = "Exqudens Application";
-      unsigned int applicationVersionMajor = 1;
-      unsigned int applicationVersionMinor = 0;
-      unsigned int applicationVersionPatch = 0;
-      std::string engineName = "Engine Application";
-      unsigned int engineVersionMajor = 1;
-      unsigned int engineVersionMinor = 0;
-      unsigned int engineVersionPatch = 0;
-      std::vector<std::string> validationLayers;
-      if (validationLayersEnabled) {
-        validationLayers = {"VK_LAYER_KHRONOS_validation"};
-      }
-      std::vector<std::string> extensions = {VK_EXT_DEBUG_UTILS_EXTENSION_NAME};
-      std::vector<std::string> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-      return createConfiguration(
-          applicationName,
-          applicationVersionMajor,
-          applicationVersionMinor,
-          applicationVersionPatch,
-          engineName,
-          engineVersionMajor,
-          engineVersionMinor,
-          engineVersionPatch,
-          validationLayersEnabled,
-          validationLayers,
-          extensions,
-          deviceExtensions
-      );
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
-
-  Configuration CreateFunctions::createConfiguration(
-      std::string applicationName,
-      unsigned int applicationVersionMajor,
-      unsigned int applicationVersionMinor,
-      unsigned int applicationVersionPatch,
-      std::string engineName,
-      unsigned int engineVersionMajor,
-      unsigned int engineVersionMinor,
-      unsigned int engineVersionPatch,
-      const bool& validationLayersEnabled,
-      const std::vector<std::string>&validationLayers,
-      const std::vector<std::string>& extensions,
-      const std::vector<std::string>& deviceExtensions
-  ) {
-    try {
-      Configuration configuration;
-      configuration.applicationName = std::move(applicationName);
-      configuration.applicationVersionMajor = applicationVersionMajor;
-      configuration.applicationVersionMinor = applicationVersionMinor;
-      configuration.applicationVersionPatch = applicationVersionPatch;
-      configuration.engineName = std::move(engineName);
-      configuration.engineVersionMajor = engineVersionMajor;
-      configuration.engineVersionMinor = engineVersionMinor;
-      configuration.engineVersionPatch = engineVersionPatch;
-      configuration.validationLayersEnabled = validationLayersEnabled;
-      configuration.validationLayers = StringVector(validationLayers);
-      configuration.extensions = StringVector(extensions);
-      configuration.deviceExtensions = StringVector(deviceExtensions);
-      return configuration;
+          deviceExtensions,
+          computeQueueFamilyRequired,
+          transferQueueFamilyRequired,
+          graphicsQueueFamilyRequired,
+          presentQueueFamilyRequired,
+          anisotropyRequired
+      };
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -211,8 +152,10 @@ namespace exqudens::vulkan {
 
   VkInstance CreateFunctions::createInstance(Configuration& configuration, Logger& logger) {
     try {
+      VkInstance instance = nullptr;
+
       if (utilFunctions == nullptr) {
-        throw std::runtime_error(CALL_INFO() + ": 'utilFunctions' is null!");
+        throw std::runtime_error(CALL_INFO() + ": " + TO_STRING_SINGLE_QUOTES(utilFunctions) + " is null!");
       }
 
       if (configuration.validationLayersEnabled) {
@@ -247,7 +190,6 @@ namespace exqudens::vulkan {
         createInfo.pNext = nullptr;
       }
 
-      VkInstance instance;
       if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
         throw std::runtime_error(CALL_INFO() + ": failed to create instance!");
       }
@@ -260,11 +202,12 @@ namespace exqudens::vulkan {
 
   VkDebugUtilsMessengerEXT CreateFunctions::createDebugUtilsMessenger(VkInstance& instance, Logger& logger) {
     try {
+      VkDebugUtilsMessengerEXT debugUtilsMessenger = nullptr;
+
       if (utilFunctions == nullptr) {
         throw std::runtime_error(CALL_INFO() + ": 'utilFunctions' is null!");
       }
 
-      VkDebugUtilsMessengerEXT debugUtilsMessenger;
       VkResult result;
 
       auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
@@ -287,18 +230,42 @@ namespace exqudens::vulkan {
     }
   }
 
+  VkPhysicalDevice CreateFunctions::createPhysicalDevice(VkInstance& instance, Configuration& configuration) {
+    try {
+      VkSurfaceKHR surface = nullptr;
+      return createPhysicalDevice(
+          instance,
+          configuration,
+          surface
+      );
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
   VkPhysicalDevice CreateFunctions::createPhysicalDevice(
       VkInstance& instance,
-      VkSurfaceKHR& surface,
-      StringVector& deviceExtensions,
-      bool transferFamilyRequired
+      Configuration& configuration,
+      VkSurfaceKHR& surface
   ) {
     try {
+      VkPhysicalDevice physicalDevice = nullptr;
+
       if (utilFunctions == nullptr) {
-        throw std::runtime_error(CALL_INFO() + ": 'utilFunctions' is null!");
+        throw std::runtime_error(CALL_INFO() + ": " + TO_STRING_SINGLE_QUOTES(utilFunctions) + " is null!");
       }
 
-      VkPhysicalDevice physicalDevice;
+      if (configuration.presentQueueFamilyRequired && surface == nullptr) {
+        throw std::runtime_error(
+            CALL_INFO()
+            + ": "
+            + TO_STRING_SINGLE_QUOTES(configuration.presentQueueFamilyRequired)
+            + ": true but "
+            + TO_STRING_SINGLE_QUOTES(surface)
+            + " is null!"
+        );
+      }
+
       uint32_t deviceCount = 0;
       vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
@@ -310,7 +277,13 @@ namespace exqudens::vulkan {
       vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
       for (VkPhysicalDevice& object : devices) {
-        if (utilFunctions->isDeviceSuitable(object, surface, deviceExtensions, transferFamilyRequired)) {
+        if (
+            utilFunctions->isDeviceSuitable(
+                object,
+                configuration,
+                surface
+            )
+        ) {
           physicalDevice = object;
           break;
         }

@@ -24,6 +24,11 @@ namespace exqudens::vulkan {
       StringVector validationLayers = StringVector();
       StringVector extensions = StringVector();
       StringVector deviceExtensions = StringVector();
+      bool computeQueueFamilyRequired = true;
+      bool transferQueueFamilyRequired = true;
+      bool graphicsQueueFamilyRequired = true;
+      bool presentQueueFamilyRequired = true;
+      bool anisotropyRequired = true;
 
       Configuration(
           std::string applicationName,
@@ -37,7 +42,12 @@ namespace exqudens::vulkan {
           bool validationLayersEnabled,
           StringVector validationLayers,
           StringVector extensions,
-          StringVector deviceExtensions
+          StringVector deviceExtensions,
+          bool computeQueueFamilyRequired,
+          bool transferQueueFamilyRequired,
+          bool graphicsQueueFamilyRequired,
+          bool presentQueueFamilyRequired,
+          bool anisotropyRequired
       );
       Configuration();
       Configuration(const Configuration& object);

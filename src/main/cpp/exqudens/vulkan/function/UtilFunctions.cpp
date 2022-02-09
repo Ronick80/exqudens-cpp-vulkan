@@ -94,14 +94,35 @@ namespace exqudens::vulkan {
     }
   }
 
-  bool UtilFunctions::isDeviceSuitable(VkPhysicalDevice& physicalDevice, VkSurfaceKHR& surface, StringVector& deviceExtensions, bool transferFamilyRequired) {
+  bool UtilFunctions::isDeviceSuitable(
+      VkPhysicalDevice& physicalDevice,
+      Configuration& configuration,
+      VkSurfaceKHR& surface
+  ) {
     try {
-      QueueFamilyIndices familyIndices = findQueueFamilies(physicalDevice, surface, transferFamilyRequired);
+      if (configuration.presentQueueFamilyRequired && surface == nullptr) {
+        throw std::runtime_error(
+            CALL_INFO()
+            + ": "
+            + TO_STRING_SINGLE_QUOTES(configuration.presentQueueFamilyRequired)
+            + ": true but "
+            + TO_STRING_SINGLE_QUOTES(surface)
+            + " is null!"
+        );
+      }
 
-      bool extensionsSupported = checkDeviceExtensionSupport(physicalDevice, deviceExtensions);
+      QueueFamilyIndices familyIndices = findQueueFamilies(
+          physicalDevice,
+          configuration.computeQueueFamilyRequired,
+          configuration.transferQueueFamilyRequired,
+          configuration.graphicsQueueFamilyRequired,
+          surface
+      );
 
-      bool swapChainAdequate = false;
-      if (extensionsSupported) {
+      bool extensionsSupported = checkDeviceExtensionSupport(physicalDevice, configuration.deviceExtensions);
+
+      bool swapChainAdequate = surface == nullptr;
+      if (extensionsSupported && surface != nullptr) {
         SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice, surface);
         swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
       }
@@ -109,15 +130,33 @@ namespace exqudens::vulkan {
       VkPhysicalDeviceFeatures supportedFeatures;
       vkGetPhysicalDeviceFeatures(physicalDevice, &supportedFeatures);
 
-      return familyIndices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
+      bool anisotropyAdequate = true;
+      if (configuration.anisotropyRequired) {
+        anisotropyAdequate = supportedFeatures.samplerAnisotropy;
+      }
+
+      return familyIndices.isComplete() &&
+          extensionsSupported &&
+          swapChainAdequate &&
+          anisotropyAdequate;
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
   }
 
-  QueueFamilyIndices UtilFunctions::findQueueFamilies(VkPhysicalDevice& physicalDevice, VkSurfaceKHR& surface, bool transferFamilyRequired) {
+  QueueFamilyIndices UtilFunctions::findQueueFamilies(
+      VkPhysicalDevice& physicalDevice,
+      bool computeFamilyRequired,
+      bool transferFamilyRequired,
+      bool graphicsFamilyRequired,
+      VkSurfaceKHR& surface
+  ) {
     try {
       QueueFamilyIndices familyIndices;
+      familyIndices.computeFamilyRequired = computeFamilyRequired;
+      familyIndices.transferFamilyRequired = transferFamilyRequired;
+      familyIndices.graphicsFamilyRequired = graphicsFamilyRequired;
+      familyIndices.presentFamilyRequired = surface != nullptr;
 
       uint32_t queueFamilyCount = 0;
       vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
@@ -127,6 +166,12 @@ namespace exqudens::vulkan {
 
       int i = 0;
       for (const auto& queueFamily : queueFamilies) {
+        if (familyIndices.computeFamilyRequired) {
+          if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) {
+            familyIndices.computeFamily = i;
+          }
+        }
+
         if (familyIndices.transferFamilyRequired) {
           if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) {
             familyIndices.transferFamily = i;

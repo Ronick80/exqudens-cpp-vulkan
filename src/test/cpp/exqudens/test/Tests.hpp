@@ -44,6 +44,7 @@ namespace exqudens::vulkan {
       UtilFunctions utilFunctions;
       CreateFunctions createFunctions(&utilFunctions);
       DestroyFunctions destroyFunctions;
+
       std::map<std::string, std::string> environmentVariables = createFunctions.createEnvironmentVariables(TestConfiguration::getExecutableDir());
 
       for (auto const& [name, value] : environmentVariables) {
@@ -51,14 +52,17 @@ namespace exqudens::vulkan {
       }
 
       Configuration configuration = createFunctions.createConfiguration();
+      configuration.presentQueueFamilyRequired = false;
       std::ostringstream stream;
       Logger logger = createFunctions.createLogger(stream);
 
       VkInstance instance = createFunctions.createInstance(configuration, logger);
       VkDebugUtilsMessengerEXT debugUtilsMessenger = createFunctions.createDebugUtilsMessenger(instance, logger);
+      VkPhysicalDevice physicalDevice = createFunctions.createPhysicalDevice(instance, configuration);
 
       //std::this_thread::sleep_for(std::chrono::seconds(5));
 
+      destroyFunctions.destroyPhysicalDevice(physicalDevice);
       destroyFunctions.destroyDebugUtilsMessenger(debugUtilsMessenger, instance);
       destroyFunctions.destroyInstance(instance);
       std::cout << stream.str();

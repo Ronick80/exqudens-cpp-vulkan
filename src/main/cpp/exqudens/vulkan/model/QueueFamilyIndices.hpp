@@ -11,6 +11,9 @@ namespace exqudens::vulkan {
 
     public:
 
+      bool computeFamilyRequired = true;
+      std::optional<uint32_t> computeFamily;
+
       bool transferFamilyRequired = true;
       std::optional<uint32_t> transferFamily;
 
@@ -21,6 +24,9 @@ namespace exqudens::vulkan {
       std::optional<uint32_t> presentFamily;
 
       QueueFamilyIndices(
+          bool computeFamilyRequired,
+          std::optional<uint32_t> computeFamily,
+
           bool transferFamilyRequired,
           std::optional<uint32_t> transferFamily,
 

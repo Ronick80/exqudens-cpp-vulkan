@@ -12,6 +12,8 @@ namespace exqudens::vulkan {
 
       DestroyFunctions();
 
+      virtual void destroyPhysicalDevice(VkPhysicalDevice& physicalDevice);
+
       virtual void destroyDebugUtilsMessenger(VkDebugUtilsMessengerEXT& debugUtilsMessenger, VkInstance& instance);
 
       virtual void destroyInstance(VkInstance& instance);

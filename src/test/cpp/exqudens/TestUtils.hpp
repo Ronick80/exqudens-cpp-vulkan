@@ -28,7 +28,10 @@ namespace exqudens::vulkan {
         } catch (const std::exception& e) {
           return toStringVector(e, previous);
         } catch (...) {
-          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+          if (previous.empty()) {
+            previous.emplace_back(CALL_INFO() + ": Empty stack!");
+          }
+          return previous;
         }
       }
 

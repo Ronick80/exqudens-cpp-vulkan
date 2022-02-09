@@ -7,6 +7,14 @@ namespace exqudens::vulkan {
 
   DestroyFunctions::DestroyFunctions() = default;
 
+  void DestroyFunctions::destroyPhysicalDevice(VkPhysicalDevice& physicalDevice) {
+    try {
+      physicalDevice = nullptr;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
   void DestroyFunctions::destroyDebugUtilsMessenger(VkDebugUtilsMessengerEXT& debugUtilsMessenger, VkInstance& instance) {
     try {
       if (debugUtilsMessenger != nullptr) {
