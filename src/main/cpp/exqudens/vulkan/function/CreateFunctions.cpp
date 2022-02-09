@@ -1,15 +1,23 @@
-#include "exqudens/vulkan/Functions.hpp"
+#include "exqudens/vulkan/function/CreateFunctions.hpp"
 #include "exqudens/vulkan/Macros.hpp"
 
-#include <set>
-#include <cstdlib>
 #include <filesystem>
 #include <stdexcept>
+#include <utility>
 #include <iostream>
 
 namespace exqudens::vulkan {
 
-  std::map<std::string, std::string> Functions::createEnvironmentVariables(const std::string& executableDirPath) {
+  CreateFunctions::CreateFunctions(
+      UtilFunctions* utilFunctions
+  ):
+      utilFunctions(utilFunctions)
+  {
+  }
+
+  CreateFunctions::CreateFunctions() = default;
+
+  std::map<std::string, std::string> CreateFunctions::createEnvironmentVariables(const std::string& executableDirPath) {
     try {
       std::map<std::string, std::string> environmentVariables;
       environmentVariables["VK_LAYER_PATH"] = std::filesystem::path(executableDirPath).make_preferred().string();
@@ -19,7 +27,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  Configuration Functions::createConfiguration() {
+  Configuration CreateFunctions::createConfiguration() {
     try {
       std::string applicationName = "Exqudens Application";
       unsigned int applicationVersionMajor = 1;
@@ -52,7 +60,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  Configuration Functions::createConfiguration(const bool& validationLayersEnabled) {
+  Configuration CreateFunctions::createConfiguration(const bool& validationLayersEnabled) {
     try {
       std::string applicationName = "Exqudens Application";
       unsigned int applicationVersionMajor = 1;
@@ -87,7 +95,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  Configuration Functions::createConfiguration(
+  Configuration CreateFunctions::createConfiguration(
       std::string applicationName,
       unsigned int applicationVersionMajor,
       unsigned int applicationVersionMinor,
@@ -103,11 +111,11 @@ namespace exqudens::vulkan {
   ) {
     try {
       Configuration configuration;
-      configuration.applicationName = applicationName;
+      configuration.applicationName = std::move(applicationName);
       configuration.applicationVersionMajor = applicationVersionMajor;
       configuration.applicationVersionMinor = applicationVersionMinor;
       configuration.applicationVersionPatch = applicationVersionPatch;
-      configuration.engineName = engineName;
+      configuration.engineName = std::move(engineName);
       configuration.engineVersionMajor = engineVersionMajor;
       configuration.engineVersionMinor = engineVersionMinor;
       configuration.engineVersionPatch = engineVersionPatch;
@@ -121,7 +129,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  Logger Functions::createLogger() {
+  Logger CreateFunctions::createLogger() {
     try {
       return createLogger(std::cout);
     } catch (...) {
@@ -129,7 +137,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  Logger Functions::createLogger(std::ostream& stream) {
+  Logger CreateFunctions::createLogger(std::ostream& stream) {
     try {
       std::function < void(
           VkDebugUtilsMessageSeverityFlagBitsEXT,
@@ -187,7 +195,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  Logger Functions::createLogger(
+  Logger CreateFunctions::createLogger(
       const std::function<void(
           VkDebugUtilsMessageSeverityFlagBitsEXT,
           VkDebugUtilsMessageTypeFlagsEXT,
@@ -201,10 +209,16 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkInstance Functions::createInstance(Configuration& configuration, Logger& logger) {
+  VkInstance CreateFunctions::createInstance(Configuration& configuration, Logger& logger) {
     try {
-      if (configuration.validationLayersEnabled && !checkValidationLayerSupport(configuration.validationLayers.values)) {
-        throw std::runtime_error(CALL_INFO() + ": validation layers requested, but not available!");
+      if (utilFunctions == nullptr) {
+        throw std::runtime_error(CALL_INFO() + ": 'utilFunctions' is null!");
+      }
+
+      if (configuration.validationLayersEnabled) {
+        if (!utilFunctions->checkValidationLayerSupport(configuration.validationLayers.values)) {
+          throw std::runtime_error(CALL_INFO() + ": validation layers requested, but not available!");
+        }
       }
 
       VkApplicationInfo appInfo{};
@@ -226,7 +240,7 @@ namespace exqudens::vulkan {
       if (configuration.validationLayersEnabled) {
         createInfo.enabledLayerCount = static_cast<uint32_t>(configuration.validationLayers.pointers.size());
         createInfo.ppEnabledLayerNames = configuration.validationLayers.pointers.data();
-        populateDebugMessengerCreateInfo(debugCreateInfo, logger);
+        utilFunctions->populateDebugMessengerCreateInfo(debugCreateInfo, logger);
         createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*) &debugCreateInfo;
       } else {
         createInfo.enabledLayerCount = 0;
@@ -244,8 +258,12 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkDebugUtilsMessengerEXT Functions::createDebugUtilsMessenger(Logger& logger, VkInstance& instance) {
+  VkDebugUtilsMessengerEXT CreateFunctions::createDebugUtilsMessenger(VkInstance& instance, Logger& logger) {
     try {
+      if (utilFunctions == nullptr) {
+        throw std::runtime_error(CALL_INFO() + ": 'utilFunctions' is null!");
+      }
+
       VkDebugUtilsMessengerEXT debugUtilsMessenger;
       VkResult result;
 
@@ -253,7 +271,7 @@ namespace exqudens::vulkan {
 
       if (func != nullptr) {
         VkDebugUtilsMessengerCreateInfoEXT createInfo;
-        populateDebugMessengerCreateInfo(createInfo, logger);
+        utilFunctions->populateDebugMessengerCreateInfo(createInfo, logger);
         result = func(instance, &createInfo, nullptr, &debugUtilsMessenger);
       } else {
         result = VK_ERROR_EXTENSION_NOT_PRESENT;
@@ -269,20 +287,17 @@ namespace exqudens::vulkan {
     }
   }
 
-  /*VkSurfaceKHR Functions::createSurface(GLFWwindow*& window, VkInstance& instance) {
+  VkPhysicalDevice CreateFunctions::createPhysicalDevice(
+      VkInstance& instance,
+      VkSurfaceKHR& surface,
+      StringVector& deviceExtensions,
+      bool transferFamilyRequired
+  ) {
     try {
-      VkSurfaceKHR surface;
-      if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
-        throw std::runtime_error(CALL_INFO() + ": failed to create window surface!");
+      if (utilFunctions == nullptr) {
+        throw std::runtime_error(CALL_INFO() + ": 'utilFunctions' is null!");
       }
-      return surface;
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }*/
 
-  VkPhysicalDevice Functions::createPhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface, StringVector& deviceExtensions) {
-    try {
       VkPhysicalDevice physicalDevice;
       uint32_t deviceCount = 0;
       vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
@@ -295,7 +310,7 @@ namespace exqudens::vulkan {
       vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
       for (VkPhysicalDevice& object : devices) {
-        if (isDeviceSuitable(object, surface, deviceExtensions)) {
+        if (utilFunctions->isDeviceSuitable(object, surface, deviceExtensions, transferFamilyRequired)) {
           physicalDevice = object;
           break;
         }
@@ -311,210 +326,6 @@ namespace exqudens::vulkan {
     }
   }
 
-  void Functions::setEnvironmentVariable(const std::string& name, const std::string& value) {
-#ifdef _WIN32
-    _putenv_s(name.c_str(), value.c_str());
-#elif _WIN64
-    _putenv_s(name.c_str(), value.c_str());
-#endif
-  }
-
-  std::optional<std::string> Functions::getEnvironmentVariable(const std::string& name) {
-    std::optional<std::string> value;
-#ifdef _WIN32
-    char* buffer;
-    size_t size;
-    errno_t error = _dupenv_s(&buffer, &size, name.c_str());
-    if (error) {
-      return value;
-    }
-    if (buffer != nullptr) {
-      value.emplace(std::string(buffer));
-    }
-#elif _WIN64
-    char* buffer;
-    size_t size;
-    errno_t error = _dupenv_s(&buffer, &size, name.c_str());
-    if (error) {
-      return value;
-    }
-    if (buffer != nullptr) {
-      value.emplace(std::string(buffer));
-    }
-#endif
-    return value;
-  }
-
-  bool Functions::checkValidationLayerSupport(const std::vector<std::string>& validationLayers) {
-    try {
-      uint32_t layerCount;
-      vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-
-      std::vector<VkLayerProperties> availableLayers(layerCount);
-      vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
-
-      for (const std::string& layerName: validationLayers) {
-        bool layerFound = false;
-
-        for (const auto& layerProperties: availableLayers) {
-          if (layerName == std::string(layerProperties.layerName)) {
-            layerFound = true;
-            break;
-          }
-        }
-
-        if (!layerFound) {
-          return false;
-        }
-      }
-
-      return true;
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
-
-  void Functions::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& object, Logger& logger) {
-    try {
-      object = {};
-      object.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-      object.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-      object.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-      object.pfnUserCallback = &Logger::call;
-      object.pUserData = &logger;
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
-
-  bool Functions::isDeviceSuitable(VkPhysicalDevice& physicalDevice, VkSurfaceKHR& surface, StringVector& deviceExtensions) {
-    try {
-      QueueFamilyIndices familyIndices = findQueueFamilies(physicalDevice, surface);
-
-      bool extensionsSupported = checkDeviceExtensionSupport(physicalDevice, deviceExtensions);
-
-      bool swapChainAdequate = false;
-      if (extensionsSupported) {
-        SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice, surface);
-        swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
-      }
-
-      VkPhysicalDeviceFeatures supportedFeatures;
-      vkGetPhysicalDeviceFeatures(physicalDevice, &supportedFeatures);
-
-      return familyIndices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
-
-  QueueFamilyIndices Functions::findQueueFamilies(VkPhysicalDevice& physicalDevice, VkSurfaceKHR& surface) {
-    try {
-      QueueFamilyIndices familyIndices;
-
-      uint32_t queueFamilyCount = 0;
-      vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
-
-      std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-      vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
-
-      int i = 0;
-      for (const auto& queueFamily : queueFamilies) {
-        if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-          familyIndices.graphicsFamily = i;
-        }
-
-        if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) {
-          familyIndices.transferFamily = i;
-        }
-
-        VkBool32 presentSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &presentSupport);
-
-        if (presentSupport) {
-          familyIndices.presentFamily = i;
-        }
-
-        if (familyIndices.isComplete()) {
-          break;
-        }
-
-        i++;
-      }
-
-      return familyIndices;
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
-
-  bool Functions::checkDeviceExtensionSupport(VkPhysicalDevice& physicalDevice, StringVector& deviceExtensions) {
-    try {
-      uint32_t extensionCount;
-      vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
-
-      std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-      vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableExtensions.data());
-
-      std::set<std::string> requiredExtensions(deviceExtensions.pointers.begin(), deviceExtensions.pointers.end());
-
-      for (const auto& extension : availableExtensions) {
-        requiredExtensions.erase(extension.extensionName);
-      }
-
-      return requiredExtensions.empty();
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
-
-  SwapChainSupportDetails Functions::querySwapChainSupport(VkPhysicalDevice& physicalDevice, VkSurfaceKHR& surface) {
-    try {
-      SwapChainSupportDetails details;
-
-      vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &details.capabilities);
-
-      uint32_t formatCount;
-      vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr);
-
-      if (formatCount != 0) {
-        details.formats.resize(formatCount);
-        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, details.formats.data());
-      }
-
-      uint32_t presentModeCount;
-      vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
-
-      if (presentModeCount != 0) {
-        details.presentModes.resize(presentModeCount);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, details.presentModes.data());
-      }
-
-      return details;
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
-
-  void Functions::destroyDebugUtilsMessenger(VkInstance& instance, VkDebugUtilsMessengerEXT& debugUtilsMessenger) {
-    try {
-      if (debugUtilsMessenger != nullptr) {
-        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-        func(instance, debugUtilsMessenger, nullptr);
-      }
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
-
-  void Functions::destroyInstance(VkInstance& instance) {
-    try {
-      if (instance != nullptr) {
-        vkDestroyInstance(instance, nullptr);
-      }
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
+  CreateFunctions::~CreateFunctions() = default;
 
 }

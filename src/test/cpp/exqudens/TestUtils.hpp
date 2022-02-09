@@ -35,7 +35,9 @@ namespace exqudens::vulkan {
       static std::vector<std::string> toStackTrace(const std::exception& exception) {
         try {
           std::vector<std::string> elements = toStringVector(exception);
-          std::ranges::reverse(elements);
+          if (elements.size() > 1) {
+            std::ranges::reverse(elements);
+          }
           return elements;
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));

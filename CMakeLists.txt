@@ -118,8 +118,7 @@ add_library("${PROJECT_NAME}"
     "src/main/cpp/exqudens/vulkan/Macros.hpp"
     "src/main/cpp/exqudens/vulkan/Logger.hpp"
     "src/main/cpp/exqudens/vulkan/Logger.cpp"
-    "src/main/cpp/exqudens/vulkan/Functions.hpp"
-    "src/main/cpp/exqudens/vulkan/Functions.cpp"
+
     "src/main/cpp/exqudens/vulkan/model/StringVector.hpp"
     "src/main/cpp/exqudens/vulkan/model/StringVector.cpp"
     "src/main/cpp/exqudens/vulkan/model/Configuration.hpp"
@@ -128,6 +127,13 @@ add_library("${PROJECT_NAME}"
     "src/main/cpp/exqudens/vulkan/model/QueueFamilyIndices.cpp"
     "src/main/cpp/exqudens/vulkan/model/SwapChainSupportDetails.hpp"
     "src/main/cpp/exqudens/vulkan/model/SwapChainSupportDetails.cpp"
+
+    "src/main/cpp/exqudens/vulkan/function/CreateFunctions.hpp"
+    "src/main/cpp/exqudens/vulkan/function/CreateFunctions.cpp"
+    "src/main/cpp/exqudens/vulkan/function/UtilFunctions.hpp"
+    "src/main/cpp/exqudens/vulkan/function/UtilFunctions.cpp"
+    "src/main/cpp/exqudens/vulkan/function/DestroyFunctions.hpp"
+    "src/main/cpp/exqudens/vulkan/function/DestroyFunctions.cpp"
 )
 generate_export_header("${PROJECT_NAME}" BASE_NAME "EXQUDENS_VULKAN" EXPORT_FILE_NAME
     "generated/main/exqudens/vulkan/Export.hpp"

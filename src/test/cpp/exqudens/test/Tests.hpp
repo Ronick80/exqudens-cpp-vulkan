@@ -14,13 +14,16 @@
 
 #include "exqudens/TestConfiguration.hpp"
 #include "exqudens/TestUtils.hpp"
-#include "exqudens/vulkan/Functions.hpp"
+#include "exqudens/vulkan/function/UtilFunctions.hpp"
+#include "exqudens/vulkan/function/CreateFunctions.hpp"
+#include "exqudens/vulkan/function/DestroyFunctions.hpp"
 
 namespace exqudens::vulkan {
 
   TEST(Tests, test1) {
     try {
-      Configuration configuration = Functions::createConfiguration();
+      CreateFunctions createFunctions;
+      Configuration configuration = createFunctions.createConfiguration();
       ASSERT_EQ(true, configuration.validationLayersEnabled);
 
       ASSERT_EQ(std::string("VK_LAYER_KHRONOS_validation"), configuration.validationLayers.values[0]);
@@ -38,23 +41,26 @@ namespace exqudens::vulkan {
 
   TEST(Tests, test2) {
     try {
-      std::map<std::string, std::string> environmentVariables = Functions::createEnvironmentVariables(TestConfiguration::getExecutableDir());
+      UtilFunctions utilFunctions;
+      CreateFunctions createFunctions(&utilFunctions);
+      DestroyFunctions destroyFunctions;
+      std::map<std::string, std::string> environmentVariables = createFunctions.createEnvironmentVariables(TestConfiguration::getExecutableDir());
 
       for (auto const& [name, value] : environmentVariables) {
-        Functions::setEnvironmentVariable(name, value);
+        utilFunctions.setEnvironmentVariable(name, value);
       }
 
-      Configuration configuration = Functions::createConfiguration();
+      Configuration configuration = createFunctions.createConfiguration();
       std::ostringstream stream;
-      Logger logger = Functions::createLogger(stream);
+      Logger logger = createFunctions.createLogger(stream);
 
-      VkInstance instance = Functions::createInstance(configuration, logger);
-      VkDebugUtilsMessengerEXT debugUtilsMessenger = Functions::createDebugUtilsMessenger(logger, instance);
+      VkInstance instance = createFunctions.createInstance(configuration, logger);
+      VkDebugUtilsMessengerEXT debugUtilsMessenger = createFunctions.createDebugUtilsMessenger(instance, logger);
 
       //std::this_thread::sleep_for(std::chrono::seconds(5));
 
-      Functions::destroyDebugUtilsMessenger(instance, debugUtilsMessenger);
-      Functions::destroyInstance(instance);
+      destroyFunctions.destroyDebugUtilsMessenger(debugUtilsMessenger, instance);
+      destroyFunctions.destroyInstance(instance);
       std::cout << stream.str();
     } catch (const std::exception& e) {
       FAIL() << TestUtils::toString(e);

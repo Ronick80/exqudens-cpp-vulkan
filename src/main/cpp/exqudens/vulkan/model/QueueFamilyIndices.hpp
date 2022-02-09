@@ -11,13 +11,23 @@ namespace exqudens::vulkan {
 
     public:
 
+      bool transferFamilyRequired = true;
       std::optional<uint32_t> transferFamily;
+
+      bool graphicsFamilyRequired = true;
       std::optional<uint32_t> graphicsFamily;
+
+      bool presentFamilyRequired = true;
       std::optional<uint32_t> presentFamily;
 
       QueueFamilyIndices(
+          bool transferFamilyRequired,
           std::optional<uint32_t> transferFamily,
+
+          bool graphicsFamilyRequired,
           std::optional<uint32_t> graphicsFamily,
+
+          bool presentFamilyRequired,
           std::optional<uint32_t> presentFamily
       );
       QueueFamilyIndices();
