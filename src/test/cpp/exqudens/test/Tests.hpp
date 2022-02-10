@@ -56,9 +56,13 @@ namespace exqudens::vulkan {
 
       VkInstance instance = functions.createInstance(configuration, logger);
       VkDebugUtilsMessengerEXT debugUtilsMessenger = functions.createDebugUtilsMessenger(instance, logger);
-      VkSurfaceKHR surface = functions.createSurface(instance);
+      VkSurfaceKHR surface = nullptr;
       VkPhysicalDevice physicalDevice = functions.createPhysicalDevice(instance, configuration, surface);
       VkDevice device = functions.createDevice(physicalDevice, configuration, surface);
+      VkQueue computeQueue = functions.createQueue(QueueType::COMPUTE, physicalDevice, configuration, surface, device, 0);
+      VkQueue transferQueue = functions.createQueue(QueueType::TRANSFER, physicalDevice, configuration, surface, device, 0);
+      VkQueue graphicsQueue = functions.createQueue(QueueType::GRAPHICS, physicalDevice, configuration, surface, device, 0);
+      VkQueue presentQueue = nullptr;
 
       //std::this_thread::sleep_for(std::chrono::seconds(5));
 
@@ -67,6 +71,10 @@ namespace exqudens::vulkan {
       ASSERT_TRUE(surface == nullptr);
       ASSERT_TRUE(physicalDevice != nullptr);
       ASSERT_TRUE(device != nullptr);
+      ASSERT_TRUE(computeQueue != nullptr);
+      ASSERT_TRUE(transferQueue != nullptr);
+      ASSERT_TRUE(graphicsQueue != nullptr);
+      ASSERT_TRUE(presentQueue == nullptr);
 
       functions.destroyDevice(device);
       functions.destroyPhysicalDevice(physicalDevice);

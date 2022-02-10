@@ -6,6 +6,7 @@
 #include <map>
 #include <functional>
 #include <ostream>
+#include <cstdint>
 
 #include <vulkan/vulkan.h>
 
@@ -13,6 +14,7 @@
 #include "exqudens/vulkan/Logger.hpp"
 #include "exqudens/vulkan/model/Configuration.hpp"
 #include "exqudens/vulkan/model/StringVector.hpp"
+#include "exqudens/vulkan/model/QueueType.hpp"
 #include "exqudens/vulkan/model/QueueFamilyIndices.hpp"
 #include "exqudens/vulkan/model/SwapChainSupportDetails.hpp"
 
@@ -68,6 +70,15 @@ namespace exqudens::vulkan {
           VkPhysicalDevice& physicalDevice,
           Configuration& configuration,
           VkSurfaceKHR& surface
+      );
+
+      virtual VkQueue createQueue(
+          QueueType type,
+          VkPhysicalDevice& physicalDevice,
+          Configuration& configuration,
+          VkSurfaceKHR& surface,
+          VkDevice& device,
+          uint32_t queueIndex
       );
 
       // utility

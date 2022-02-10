@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <set>
 #include <cstdint>
 
 #include "exqudens/vulkan/Export.hpp"
@@ -46,6 +47,8 @@ namespace exqudens::vulkan {
       friend void swap(QueueFamilyIndices& first, QueueFamilyIndices& second);
 
       bool isComplete();
+
+      std::set<uint32_t> uniqueQueueFamilies();
 
       virtual ~QueueFamilyIndices();
 

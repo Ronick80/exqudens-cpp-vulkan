@@ -6,7 +6,6 @@
 #include <stdexcept>
 #include <utility>
 #include <iostream>
-#include <cstdint>
 #include <cstdlib>
 
 namespace exqudens::vulkan {
@@ -211,7 +210,7 @@ namespace exqudens::vulkan {
         createInfo.pNext = nullptr;
       }
 
-      if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
+      if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS || instance == nullptr) {
         throw std::runtime_error(CALL_INFO() + ": failed to create instance!");
       }
 
@@ -237,8 +236,8 @@ namespace exqudens::vulkan {
         result = VK_ERROR_EXTENSION_NOT_PRESENT;
       }
 
-      if (result != VK_SUCCESS) {
-        throw std::runtime_error(CALL_INFO() + ": failed to set up debug messenger!");
+      if (result != VK_SUCCESS || debugUtilsMessenger == nullptr) {
+        throw std::runtime_error(CALL_INFO() + ": failed create debug messenger!");
       }
 
       return debugUtilsMessenger;
@@ -250,11 +249,17 @@ namespace exqudens::vulkan {
   VkSurfaceKHR Functions::createSurface(VkInstance& instance) {
     try {
       VkSurfaceKHR surface = nullptr;
+
       try {
         surface = createSurfaceFunction(instance);
       } catch (const std::bad_function_call& e) {
         surface = nullptr;
       }
+
+      if (surface == nullptr) {
+        throw std::runtime_error(CALL_INFO() + ": failed create surface!");
+      }
+
       return surface;
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
@@ -297,7 +302,7 @@ namespace exqudens::vulkan {
         }
       }
 
-      if (physicalDevice == VK_NULL_HANDLE) {
+      if (physicalDevice == nullptr) {
         throw std::runtime_error(CALL_INFO() + ": failed to find a suitable GPU!");
       }
 
@@ -336,20 +341,7 @@ namespace exqudens::vulkan {
 
       std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 
-      std::set<uint32_t> uniqueQueueFamilies;
-      if (familyIndices.computeFamilyRequired) {
-        uniqueQueueFamilies.insert(familyIndices.computeFamily.value());
-      }
-      if (familyIndices.transferFamilyRequired) {
-        uniqueQueueFamilies.insert(familyIndices.transferFamily.value());
-      }
-      if (familyIndices.graphicsFamilyRequired) {
-        uniqueQueueFamilies.insert(familyIndices.graphicsFamily.value());
-      }
-      if (familyIndices.presentFamilyRequired) {
-        uniqueQueueFamilies.insert(familyIndices.presentFamily.value());
-      }
-
+      std::set<uint32_t> uniqueQueueFamilies = familyIndices.uniqueQueueFamilies();
       float queuePriority = 1.0f;
       for (uint32_t queueFamily : uniqueQueueFamilies) {
         VkDeviceQueueCreateInfo queueCreateInfo{};
@@ -381,11 +373,78 @@ namespace exqudens::vulkan {
         createInfo.enabledLayerCount = 0;
       }
 
-      if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
+      if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS || device == nullptr) {
         throw std::runtime_error(CALL_INFO() + ": failed to create logical device!");
       }
 
       return device;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  VkQueue Functions::createQueue(
+      QueueType type,
+      VkPhysicalDevice& physicalDevice,
+      Configuration& configuration,
+      VkSurfaceKHR& surface,
+      VkDevice& device,
+      uint32_t queueIndex
+  ) {
+    try {
+      VkQueue queue = nullptr;
+
+      QueueFamilyIndices familyIndices = findQueueFamilies(
+          physicalDevice,
+          configuration.computeQueueFamilyRequired,
+          configuration.transferQueueFamilyRequired,
+          configuration.graphicsQueueFamilyRequired,
+          surface
+      );
+
+      if (type == QueueType::COMPUTE) {
+        if (!configuration.computeQueueFamilyRequired) {
+          throw std::runtime_error(
+              CALL_INFO()
+              + ": failed to create queue, "
+              + TO_STRING_SINGLE_QUOTES(QueueType::COMPUTE)
+              + " queue not required in configuration!");
+        }
+        vkGetDeviceQueue(device, familyIndices.computeFamily.value(), queueIndex, &queue);
+      } else if (type == QueueType::TRANSFER) {
+        if (!configuration.transferQueueFamilyRequired) {
+          throw std::runtime_error(
+              CALL_INFO()
+              + ": failed to create queue, "
+              + TO_STRING_SINGLE_QUOTES(QueueType::TRANSFER)
+              + " queue not required in configuration!");
+        }
+        vkGetDeviceQueue(device, familyIndices.transferFamily.value(), queueIndex, &queue);
+      } else if (type == QueueType::GRAPHICS) {
+        if (!configuration.graphicsQueueFamilyRequired) {
+          throw std::runtime_error(
+              CALL_INFO()
+              + ": failed to create queue, "
+              + TO_STRING_SINGLE_QUOTES(QueueType::GRAPHICS)
+              + " queue not required in configuration!");
+        }
+        vkGetDeviceQueue(device, familyIndices.graphicsFamily.value(), queueIndex, &queue);
+      } else if (type == QueueType::PRESENT) {
+        if (!configuration.presentQueueFamilyRequired || surface == nullptr) {
+          throw std::runtime_error(
+              CALL_INFO()
+              + ": failed to create queue, "
+              + TO_STRING_SINGLE_QUOTES(QueueType::PRESENT)
+              + " queue not required in configuration!");
+        }
+        vkGetDeviceQueue(device, familyIndices.presentFamily.value(), queueIndex, &queue);
+      }
+
+      if (queue == nullptr) {
+        throw std::runtime_error(CALL_INFO() + ": failed to create queue!");
+      }
+
+      return queue;
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }

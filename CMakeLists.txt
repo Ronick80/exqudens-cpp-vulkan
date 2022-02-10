@@ -124,6 +124,8 @@ add_library("${PROJECT_NAME}"
     "src/main/cpp/exqudens/vulkan/Logger.hpp"
     "src/main/cpp/exqudens/vulkan/Logger.cpp"
 
+    "src/main/cpp/exqudens/vulkan/model/QueueType.hpp"
+
     "src/main/cpp/exqudens/vulkan/model/StringVector.hpp"
     "src/main/cpp/exqudens/vulkan/model/StringVector.cpp"
     "src/main/cpp/exqudens/vulkan/model/Configuration.hpp"
