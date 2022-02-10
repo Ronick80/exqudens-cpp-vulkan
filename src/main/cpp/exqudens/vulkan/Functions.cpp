@@ -41,6 +41,313 @@ namespace exqudens::vulkan {
     std::swap(first.createSurfaceFunction, second.createSurfaceFunction);
   }
 
+  // utility
+
+  void Functions::setEnvironmentVariable(const std::string& name, const std::string& value) {
+    try {
+#ifdef _WIN32
+      _putenv_s(name.c_str(), value.c_str());
+#elif _WIN64
+      _putenv_s(name.c_str(), value.c_str());
+#endif
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  std::optional<std::string> Functions::getEnvironmentVariable(const std::string& name) {
+    try {
+      std::optional<std::string> value;
+#ifdef _WIN32
+      char* buffer;
+      size_t size;
+      errno_t error = _dupenv_s(&buffer, &size, name.c_str());
+      if (error) {
+        return value;
+      }
+      if (buffer != nullptr) {
+        value.emplace(std::string(buffer));
+      }
+#elif _WIN64
+      char* buffer;
+    size_t size;
+    errno_t error = _dupenv_s(&buffer, &size, name.c_str());
+    if (error) {
+      return value;
+    }
+    if (buffer != nullptr) {
+      value.emplace(std::string(buffer));
+    }
+#endif
+      return value;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  bool Functions::checkValidationLayerSupport(const std::vector<std::string>& validationLayers) {
+    try {
+      uint32_t layerCount;
+      vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+
+      std::vector<VkLayerProperties> availableLayers(layerCount);
+      vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+      for (const std::string& layerName: validationLayers) {
+        bool layerFound = false;
+
+        for (const auto& layerProperties: availableLayers) {
+          if (layerName == std::string(layerProperties.layerName)) {
+            layerFound = true;
+            break;
+          }
+        }
+
+        if (!layerFound) {
+          return false;
+        }
+      }
+
+      return true;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  void Functions::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& object, Logger& logger) {
+    try {
+      object = {};
+      object.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+      object.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+      object.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+      object.pfnUserCallback = &Logger::call;
+      object.pUserData = &logger;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  bool Functions::isDeviceSuitable(
+      VkPhysicalDevice& physicalDevice,
+      Configuration& configuration,
+      VkSurfaceKHR& surface
+  ) {
+    try {
+      if (configuration.presentQueueFamilyRequired && surface == nullptr) {
+        throw std::runtime_error(
+            CALL_INFO()
+            + ": "
+            + TO_STRING_SINGLE_QUOTES(configuration.presentQueueFamilyRequired)
+            + ": true but "
+            + TO_STRING_SINGLE_QUOTES(surface)
+            + " is null!"
+        );
+      }
+
+      QueueFamilyIndices familyIndices = findQueueFamilies(
+          physicalDevice,
+          configuration.computeQueueFamilyRequired,
+          configuration.transferQueueFamilyRequired,
+          configuration.graphicsQueueFamilyRequired,
+          surface
+      );
+
+      bool extensionsSupported = checkDeviceExtensionSupport(physicalDevice, configuration.deviceExtensions);
+
+      bool swapChainAdequate = surface == nullptr;
+      if (extensionsSupported && surface != nullptr) {
+        SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice, surface);
+        swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+      }
+
+      VkPhysicalDeviceFeatures supportedFeatures;
+      vkGetPhysicalDeviceFeatures(physicalDevice, &supportedFeatures);
+
+      bool anisotropyAdequate = true;
+      if (configuration.anisotropyRequired) {
+        anisotropyAdequate = supportedFeatures.samplerAnisotropy;
+      }
+
+      return familyIndices.isComplete() &&
+             extensionsSupported &&
+             swapChainAdequate &&
+             anisotropyAdequate;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  QueueFamilyIndices Functions::findQueueFamilies(
+      VkPhysicalDevice& physicalDevice,
+      bool computeFamilyRequired,
+      bool transferFamilyRequired,
+      bool graphicsFamilyRequired,
+      VkSurfaceKHR& surface
+  ) {
+    try {
+      QueueFamilyIndices familyIndices;
+      familyIndices.computeFamilyRequired = computeFamilyRequired;
+      familyIndices.transferFamilyRequired = transferFamilyRequired;
+      familyIndices.graphicsFamilyRequired = graphicsFamilyRequired;
+      familyIndices.presentFamilyRequired = surface != nullptr;
+
+      uint32_t queueFamilyCount = 0;
+      vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
+
+      std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+      vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
+
+      int i = 0;
+      for (const auto& queueFamily : queueFamilies) {
+        if (familyIndices.computeFamilyRequired) {
+          if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) {
+            familyIndices.computeFamily = i;
+          }
+        }
+
+        if (familyIndices.transferFamilyRequired) {
+          if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) {
+            familyIndices.transferFamily = i;
+          }
+        }
+
+        if (familyIndices.graphicsFamilyRequired) {
+          if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            familyIndices.graphicsFamily = i;
+          }
+        }
+
+        if (familyIndices.presentFamilyRequired) {
+          VkBool32 presentSupport = false;
+          vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &presentSupport);
+          if (presentSupport) {
+            familyIndices.presentFamily = i;
+          }
+        }
+
+        if (familyIndices.isComplete()) {
+          break;
+        }
+
+        i++;
+      }
+
+      return familyIndices;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  bool Functions::checkDeviceExtensionSupport(VkPhysicalDevice& physicalDevice, StringVector& deviceExtensions) {
+    try {
+      uint32_t extensionCount;
+      vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
+
+      std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+      vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableExtensions.data());
+
+      std::set<std::string> requiredExtensions(deviceExtensions.pointers.begin(), deviceExtensions.pointers.end());
+
+      for (const auto& extension : availableExtensions) {
+        requiredExtensions.erase(extension.extensionName);
+      }
+
+      return requiredExtensions.empty();
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  SwapChainSupportDetails Functions::querySwapChainSupport(VkPhysicalDevice& physicalDevice, VkSurfaceKHR& surface) {
+    try {
+      if (surface == nullptr) {
+        throw std::runtime_error(CALL_INFO() + ": failed to get swap chain support details!");
+      }
+
+      SwapChainSupportDetails details;
+
+      vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &details.capabilities);
+
+      uint32_t formatCount;
+      vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr);
+
+      if (formatCount != 0) {
+        details.formats.resize(formatCount);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, details.formats.data());
+      }
+
+      uint32_t presentModeCount;
+      vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
+
+      if (presentModeCount != 0) {
+        details.presentModes.resize(presentModeCount);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, details.presentModes.data());
+      }
+
+      return details;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  VkSurfaceFormatKHR Functions::chooseSwapSurfaceFormat(std::vector<VkSurfaceFormatKHR>& availableFormats) {
+    try {
+      for (const auto& availableFormat : availableFormats) {
+        if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+          return availableFormat;
+        }
+      }
+      return availableFormats[0];
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  VkPresentModeKHR Functions::chooseSwapPresentMode(std::vector<VkPresentModeKHR>& availablePresentModes) {
+    try {
+      for (const auto& availablePresentMode : availablePresentModes) {
+        if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
+          return availablePresentMode;
+        }
+      }
+      return VK_PRESENT_MODE_FIFO_KHR;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  VkExtent2D Functions::chooseSwapExtent(VkSurfaceCapabilitiesKHR& capabilities, const int& width, const int& height) {
+    try {
+      if (capabilities.currentExtent.width != UINT32_MAX) {
+        return capabilities.currentExtent;
+      } else {
+        VkExtent2D actualExtent = {
+            static_cast<uint32_t>(width),
+            static_cast<uint32_t>(height)
+        };
+        actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+        actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+        return actualExtent;
+      }
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  uint32_t Functions::getSwapChainImageCount(SwapChainSupportDetails& swapChainSupport) {
+    try {
+      uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+
+      if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
+        imageCount = swapChainSupport.capabilities.maxImageCount;
+      }
+
+      return imageCount;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
   // create
 
   std::map<std::string, std::string> Functions::createEnvironmentVariables(const std::string& executableDirPath) {
@@ -450,108 +757,39 @@ namespace exqudens::vulkan {
     }
   }
 
-  // utility
-
-  void Functions::setEnvironmentVariable(const std::string& name, const std::string& value) {
-    try {
-#ifdef _WIN32
-      _putenv_s(name.c_str(), value.c_str());
-#elif _WIN64
-      _putenv_s(name.c_str(), value.c_str());
-#endif
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
-
-  std::optional<std::string> Functions::getEnvironmentVariable(const std::string& name) {
-    try {
-      std::optional<std::string> value;
-#ifdef _WIN32
-      char* buffer;
-      size_t size;
-      errno_t error = _dupenv_s(&buffer, &size, name.c_str());
-      if (error) {
-        return value;
-      }
-      if (buffer != nullptr) {
-        value.emplace(std::string(buffer));
-      }
-#elif _WIN64
-      char* buffer;
-    size_t size;
-    errno_t error = _dupenv_s(&buffer, &size, name.c_str());
-    if (error) {
-      return value;
-    }
-    if (buffer != nullptr) {
-      value.emplace(std::string(buffer));
-    }
-#endif
-      return value;
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
-
-  bool Functions::checkValidationLayerSupport(const std::vector<std::string>& validationLayers) {
-    try {
-      uint32_t layerCount;
-      vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-
-      std::vector<VkLayerProperties> availableLayers(layerCount);
-      vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
-
-      for (const std::string& layerName: validationLayers) {
-        bool layerFound = false;
-
-        for (const auto& layerProperties: availableLayers) {
-          if (layerName == std::string(layerProperties.layerName)) {
-            layerFound = true;
-            break;
-          }
-        }
-
-        if (!layerFound) {
-          return false;
-        }
-      }
-
-      return true;
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
-
-  void Functions::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& object, Logger& logger) {
-    try {
-      object = {};
-      object.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-      object.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-      object.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-      object.pfnUserCallback = &Logger::call;
-      object.pUserData = &logger;
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
-
-  bool Functions::isDeviceSuitable(
+  VkSwapchainKHR Functions::createSwapChain(
       VkPhysicalDevice& physicalDevice,
       Configuration& configuration,
-      VkSurfaceKHR& surface
+      VkSurfaceKHR& surface,
+      VkDevice& device,
+      const int& width,
+      const int& height
   ) {
     try {
-      if (configuration.presentQueueFamilyRequired && surface == nullptr) {
-        throw std::runtime_error(
-            CALL_INFO()
-            + ": "
-            + TO_STRING_SINGLE_QUOTES(configuration.presentQueueFamilyRequired)
-            + ": true but "
-            + TO_STRING_SINGLE_QUOTES(surface)
-            + " is null!"
-        );
+      if (surface == nullptr) {
+        throw std::runtime_error(CALL_INFO() + ": surface is null failed to create swap chain!");
       }
+
+      VkSwapchainKHR swapChain = nullptr;
+
+      SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice, surface);
+
+      VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
+      VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
+      VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities, width, height);
+
+      uint32_t imageCount = getSwapChainImageCount(swapChainSupport);
+
+      VkSwapchainCreateInfoKHR createInfo{};
+      createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+      createInfo.surface = surface;
+
+      createInfo.minImageCount = imageCount;
+      createInfo.imageFormat = surfaceFormat.format;
+      createInfo.imageColorSpace = surfaceFormat.colorSpace;
+      createInfo.imageExtent = extent;
+      createInfo.imageArrayLayers = 1;
+      createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
       QueueFamilyIndices familyIndices = findQueueFamilies(
           physicalDevice,
@@ -560,142 +798,122 @@ namespace exqudens::vulkan {
           configuration.graphicsQueueFamilyRequired,
           surface
       );
+      uint32_t queueFamilyIndices[] = {familyIndices.graphicsFamily.value(), familyIndices.presentFamily.value()};
 
-      bool extensionsSupported = checkDeviceExtensionSupport(physicalDevice, configuration.deviceExtensions);
-
-      bool swapChainAdequate = surface == nullptr;
-      if (extensionsSupported && surface != nullptr) {
-        SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice, surface);
-        swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+      if (familyIndices.graphicsFamily != familyIndices.presentFamily) {
+        createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+        createInfo.queueFamilyIndexCount = 2;
+        createInfo.pQueueFamilyIndices = queueFamilyIndices;
+      } else {
+        createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
       }
 
-      VkPhysicalDeviceFeatures supportedFeatures;
-      vkGetPhysicalDeviceFeatures(physicalDevice, &supportedFeatures);
+      createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
+      createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+      createInfo.presentMode = presentMode;
+      createInfo.clipped = VK_TRUE;
 
-      bool anisotropyAdequate = true;
-      if (configuration.anisotropyRequired) {
-        anisotropyAdequate = supportedFeatures.samplerAnisotropy;
+      createInfo.oldSwapchain = nullptr;
+
+      if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS || swapChain == nullptr) {
+        throw std::runtime_error(CALL_INFO() + ": failed to create swap chain!");
       }
 
-      return familyIndices.isComplete() &&
-             extensionsSupported &&
-             swapChainAdequate &&
-             anisotropyAdequate;
+      return swapChain;
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
   }
 
-  QueueFamilyIndices Functions::findQueueFamilies(
+  std::vector<VkImage> Functions::createSwapChainImages(
       VkPhysicalDevice& physicalDevice,
-      bool computeFamilyRequired,
-      bool transferFamilyRequired,
-      bool graphicsFamilyRequired,
-      VkSurfaceKHR& surface
+      VkSurfaceKHR& surface,
+      VkDevice& device,
+      VkSwapchainKHR& swapChain
   ) {
     try {
-      QueueFamilyIndices familyIndices;
-      familyIndices.computeFamilyRequired = computeFamilyRequired;
-      familyIndices.transferFamilyRequired = transferFamilyRequired;
-      familyIndices.graphicsFamilyRequired = graphicsFamilyRequired;
-      familyIndices.presentFamilyRequired = surface != nullptr;
-
-      uint32_t queueFamilyCount = 0;
-      vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
-
-      std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-      vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
-
-      int i = 0;
-      for (const auto& queueFamily : queueFamilies) {
-        if (familyIndices.computeFamilyRequired) {
-          if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) {
-            familyIndices.computeFamily = i;
-          }
-        }
-
-        if (familyIndices.transferFamilyRequired) {
-          if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) {
-            familyIndices.transferFamily = i;
-          }
-        }
-
-        if (familyIndices.graphicsFamilyRequired) {
-          if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-            familyIndices.graphicsFamily = i;
-          }
-        }
-
-        if (familyIndices.presentFamilyRequired) {
-          VkBool32 presentSupport = false;
-          vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &presentSupport);
-          if (presentSupport) {
-            familyIndices.presentFamily = i;
-          }
-        }
-
-        if (familyIndices.isComplete()) {
-          break;
-        }
-
-        i++;
+      if (surface == nullptr) {
+        throw std::runtime_error(CALL_INFO() + ": surface is null failed to create swap chain images!");
       }
 
-      return familyIndices;
+      SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice, surface);
+      uint32_t imageCount = getSwapChainImageCount(swapChainSupport);
+      std::vector<VkImage> swapChainImages;
+      vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
+      swapChainImages.resize(imageCount);
+      vkGetSwapchainImagesKHR(device, swapChain, &imageCount, swapChainImages.data());
+      return swapChainImages;
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
   }
 
-  bool Functions::checkDeviceExtensionSupport(VkPhysicalDevice& physicalDevice, StringVector& deviceExtensions) {
+  VkImageView Functions::createImageView(VkDevice& device, VkImage& image, VkFormat& format) {
     try {
-      uint32_t extensionCount;
-      vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
+      VkImageViewCreateInfo viewInfo{};
+      viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+      viewInfo.image = image;
+      viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+      viewInfo.format = format;
+      viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+      viewInfo.subresourceRange.baseMipLevel = 0;
+      viewInfo.subresourceRange.levelCount = 1;
+      viewInfo.subresourceRange.baseArrayLayer = 0;
+      viewInfo.subresourceRange.layerCount = 1;
 
-      std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-      vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableExtensions.data());
+      VkImageView imageView = nullptr;
 
-      std::set<std::string> requiredExtensions(deviceExtensions.pointers.begin(), deviceExtensions.pointers.end());
-
-      for (const auto& extension : availableExtensions) {
-        requiredExtensions.erase(extension.extensionName);
+      if (vkCreateImageView(device, &viewInfo, nullptr, &imageView) != VK_SUCCESS || imageView == nullptr) {
+        throw std::runtime_error(CALL_INFO() + ": failed to create texture image view!");
       }
 
-      return requiredExtensions.empty();
+      return imageView;
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
   }
 
-  SwapChainSupportDetails Functions::querySwapChainSupport(VkPhysicalDevice& physicalDevice, VkSurfaceKHR& surface) {
+  VkRenderPass Functions::createRenderPass() {
     try {
-      SwapChainSupportDetails details;
-
-      vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &details.capabilities);
-
-      uint32_t formatCount;
-      vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr);
-
-      if (formatCount != 0) {
-        details.formats.resize(formatCount);
-        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, details.formats.data());
-      }
-
-      uint32_t presentModeCount;
-      vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
-
-      if (presentModeCount != 0) {
-        details.presentModes.resize(presentModeCount);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, details.presentModes.data());
-      }
-
-      return details;
+      VkRenderPass renderPass = nullptr;
+      return renderPass;
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
   }
 
   // destroy
+
+  void Functions::destroyRenderPass(VkRenderPass& renderPass, VkDevice& device) {
+    try {
+      if (renderPass != nullptr) {
+        vkDestroyRenderPass(device, renderPass, nullptr);
+      }
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  void Functions::destroyImageView(VkImageView& imageView, VkDevice& device) {
+    try {
+      if (imageView != nullptr) {
+        vkDestroyImageView(device, imageView, nullptr);
+      }
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  void Functions::destroySwapChain(VkSwapchainKHR& swapChain, VkDevice& device) {
+    try {
+      if (swapChain != nullptr) {
+        vkDestroySwapchainKHR(device, swapChain, nullptr);
+        swapChain = nullptr;
+      }
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
 
   void Functions::destroyDevice(VkDevice& device) {
     try {

@@ -38,6 +38,42 @@ namespace exqudens::vulkan {
 
       friend void swap(Functions& first, Functions& second);
 
+      // utility
+
+      virtual void setEnvironmentVariable(const std::string& name, const std::string& value);
+
+      virtual std::optional<std::string> getEnvironmentVariable(const std::string& name);
+
+      virtual bool checkValidationLayerSupport(const std::vector<std::string>& validationLayers);
+
+      virtual void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& object, Logger& logger);
+
+      virtual bool isDeviceSuitable(
+          VkPhysicalDevice& physicalDevice,
+          Configuration& configuration,
+          VkSurfaceKHR& surface
+      );
+
+      virtual QueueFamilyIndices findQueueFamilies(
+          VkPhysicalDevice& physicalDevice,
+          bool computeFamilyRequired,
+          bool transferFamilyRequired,
+          bool graphicsFamilyRequired,
+          VkSurfaceKHR& surface
+      );
+
+      virtual bool checkDeviceExtensionSupport(VkPhysicalDevice& physicalDevice, StringVector& deviceExtensions);
+
+      virtual SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice& physicalDevice, VkSurfaceKHR& surface);
+
+      virtual VkSurfaceFormatKHR chooseSwapSurfaceFormat(std::vector<VkSurfaceFormatKHR>& availableFormats);
+
+      virtual VkPresentModeKHR chooseSwapPresentMode(std::vector<VkPresentModeKHR>& availablePresentModes);
+
+      virtual VkExtent2D chooseSwapExtent(VkSurfaceCapabilitiesKHR& capabilities, const int& width, const int& height);
+
+      virtual uint32_t getSwapChainImageCount(SwapChainSupportDetails& swapChainSupport);
+
       // create
 
       virtual std::map<std::string, std::string> createEnvironmentVariables(const std::string& executableDirPath);
@@ -81,35 +117,33 @@ namespace exqudens::vulkan {
           uint32_t queueIndex
       );
 
-      // utility
-
-      virtual void setEnvironmentVariable(const std::string& name, const std::string& value);
-
-      virtual std::optional<std::string> getEnvironmentVariable(const std::string& name);
-
-      virtual bool checkValidationLayerSupport(const std::vector<std::string>& validationLayers);
-
-      virtual void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& object, Logger& logger);
-
-      virtual bool isDeviceSuitable(
+      virtual VkSwapchainKHR createSwapChain(
           VkPhysicalDevice& physicalDevice,
           Configuration& configuration,
-          VkSurfaceKHR& surface
+          VkSurfaceKHR& surface,
+          VkDevice& device,
+          const int& width,
+          const int& height
       );
 
-      virtual QueueFamilyIndices findQueueFamilies(
+      virtual std::vector<VkImage> createSwapChainImages(
           VkPhysicalDevice& physicalDevice,
-          bool computeFamilyRequired,
-          bool transferFamilyRequired,
-          bool graphicsFamilyRequired,
-          VkSurfaceKHR& surface
+          VkSurfaceKHR& surface,
+          VkDevice& device,
+          VkSwapchainKHR& swapChain
       );
 
-      virtual bool checkDeviceExtensionSupport(VkPhysicalDevice& physicalDevice, StringVector& deviceExtensions);
+      virtual VkImageView createImageView(VkDevice& device, VkImage& image, VkFormat& format);
 
-      virtual SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice& physicalDevice, VkSurfaceKHR& surface);
+      virtual VkRenderPass createRenderPass();
 
       // destroy
+
+      virtual void destroyRenderPass(VkRenderPass& renderPass, VkDevice& device);
+
+      virtual void destroyImageView(VkImageView& imageView, VkDevice& device);
+
+      virtual void destroySwapChain(VkSwapchainKHR& swapChain, VkDevice& device);
 
       virtual void destroyDevice(VkDevice& device);
 

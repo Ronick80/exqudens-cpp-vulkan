@@ -20,7 +20,7 @@
 
 namespace exqudens::vulkan {
 
-  TEST(Tests, test1) {
+  TEST(CoreTests, test1) {
     try {
       Functions functions;
       Configuration configuration = functions.createConfiguration();
@@ -39,7 +39,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  TEST(Tests, test2) {
+  TEST(CoreTests, test2) {
     try {
       Functions functions;
 
@@ -63,6 +63,7 @@ namespace exqudens::vulkan {
       VkQueue transferQueue = functions.createQueue(QueueType::TRANSFER, physicalDevice, configuration, surface, device, 0);
       VkQueue graphicsQueue = functions.createQueue(QueueType::GRAPHICS, physicalDevice, configuration, surface, device, 0);
       VkQueue presentQueue = nullptr;
+      VkSwapchainKHR swapChain = nullptr;
 
       //std::this_thread::sleep_for(std::chrono::seconds(5));
 
@@ -75,6 +76,7 @@ namespace exqudens::vulkan {
       ASSERT_TRUE(transferQueue != nullptr);
       ASSERT_TRUE(graphicsQueue != nullptr);
       ASSERT_TRUE(presentQueue == nullptr);
+      ASSERT_TRUE(swapChain == nullptr);
 
       functions.destroyDevice(device);
       functions.destroyPhysicalDevice(physicalDevice);

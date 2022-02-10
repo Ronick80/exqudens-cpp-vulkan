@@ -217,7 +217,7 @@ add_library("test-lib" INTERFACE
     "src/test/cpp/exqudens/TestMacros.hpp"
     "src/test/cpp/exqudens/TestUtils.hpp"
     "src/test/cpp/exqudens/test/TestUtilsTests.hpp"
-    "src/test/cpp/exqudens/test/Tests.hpp"
+    "src/test/cpp/exqudens/test/CoreTests.hpp"
     "src/test/cpp/exqudens/test/UiTests.hpp"
 )
 target_include_directories("test-lib" INTERFACE

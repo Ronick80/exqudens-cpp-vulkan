@@ -5,7 +5,7 @@
 
 #include "exqudens/TestConfiguration.hpp"
 #include "exqudens/test/TestUtilsTests.hpp"
-#include "exqudens/test/Tests.hpp"
+#include "exqudens/test/CoreTests.hpp"
 #include "exqudens/test/UiTests.hpp"
 
 namespace exqudens::vulkan {
