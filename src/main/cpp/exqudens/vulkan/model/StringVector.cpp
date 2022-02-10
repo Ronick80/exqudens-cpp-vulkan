@@ -20,7 +20,7 @@ namespace exqudens::vulkan {
   StringVector::StringVector(
       std::vector<std::string> values
   ):
-  values(std::move(values))
+      values(std::move(values))
   {
     pointers = toPointers(this->values);
   }

@@ -92,6 +92,7 @@ foreach(
     elseif("vulkan" STREQUAL "${conanPackageName}")
         list(APPEND NOT_FOUND_PACKAGE_NAMES "${cmakePackageName}")
         find_package("${cmakePackageName}" "${cmakePackageVersion}" EXACT QUIET)
+        find_program(GLSLC_COMMAND NAMES "glslc.exe" "glslc" PATHS "${cmakePackagePath}/bin")
     elseif("lodepng" STREQUAL "${conanPackageName}")
         list(APPEND NOT_FOUND_PACKAGE_NAMES "${cmakePackageName}")
         find_package("${cmakePackageName}" QUIET)
@@ -116,6 +117,10 @@ endif()
 
 add_library("${PROJECT_NAME}"
     "src/main/cpp/exqudens/vulkan/Macros.hpp"
+
+    "src/main/cpp/exqudens/vulkan/Functions.hpp"
+    "src/main/cpp/exqudens/vulkan/Functions.cpp"
+
     "src/main/cpp/exqudens/vulkan/Logger.hpp"
     "src/main/cpp/exqudens/vulkan/Logger.cpp"
 
@@ -127,13 +132,6 @@ add_library("${PROJECT_NAME}"
     "src/main/cpp/exqudens/vulkan/model/QueueFamilyIndices.cpp"
     "src/main/cpp/exqudens/vulkan/model/SwapChainSupportDetails.hpp"
     "src/main/cpp/exqudens/vulkan/model/SwapChainSupportDetails.cpp"
-
-    "src/main/cpp/exqudens/vulkan/function/CreateFunctions.hpp"
-    "src/main/cpp/exqudens/vulkan/function/CreateFunctions.cpp"
-    "src/main/cpp/exqudens/vulkan/function/UtilFunctions.hpp"
-    "src/main/cpp/exqudens/vulkan/function/UtilFunctions.cpp"
-    "src/main/cpp/exqudens/vulkan/function/DestroyFunctions.hpp"
-    "src/main/cpp/exqudens/vulkan/function/DestroyFunctions.cpp"
 )
 generate_export_header("${PROJECT_NAME}" BASE_NAME "EXQUDENS_VULKAN" EXPORT_FILE_NAME
     "generated/main/exqudens/vulkan/Export.hpp"
@@ -276,6 +274,8 @@ else()
     add_custom_command(TARGET "test-app"
         PRE_BUILD
         COMMAND "${CMAKE_COMMAND}" -E rm -f "$<TARGET_PROPERTY:test-app,RUNTIME_OUTPUT_DIRECTORY>/*"
+        #COMMAND "${CMAKE_COMMAND}" -E copy_directory "$<TARGET_PROPERTY:${PROJECT_NAME},RUNTIME_OUTPUT_DIRECTORY>" "$<TARGET_PROPERTY:test-app,RUNTIME_OUTPUT_DIRECTORY>"
+        COMMAND "${CMAKE_COMMAND}" -E copy_directory "${CONAN_INSTALL_PREFIX}/bin" "$<TARGET_PROPERTY:test-app,RUNTIME_OUTPUT_DIRECTORY>"
         COMMAND "${CMAKE_COMMAND}" -E make_directory "$<TARGET_PROPERTY:test-app,RUNTIME_OUTPUT_DIRECTORY>/resources"
         COMMAND "${CMAKE_COMMAND}" -E copy_directory "${PROJECT_SOURCE_DIR}/src/test/resources" "$<TARGET_PROPERTY:test-app,RUNTIME_OUTPUT_DIRECTORY>/resources"
         VERBATIM

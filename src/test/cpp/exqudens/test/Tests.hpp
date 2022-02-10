@@ -12,18 +12,18 @@
 
 #include <gtest/gtest.h>
 
+#include <vulkan/vulkan.h>
+
 #include "exqudens/TestConfiguration.hpp"
 #include "exqudens/TestUtils.hpp"
-#include "exqudens/vulkan/function/UtilFunctions.hpp"
-#include "exqudens/vulkan/function/CreateFunctions.hpp"
-#include "exqudens/vulkan/function/DestroyFunctions.hpp"
+#include "exqudens/vulkan/Functions.hpp"
 
 namespace exqudens::vulkan {
 
   TEST(Tests, test1) {
     try {
-      CreateFunctions createFunctions;
-      Configuration configuration = createFunctions.createConfiguration();
+      Functions functions;
+      Configuration configuration = functions.createConfiguration();
       ASSERT_EQ(true, configuration.validationLayersEnabled);
 
       ASSERT_EQ(std::string("VK_LAYER_KHRONOS_validation"), configuration.validationLayers.values[0]);
@@ -41,30 +41,37 @@ namespace exqudens::vulkan {
 
   TEST(Tests, test2) {
     try {
-      UtilFunctions utilFunctions;
-      CreateFunctions createFunctions(&utilFunctions);
-      DestroyFunctions destroyFunctions;
+      Functions functions;
 
-      std::map<std::string, std::string> environmentVariables = createFunctions.createEnvironmentVariables(TestConfiguration::getExecutableDir());
+      std::map<std::string, std::string> environmentVariables = functions.createEnvironmentVariables(TestConfiguration::getExecutableDir());
 
       for (auto const& [name, value] : environmentVariables) {
-        utilFunctions.setEnvironmentVariable(name, value);
+        functions.setEnvironmentVariable(name, value);
       }
 
-      Configuration configuration = createFunctions.createConfiguration();
+      Configuration configuration = functions.createConfiguration();
       configuration.presentQueueFamilyRequired = false;
       std::ostringstream stream;
-      Logger logger = createFunctions.createLogger(stream);
+      Logger logger = functions.createLogger(stream);
 
-      VkInstance instance = createFunctions.createInstance(configuration, logger);
-      VkDebugUtilsMessengerEXT debugUtilsMessenger = createFunctions.createDebugUtilsMessenger(instance, logger);
-      VkPhysicalDevice physicalDevice = createFunctions.createPhysicalDevice(instance, configuration);
+      VkInstance instance = functions.createInstance(configuration, logger);
+      VkDebugUtilsMessengerEXT debugUtilsMessenger = functions.createDebugUtilsMessenger(instance, logger);
+      VkSurfaceKHR surface = functions.createSurface(instance);
+      VkPhysicalDevice physicalDevice = functions.createPhysicalDevice(instance, configuration, surface);
+      VkDevice device = functions.createDevice(physicalDevice, configuration, surface);
 
       //std::this_thread::sleep_for(std::chrono::seconds(5));
 
-      destroyFunctions.destroyPhysicalDevice(physicalDevice);
-      destroyFunctions.destroyDebugUtilsMessenger(debugUtilsMessenger, instance);
-      destroyFunctions.destroyInstance(instance);
+      ASSERT_TRUE(instance != nullptr);
+      ASSERT_TRUE(debugUtilsMessenger != nullptr);
+      ASSERT_TRUE(surface == nullptr);
+      ASSERT_TRUE(physicalDevice != nullptr);
+      ASSERT_TRUE(device != nullptr);
+
+      functions.destroyDevice(device);
+      functions.destroyPhysicalDevice(physicalDevice);
+      functions.destroyDebugUtilsMessenger(debugUtilsMessenger, instance);
+      functions.destroyInstance(instance);
       std::cout << stream.str();
     } catch (const std::exception& e) {
       FAIL() << TestUtils::toString(e);
