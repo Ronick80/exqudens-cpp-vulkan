@@ -93,6 +93,9 @@ foreach(
         list(APPEND NOT_FOUND_PACKAGE_NAMES "${cmakePackageName}")
         find_package("${cmakePackageName}" "${cmakePackageVersion}" EXACT QUIET)
         find_program(GLSLC_COMMAND NAMES "glslc.exe" "glslc" PATHS "${cmakePackagePath}/bin")
+    elseif("glm" STREQUAL "${conanPackageName}")
+        list(APPEND NOT_FOUND_PACKAGE_NAMES "${cmakePackageName}")
+        find_package("${cmakePackageName}" "${cmakePackageVersion}" EXACT QUIET)
     elseif("lodepng" STREQUAL "${conanPackageName}")
         list(APPEND NOT_FOUND_PACKAGE_NAMES "${cmakePackageName}")
         find_package("${cmakePackageName}" QUIET)
@@ -116,16 +119,14 @@ if(NOT "" STREQUAL "${NOT_FOUND_PACKAGE_NAMES}")
 endif()
 
 add_library("${PROJECT_NAME}"
-    "src/main/cpp/exqudens/vulkan/Macros.hpp"
-
-    "src/main/cpp/exqudens/vulkan/Functions.hpp"
-    "src/main/cpp/exqudens/vulkan/Functions.cpp"
-
-    "src/main/cpp/exqudens/vulkan/Logger.hpp"
-    "src/main/cpp/exqudens/vulkan/Logger.cpp"
+    "src/main/cpp/exqudens/vulkan/utility/Macros.hpp"
+    "src/main/cpp/exqudens/vulkan/utility/Functions.hpp"
+    "src/main/cpp/exqudens/vulkan/utility/Functions.cpp"
+    "src/main/cpp/exqudens/vulkan/utility/Logger.hpp"
+    "src/main/cpp/exqudens/vulkan/utility/Logger.cpp"
 
     "src/main/cpp/exqudens/vulkan/model/QueueType.hpp"
-
+    "src/main/cpp/exqudens/vulkan/model/ShaderType.hpp"
     "src/main/cpp/exqudens/vulkan/model/StringVector.hpp"
     "src/main/cpp/exqudens/vulkan/model/StringVector.cpp"
     "src/main/cpp/exqudens/vulkan/model/Configuration.hpp"
@@ -134,6 +135,12 @@ add_library("${PROJECT_NAME}"
     "src/main/cpp/exqudens/vulkan/model/QueueFamilyIndices.cpp"
     "src/main/cpp/exqudens/vulkan/model/SwapChainSupportDetails.hpp"
     "src/main/cpp/exqudens/vulkan/model/SwapChainSupportDetails.cpp"
+    "src/main/cpp/exqudens/vulkan/model/Shader.hpp"
+    "src/main/cpp/exqudens/vulkan/model/Shader.cpp"
+    "src/main/cpp/exqudens/vulkan/model/Vertex.hpp"
+    "src/main/cpp/exqudens/vulkan/model/Vertex.cpp"
+    "src/main/cpp/exqudens/vulkan/model/Pipeline.hpp"
+    "src/main/cpp/exqudens/vulkan/model/Pipeline.cpp"
 )
 generate_export_header("${PROJECT_NAME}" BASE_NAME "EXQUDENS_VULKAN" EXPORT_FILE_NAME
     "generated/main/exqudens/vulkan/Export.hpp"
@@ -148,6 +155,7 @@ target_include_directories("${PROJECT_NAME}" PUBLIC
 )
 target_link_libraries("${PROJECT_NAME}" PUBLIC
     "Vulkan::Vulkan"
+    "glm::glm"
 )
 set_target_properties("${PROJECT_NAME}" PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY                "${PROJECT_BINARY_DIR}/main/bin"
@@ -237,7 +245,20 @@ set_target_properties("test-lib" PROPERTIES
     CXX_STANDARD 23
 )
 
-add_executable("test-app" "src/test/cpp/main.cpp")
+add_custom_command(
+    OUTPUT "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader.vert.spv"
+           "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader.frag.spv"
+    COMMAND "${CMAKE_COMMAND}" "-E" "rm" "-rf" "${PROJECT_BINARY_DIR}/test/bin/resources/shader"
+    COMMAND "${CMAKE_COMMAND}" "-E" "make_directory" "${PROJECT_BINARY_DIR}/test/bin/resources/shader"
+    COMMAND "${GLSLC_COMMAND}" "${PROJECT_SOURCE_DIR}/src/test/resources/shader/shader.vert" -o "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader.vert.spv"
+    COMMAND "${GLSLC_COMMAND}" "${PROJECT_SOURCE_DIR}/src/test/resources/shader/shader.frag" -o "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader.frag.spv"
+    VERBATIM
+)
+add_executable("test-app"
+    "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader.vert.spv"
+    "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader.frag.spv"
+    "src/test/cpp/main.cpp"
+)
 target_link_libraries("test-app" PRIVATE
     "test-lib"
 )

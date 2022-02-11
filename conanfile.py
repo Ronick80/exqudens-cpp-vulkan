@@ -10,7 +10,7 @@ required_conan_version = ">=1.43.0"
 class ConanConfiguration(ConanFile):
     requires = [
         "vulkan/1.2.182.0",
-        # "glm/0.9.9.8",
+        "glm/0.9.9.8",
         ("gtest/1.11.0", "private"),
         ("lodepng/cci.20200615", "private"),
         ("glfw/3.3.4", "private")

@@ -11,12 +11,15 @@
 #include <vulkan/vulkan.h>
 
 #include "exqudens/vulkan/Export.hpp"
-#include "exqudens/vulkan/Logger.hpp"
+#include "exqudens/vulkan/utility/Logger.hpp"
+#include "exqudens/vulkan/model/QueueType.hpp"
+#include "exqudens/vulkan/model/ShaderType.hpp"
 #include "exqudens/vulkan/model/Configuration.hpp"
 #include "exqudens/vulkan/model/StringVector.hpp"
-#include "exqudens/vulkan/model/QueueType.hpp"
 #include "exqudens/vulkan/model/QueueFamilyIndices.hpp"
 #include "exqudens/vulkan/model/SwapChainSupportDetails.hpp"
+#include "exqudens/vulkan/model/Shader.hpp"
+#include "exqudens/vulkan/model/Pipeline.hpp"
 
 namespace exqudens::vulkan {
 
@@ -43,6 +46,8 @@ namespace exqudens::vulkan {
       virtual void setEnvironmentVariable(const std::string& name, const std::string& value);
 
       virtual std::optional<std::string> getEnvironmentVariable(const std::string& name);
+
+      virtual std::vector<char> readFile(const std::string& path);
 
       virtual bool checkValidationLayerSupport(const std::vector<std::string>& validationLayers);
 
@@ -73,6 +78,8 @@ namespace exqudens::vulkan {
       virtual VkExtent2D chooseSwapExtent(VkSurfaceCapabilitiesKHR& capabilities, const int& width, const int& height);
 
       virtual uint32_t getSwapChainImageCount(SwapChainSupportDetails& swapChainSupport);
+
+      virtual Shader createShader(VkDevice& device, const std::string& path);
 
       // create
 
@@ -135,9 +142,23 @@ namespace exqudens::vulkan {
 
       virtual VkImageView createImageView(VkDevice& device, VkImage& image, VkFormat& format);
 
-      virtual VkRenderPass createRenderPass();
+      virtual VkRenderPass createRenderPass(VkDevice& device, VkFormat& format);
+
+      virtual VkDescriptorSetLayout createDescriptorSetLayout(VkDevice& device);
+
+      virtual Pipeline createPipeline(
+          VkDevice& device,
+          VkExtent2D& extent,
+          VkDescriptorSetLayout& descriptorSetLayout,
+          const std::vector<std::string>& shaderPaths,
+          VkRenderPass& renderPass
+      );
 
       // destroy
+
+      virtual void destroyPipeline(Pipeline& pipeline, VkDevice& device);
+
+      virtual void destroyDescriptorSetLayout(VkDescriptorSetLayout& descriptorSetLayout, VkDevice& device);
 
       virtual void destroyRenderPass(VkRenderPass& renderPass, VkDevice& device);
 

@@ -1,8 +1,11 @@
-#include "exqudens/vulkan/Functions.hpp"
-#include "exqudens/vulkan/Macros.hpp"
+#include "exqudens/vulkan/utility/Functions.hpp"
+#include "exqudens/vulkan/utility/Macros.hpp"
+#include "exqudens/vulkan/model/Vertex.hpp"
 
+#include <array>
 #include <set>
 #include <filesystem>
+#include <fstream>
 #include <stdexcept>
 #include <utility>
 #include <iostream>
@@ -85,6 +88,28 @@ namespace exqudens::vulkan {
     }
   }
 
+  std::vector<char> Functions::readFile(const std::string& path) {
+    try {
+      std::ifstream file(path, std::ios::ate | std::ios::binary);
+
+      if (!file.is_open()) {
+        throw std::runtime_error(CALL_INFO() + ": failed to open file: '" + path + "'!");
+      }
+
+      std::streamsize fileSize = file.tellg();
+      std::vector<char> buffer(fileSize);
+
+      file.seekg(0);
+      file.read(buffer.data(), fileSize);
+
+      file.close();
+
+      return buffer;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
   bool Functions::checkValidationLayerSupport(const std::vector<std::string>& validationLayers) {
     try {
       uint32_t layerCount;
@@ -136,11 +161,11 @@ namespace exqudens::vulkan {
       if (configuration.presentQueueFamilyRequired && surface == nullptr) {
         throw std::runtime_error(
             CALL_INFO()
-            + ": "
-            + TO_STRING_SINGLE_QUOTES(configuration.presentQueueFamilyRequired)
-            + ": true but "
-            + TO_STRING_SINGLE_QUOTES(surface)
-            + " is null!"
+            + ": '"
+            + TO_STRING(configuration.presentQueueFamilyRequired)
+            + "': true but '"
+            + TO_STRING(surface)
+            + "' is null!"
         );
       }
 
@@ -343,6 +368,62 @@ namespace exqudens::vulkan {
       }
 
       return imageCount;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  Shader Functions::createShader(
+      VkDevice& device,
+      const std::string& path
+  ) {
+    try {
+      VkShaderModule shaderModule = nullptr;
+
+      const std::vector<char>& code = readFile(path);
+
+      if (code.empty()) {
+        throw std::runtime_error(CALL_INFO() + ": failed to create shader module code is empty!");
+      }
+
+      VkShaderModuleCreateInfo createInfo{};
+      createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+      createInfo.codeSize = code.size();
+      createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+
+      if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS || shaderModule == nullptr) {
+        throw std::runtime_error(CALL_INFO() + ": failed to create shader module!");
+      }
+
+      VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo{};
+      pipelineShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+
+      ShaderType type = ShaderType::NONE;
+
+      if (path.ends_with(".vert.spv")) {
+        type = ShaderType::VERTEX;
+      } else if (path.ends_with(".frag.spv")) {
+        type = ShaderType::FRAGMENT;
+      }
+
+      if (type == ShaderType::VERTEX) {
+        pipelineShaderStageCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+      } else if (type == ShaderType::FRAGMENT) {
+        pipelineShaderStageCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+      } else {
+        throw std::invalid_argument(CALL_INFO() + ": failed to create shader!");
+      }
+
+      pipelineShaderStageCreateInfo.module = shaderModule;
+      pipelineShaderStageCreateInfo.pName = "main";
+
+      Shader shader;
+
+      shader.type = type;
+      shader.shaderModule = shaderModule;
+      shader.pipelineShaderStageCreateInfo = pipelineShaderStageCreateInfo;
+
+      return shader;
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -584,11 +665,11 @@ namespace exqudens::vulkan {
       if (configuration.presentQueueFamilyRequired && surface == nullptr) {
         throw std::runtime_error(
             CALL_INFO()
-            + ": "
-            + TO_STRING_SINGLE_QUOTES(configuration.presentQueueFamilyRequired)
-            + ": true but "
-            + TO_STRING_SINGLE_QUOTES(surface)
-            + " is null!"
+            + ": '"
+            + TO_STRING(configuration.presentQueueFamilyRequired)
+            + "': true but '"
+            + TO_STRING(surface)
+            + "' is null!"
         );
       }
 
@@ -630,11 +711,11 @@ namespace exqudens::vulkan {
       if (configuration.presentQueueFamilyRequired && surface == nullptr) {
         throw std::runtime_error(
             CALL_INFO()
-            + ": "
-            + TO_STRING_SINGLE_QUOTES(configuration.presentQueueFamilyRequired)
-            + ": true but "
-            + TO_STRING_SINGLE_QUOTES(surface)
-            + " is null!"
+            + ": '"
+            + TO_STRING(configuration.presentQueueFamilyRequired)
+            + "': true but '"
+            + TO_STRING(surface)
+            + "' is null!"
         );
       }
 
@@ -713,36 +794,36 @@ namespace exqudens::vulkan {
         if (!configuration.computeQueueFamilyRequired) {
           throw std::runtime_error(
               CALL_INFO()
-              + ": failed to create queue, "
-              + TO_STRING_SINGLE_QUOTES(QueueType::COMPUTE)
-              + " queue not required in configuration!");
+              + ": failed to create queue, '"
+              + TO_STRING(QueueType::COMPUTE)
+              + "' queue not required in configuration!");
         }
         vkGetDeviceQueue(device, familyIndices.computeFamily.value(), queueIndex, &queue);
       } else if (type == QueueType::TRANSFER) {
         if (!configuration.transferQueueFamilyRequired) {
           throw std::runtime_error(
               CALL_INFO()
-              + ": failed to create queue, "
-              + TO_STRING_SINGLE_QUOTES(QueueType::TRANSFER)
-              + " queue not required in configuration!");
+              + ": failed to create queue, '"
+              + TO_STRING(QueueType::TRANSFER)
+              + "' queue not required in configuration!");
         }
         vkGetDeviceQueue(device, familyIndices.transferFamily.value(), queueIndex, &queue);
       } else if (type == QueueType::GRAPHICS) {
         if (!configuration.graphicsQueueFamilyRequired) {
           throw std::runtime_error(
               CALL_INFO()
-              + ": failed to create queue, "
-              + TO_STRING_SINGLE_QUOTES(QueueType::GRAPHICS)
-              + " queue not required in configuration!");
+              + ": failed to create queue, '"
+              + TO_STRING(QueueType::GRAPHICS)
+              + "' queue not required in configuration!");
         }
         vkGetDeviceQueue(device, familyIndices.graphicsFamily.value(), queueIndex, &queue);
       } else if (type == QueueType::PRESENT) {
         if (!configuration.presentQueueFamilyRequired || surface == nullptr) {
           throw std::runtime_error(
               CALL_INFO()
-              + ": failed to create queue, "
-              + TO_STRING_SINGLE_QUOTES(QueueType::PRESENT)
-              + " queue not required in configuration!");
+              + ": failed to create queue, '"
+              + TO_STRING(QueueType::PRESENT)
+              + "' queue not required in configuration!");
         }
         vkGetDeviceQueue(device, familyIndices.presentFamily.value(), queueIndex, &queue);
       }
@@ -873,10 +954,252 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkRenderPass Functions::createRenderPass() {
+  VkRenderPass Functions::createRenderPass(VkDevice& device, VkFormat& format) {
     try {
       VkRenderPass renderPass = nullptr;
+
+      VkAttachmentDescription colorAttachment{};
+      colorAttachment.format = format;
+      colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+      colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+      colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+      colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+      colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+      colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+      colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+      VkAttachmentReference colorAttachmentRef{};
+      colorAttachmentRef.attachment = 0;
+      colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+      VkSubpassDescription subPass{};
+      subPass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+      subPass.colorAttachmentCount = 1;
+      subPass.pColorAttachments = &colorAttachmentRef;
+
+      VkSubpassDependency dependency{};
+      dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+      dependency.dstSubpass = 0;
+      dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+      dependency.srcAccessMask = 0;
+      dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+      dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+      VkRenderPassCreateInfo renderPassInfo{};
+      renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+      renderPassInfo.attachmentCount = 1;
+      renderPassInfo.pAttachments = &colorAttachment;
+      renderPassInfo.subpassCount = 1;
+      renderPassInfo.pSubpasses = &subPass;
+      renderPassInfo.dependencyCount = 1;
+      renderPassInfo.pDependencies = &dependency;
+
+      if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS || renderPass == nullptr) {
+        throw std::runtime_error(CALL_INFO() + ": failed to create render pass!");
+      }
+
       return renderPass;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  VkDescriptorSetLayout Functions::createDescriptorSetLayout(VkDevice& device) {
+    try {
+      VkDescriptorSetLayout descriptorSetLayout = nullptr;
+
+      VkDescriptorSetLayoutBinding uboLayoutBinding{};
+      uboLayoutBinding.binding = 0;
+      uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+      uboLayoutBinding.descriptorCount = 1;
+      uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+      uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
+
+      VkDescriptorSetLayoutBinding samplerLayoutBinding{};
+      samplerLayoutBinding.binding = 1;
+      samplerLayoutBinding.descriptorCount = 1;
+      samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+      samplerLayoutBinding.pImmutableSamplers = nullptr;
+      samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+      std::array<VkDescriptorSetLayoutBinding, 2> bindings = {uboLayoutBinding, samplerLayoutBinding};
+
+      VkDescriptorSetLayoutCreateInfo layoutInfo{};
+      layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+      layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+      layoutInfo.pBindings = bindings.data();
+
+      if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
+        throw std::runtime_error(CALL_INFO() + ": failed to create descriptor set layout!");
+      }
+
+      return descriptorSetLayout;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  Pipeline Functions::createPipeline(
+      VkDevice& device,
+      VkExtent2D& extent,
+      VkDescriptorSetLayout& descriptorSetLayout,
+      const std::vector<std::string>& shaderPaths,
+      VkRenderPass& renderPass
+  ) {
+    try {
+      VkPipelineLayout pipelineLayout = nullptr;
+
+      VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+      vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+
+      auto bindingDescription = Vertex::getBindingDescription();
+      auto attributeDescriptions = Vertex::getAttributeDescriptions();
+
+      vertexInputInfo.vertexBindingDescriptionCount = 1;
+      vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+      vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+      vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+
+      VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
+      inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+      inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+      inputAssembly.primitiveRestartEnable = VK_FALSE;
+
+      VkViewport viewport{};
+      viewport.x = 0.0f;
+      viewport.y = 0.0f;
+      viewport.width = (float) extent.width;
+      viewport.height = (float) extent.height;
+      viewport.minDepth = 0.0f;
+      viewport.maxDepth = 1.0f;
+
+      VkRect2D scissor{};
+      scissor.offset = {0, 0};
+      scissor.extent = extent;
+
+      VkPipelineViewportStateCreateInfo viewportState{};
+      viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+      viewportState.viewportCount = 1;
+      viewportState.pViewports = &viewport;
+      viewportState.scissorCount = 1;
+      viewportState.pScissors = &scissor;
+
+      VkPipelineRasterizationStateCreateInfo rasterizer{};
+      rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+      rasterizer.depthClampEnable = VK_FALSE;
+      rasterizer.rasterizerDiscardEnable = VK_FALSE;
+      rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+      rasterizer.lineWidth = 1.0f;
+      rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+      rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+      rasterizer.depthBiasEnable = VK_FALSE;
+      rasterizer.depthBiasConstantFactor = 0.0f; // Optional
+      rasterizer.depthBiasClamp = 0.0f; // Optional
+      rasterizer.depthBiasSlopeFactor = 0.0f; // Optional
+
+      VkPipelineMultisampleStateCreateInfo multisampling{};
+      multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+      multisampling.sampleShadingEnable = VK_FALSE;
+      multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+      multisampling.minSampleShading = 1.0f; // Optional
+      multisampling.pSampleMask = nullptr; // Optional
+      multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
+      multisampling.alphaToOneEnable = VK_FALSE; // Optional
+
+      VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+      colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+      colorBlendAttachment.blendEnable = VK_FALSE;
+      colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
+      colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
+      colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD; // Optional
+      colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
+      colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
+      colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD; // Optional
+
+      VkPipelineColorBlendStateCreateInfo colorBlending{};
+      colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+      colorBlending.logicOpEnable = VK_FALSE;
+      colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
+      colorBlending.attachmentCount = 1;
+      colorBlending.pAttachments = &colorBlendAttachment;
+      colorBlending.blendConstants[0] = 0.0f; // Optional
+      colorBlending.blendConstants[1] = 0.0f; // Optional
+      colorBlending.blendConstants[2] = 0.0f; // Optional
+      colorBlending.blendConstants[3] = 0.0f; // Optional
+
+      VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+      pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+      pipelineLayoutInfo.setLayoutCount = 1;
+      pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
+      pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
+      pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+
+      if (
+          vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS
+          || pipelineLayout == nullptr
+          ) {
+        throw std::runtime_error(CALL_INFO() + ": failed to create pipeline layout!");
+      }
+
+      VkPipeline pipeline = nullptr;
+
+      std::vector<Shader> vertexShaders;
+      std::vector<Shader> fragmentShaders;
+
+      for (const std::string& path : shaderPaths) {
+        Shader shader = createShader(device, path);
+        if (shader.type == ShaderType::VERTEX) {
+          vertexShaders.emplace_back(shader);
+        } else if (shader.type == ShaderType::FRAGMENT) {
+          fragmentShaders.emplace_back(shader);
+        }
+      }
+
+      std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+      shaderStages.resize(vertexShaders.size() + fragmentShaders.size());
+      for (const Shader& shader : vertexShaders) {
+        shaderStages.emplace_back(shader.pipelineShaderStageCreateInfo);
+      }
+      for (const Shader& shader : fragmentShaders) {
+        shaderStages.emplace_back(shader.pipelineShaderStageCreateInfo);
+      }
+
+      VkGraphicsPipelineCreateInfo pipelineInfo{};
+      pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+      pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
+      pipelineInfo.pStages = shaderStages.data();
+      pipelineInfo.pVertexInputState = &vertexInputInfo;
+      pipelineInfo.pInputAssemblyState = &inputAssembly;
+      pipelineInfo.pViewportState = &viewportState;
+      pipelineInfo.pRasterizationState = &rasterizer;
+      pipelineInfo.pMultisampleState = &multisampling;
+      pipelineInfo.pDepthStencilState = nullptr; // Optional
+      pipelineInfo.pColorBlendState = &colorBlending;
+      pipelineInfo.pDynamicState = nullptr; // Optional
+      pipelineInfo.layout = pipelineLayout;
+      pipelineInfo.renderPass = renderPass;
+      pipelineInfo.subpass = 0;
+      pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
+      pipelineInfo.basePipelineIndex = -1; // Optional
+
+      if (
+          vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS
+          || pipeline == nullptr
+      ) {
+        throw std::runtime_error(CALL_INFO() + ": failed to create graphics pipeline!");
+      }
+
+      for (const Shader& shader : vertexShaders) {
+        vkDestroyShaderModule(device, shader.shaderModule, nullptr);
+      }
+      for (const Shader& shader : fragmentShaders) {
+        vkDestroyShaderModule(device, shader.shaderModule, nullptr);
+      }
+
+      Pipeline result;
+      result.layout = pipelineLayout;
+      result.value = pipeline;
+      return result;
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -884,10 +1207,37 @@ namespace exqudens::vulkan {
 
   // destroy
 
+  void Functions::destroyPipeline(Pipeline& pipeline, VkDevice& device) {
+    try {
+      if (pipeline.value != nullptr) {
+        vkDestroyPipeline(device, pipeline.value, nullptr);
+        pipeline.value = nullptr;
+      }
+      if (pipeline.layout != nullptr) {
+        vkDestroyPipelineLayout(device, pipeline.layout, nullptr);
+        pipeline.layout = nullptr;
+      }
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  void Functions::destroyDescriptorSetLayout(VkDescriptorSetLayout& descriptorSetLayout, VkDevice& device) {
+    try {
+      if (descriptorSetLayout != nullptr) {
+        vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
+        descriptorSetLayout = nullptr;
+      }
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
   void Functions::destroyRenderPass(VkRenderPass& renderPass, VkDevice& device) {
     try {
       if (renderPass != nullptr) {
         vkDestroyRenderPass(device, renderPass, nullptr);
+        renderPass = nullptr;
       }
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));

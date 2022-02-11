@@ -16,7 +16,7 @@
 
 #include "exqudens/TestConfiguration.hpp"
 #include "exqudens/TestUtils.hpp"
-#include "exqudens/vulkan/Functions.hpp"
+#include "exqudens/vulkan/utility/Functions.hpp"
 
 namespace exqudens::vulkan {
 
