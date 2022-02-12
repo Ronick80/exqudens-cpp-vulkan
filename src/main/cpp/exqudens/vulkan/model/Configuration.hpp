@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "exqudens/vulkan/Export.hpp"
-#include "exqudens/vulkan/model/StringVector.hpp"
 
 namespace exqudens::vulkan {
 
@@ -12,18 +11,18 @@ namespace exqudens::vulkan {
 
     public:
 
-      std::string applicationName;
+      std::string applicationName = {};
       unsigned int applicationVersionMajor = 0;
       unsigned int applicationVersionMinor = 0;
       unsigned int applicationVersionPatch = 0;
-      std::string engineName;
+      std::string engineName = {};
       unsigned int engineVersionMajor = 0;
       unsigned int engineVersionMinor = 0;
       unsigned int engineVersionPatch = 0;
       bool validationLayersEnabled = false;
-      StringVector validationLayers = StringVector();
-      StringVector extensions = StringVector();
-      StringVector deviceExtensions = StringVector();
+      std::vector<const char*> validationLayers = {};
+      std::vector<const char*> extensions = {};
+      std::vector<const char*> deviceExtensions = {};
       bool computeQueueFamilyRequired = true;
       bool transferQueueFamilyRequired = true;
       bool graphicsQueueFamilyRequired = true;
@@ -40,9 +39,9 @@ namespace exqudens::vulkan {
           unsigned int engineVersionMinor,
           unsigned int engineVersionPatch,
           bool validationLayersEnabled,
-          StringVector validationLayers,
-          StringVector extensions,
-          StringVector deviceExtensions,
+          std::vector<const char*> validationLayers,
+          std::vector<const char*> extensions,
+          std::vector<const char*> deviceExtensions,
           bool computeQueueFamilyRequired,
           bool transferQueueFamilyRequired,
           bool graphicsQueueFamilyRequired,

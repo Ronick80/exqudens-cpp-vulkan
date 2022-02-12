@@ -13,8 +13,8 @@ namespace exqudens::vulkan {
     public:
 
       VkSurfaceCapabilitiesKHR capabilities = {};
-      std::vector<VkSurfaceFormatKHR> formats;
-      std::vector<VkPresentModeKHR> presentModes;
+      std::vector<VkSurfaceFormatKHR> formats = {};
+      std::vector<VkPresentModeKHR> presentModes = {};
 
       SwapChainSupportDetails(
           VkSurfaceCapabilitiesKHR capabilities,

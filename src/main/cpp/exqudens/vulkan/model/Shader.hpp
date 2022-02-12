@@ -13,7 +13,7 @@ namespace exqudens::vulkan {
 
       ShaderType type = ShaderType::NONE;
       VkShaderModule shaderModule = nullptr;
-      VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo{};
+      VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo = {};
 
       Shader(
           ShaderType type,

@@ -17,9 +17,9 @@ namespace exqudens::vulkan {
 
       static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions();
 
-      glm::vec2 pos {};
-      glm::vec3 color {};
-      glm::vec2 texCoord {};
+      glm::vec2 pos = {};
+      glm::vec3 color = {};
+      glm::vec2 texCoord = {};
 
       Vertex(
           glm::vec2 pos,

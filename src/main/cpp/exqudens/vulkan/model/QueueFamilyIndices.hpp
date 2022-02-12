@@ -1,7 +1,6 @@
 #pragma once
 
 #include <optional>
-#include <set>
 #include <cstdint>
 
 #include "exqudens/vulkan/Export.hpp"
@@ -13,16 +12,16 @@ namespace exqudens::vulkan {
     public:
 
       bool computeFamilyRequired = true;
-      std::optional<uint32_t> computeFamily;
+      std::optional<uint32_t> computeFamily = {};
 
       bool transferFamilyRequired = true;
-      std::optional<uint32_t> transferFamily;
+      std::optional<uint32_t> transferFamily = {};
 
       bool graphicsFamilyRequired = true;
-      std::optional<uint32_t> graphicsFamily;
+      std::optional<uint32_t> graphicsFamily = {};
 
       bool presentFamilyRequired = true;
-      std::optional<uint32_t> presentFamily;
+      std::optional<uint32_t> presentFamily = {};
 
       QueueFamilyIndices(
           bool computeFamilyRequired,
@@ -45,10 +44,6 @@ namespace exqudens::vulkan {
       QueueFamilyIndices& operator=(QueueFamilyIndices&& object) noexcept;
 
       friend void swap(QueueFamilyIndices& first, QueueFamilyIndices& second);
-
-      bool isComplete();
-
-      std::set<uint32_t> uniqueQueueFamilies();
 
       virtual ~QueueFamilyIndices();
 

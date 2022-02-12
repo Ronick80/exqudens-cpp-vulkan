@@ -75,31 +75,6 @@ namespace exqudens::vulkan {
     std::swap(first.presentFamily, second.presentFamily);
   }
 
-  bool QueueFamilyIndices::isComplete() {
-    bool computeFamilyComplete = !computeFamilyRequired || computeFamily.has_value();
-    bool transferFamilyComplete = !transferFamilyRequired || transferFamily.has_value();
-    bool graphicsFamilyComplete = !graphicsFamilyRequired || graphicsFamily.has_value();
-    bool presentFamilyComplete = !presentFamilyRequired || presentFamily.has_value();
-    return computeFamilyComplete && transferFamilyComplete && graphicsFamilyComplete && presentFamilyComplete;
-  }
-
-  std::set<uint32_t> QueueFamilyIndices::uniqueQueueFamilies() {
-    std::set<uint32_t> result;
-    if (computeFamilyRequired) {
-      result.insert(computeFamily.value());
-    }
-    if (transferFamilyRequired) {
-      result.insert(transferFamily.value());
-    }
-    if (graphicsFamilyRequired) {
-      result.insert(graphicsFamily.value());
-    }
-    if (presentFamilyRequired) {
-      result.insert(presentFamily.value());
-    }
-    return result;
-  }
-
   QueueFamilyIndices::~QueueFamilyIndices() = default;
 
 }

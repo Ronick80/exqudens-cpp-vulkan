@@ -24,16 +24,12 @@ namespace exqudens::vulkan {
     try {
       Functions functions;
       Configuration configuration = functions.createConfiguration();
+
       ASSERT_EQ(true, configuration.validationLayersEnabled);
+      ASSERT_EQ(std::string("VK_LAYER_KHRONOS_validation"), std::string(configuration.validationLayers[0]));
+      ASSERT_EQ(std::string(VK_EXT_DEBUG_UTILS_EXTENSION_NAME), std::string(configuration.extensions[0]));
+      ASSERT_EQ(std::string(VK_KHR_SWAPCHAIN_EXTENSION_NAME), std::string(configuration.deviceExtensions[0]));
 
-      ASSERT_EQ(std::string("VK_LAYER_KHRONOS_validation"), configuration.validationLayers.values[0]);
-      ASSERT_EQ(std::string("VK_LAYER_KHRONOS_validation"), std::string(configuration.validationLayers.pointers[0]));
-
-      ASSERT_EQ(std::string(VK_EXT_DEBUG_UTILS_EXTENSION_NAME), configuration.extensions.values[0]);
-      ASSERT_EQ(std::string(VK_EXT_DEBUG_UTILS_EXTENSION_NAME), std::string(configuration.extensions.pointers[0]));
-
-      ASSERT_EQ(std::string(VK_KHR_SWAPCHAIN_EXTENSION_NAME), configuration.deviceExtensions.values[0]);
-      ASSERT_EQ(std::string(VK_KHR_SWAPCHAIN_EXTENSION_NAME), std::string(configuration.deviceExtensions.pointers[0]));
     } catch (const std::exception& e) {
       FAIL() << TestUtils::toString(e);
     }
@@ -51,19 +47,20 @@ namespace exqudens::vulkan {
 
       Configuration configuration = functions.createConfiguration();
       configuration.presentQueueFamilyRequired = false;
+      configuration.deviceExtensions = {};
       std::ostringstream stream;
       Logger logger = functions.createLogger(stream);
 
       VkInstance instance = functions.createInstance(configuration, logger);
       VkDebugUtilsMessengerEXT debugUtilsMessenger = functions.createDebugUtilsMessenger(instance, logger);
-      VkSurfaceKHR surface = nullptr;
+      VkSurfaceKHR surface = nullptr;//functions.createSurface(instance);
       VkPhysicalDevice physicalDevice = functions.createPhysicalDevice(instance, configuration, surface);
       VkDevice device = functions.createDevice(physicalDevice, configuration, surface);
-      VkQueue computeQueue = functions.createQueue(QueueType::COMPUTE, physicalDevice, configuration, surface, device, 0);
-      VkQueue transferQueue = functions.createQueue(QueueType::TRANSFER, physicalDevice, configuration, surface, device, 0);
-      VkQueue graphicsQueue = functions.createQueue(QueueType::GRAPHICS, physicalDevice, configuration, surface, device, 0);
-      VkQueue presentQueue = nullptr;
-      VkSwapchainKHR swapChain = nullptr;
+      VkQueue computeQueue = functions.createComputeQueue(physicalDevice, configuration, surface, device, 0);
+      VkQueue transferQueue = functions.createTransferQueue(physicalDevice, configuration, surface, device, 0);
+      VkQueue graphicsQueue = functions.createGraphicsQueue(physicalDevice, configuration, surface, device, 0);
+      VkQueue presentQueue = nullptr;//functions.createPresentQueue(physicalDevice, configuration, surface, device, 0);
+      VkSwapchainKHR swapChain = nullptr;//functions.createSwapChain(physicalDevice, configuration, surface, device, 800, 600);
 
       //std::this_thread::sleep_for(std::chrono::seconds(5));
 

@@ -110,7 +110,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  bool Functions::checkValidationLayerSupport(const std::vector<std::string>& validationLayers) {
+  bool Functions::checkValidationLayerSupport(const std::vector<const char*>& validationLayers) {
     try {
       uint32_t layerCount;
       vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -121,8 +121,8 @@ namespace exqudens::vulkan {
       for (const std::string& layerName: validationLayers) {
         bool layerFound = false;
 
-        for (const auto& layerProperties: availableLayers) {
-          if (layerName == std::string(layerProperties.layerName)) {
+        for (const VkLayerProperties& layerProperties : availableLayers) {
+          if (std::string(layerName) == std::string(layerProperties.layerName)) {
             layerFound = true;
             break;
           }
@@ -193,7 +193,7 @@ namespace exqudens::vulkan {
         anisotropyAdequate = supportedFeatures.samplerAnisotropy;
       }
 
-      return familyIndices.isComplete() &&
+      return isQueueFamilyIndicesComplete(familyIndices) &&
              extensionsSupported &&
              swapChainAdequate &&
              anisotropyAdequate;
@@ -250,7 +250,7 @@ namespace exqudens::vulkan {
           }
         }
 
-        if (familyIndices.isComplete()) {
+        if (isQueueFamilyIndicesComplete(familyIndices)) {
           break;
         }
 
@@ -263,7 +263,40 @@ namespace exqudens::vulkan {
     }
   }
 
-  bool Functions::checkDeviceExtensionSupport(VkPhysicalDevice& physicalDevice, StringVector& deviceExtensions) {
+  bool Functions::isQueueFamilyIndicesComplete(QueueFamilyIndices& value) {
+    try {
+      bool computeFamilyComplete = !value.computeFamilyRequired || value.computeFamily.has_value();
+      bool transferFamilyComplete = !value.transferFamilyRequired || value.transferFamily.has_value();
+      bool graphicsFamilyComplete = !value.graphicsFamilyRequired || value.graphicsFamily.has_value();
+      bool presentFamilyComplete = !value.presentFamilyRequired || value.presentFamily.has_value();
+      return computeFamilyComplete && transferFamilyComplete && graphicsFamilyComplete && presentFamilyComplete;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  std::set<uint32_t> Functions::uniqueQueueFamilyIndices(QueueFamilyIndices& value) {
+    try {
+      std::set<uint32_t> result;
+      if (value.computeFamilyRequired) {
+        result.insert(value.computeFamily.value());
+      }
+      if (value.transferFamilyRequired) {
+        result.insert(value.transferFamily.value());
+      }
+      if (value.graphicsFamilyRequired) {
+        result.insert(value.graphicsFamily.value());
+      }
+      if (value.presentFamilyRequired) {
+        result.insert(value.presentFamily.value());
+      }
+      return result;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  bool Functions::checkDeviceExtensionSupport(VkPhysicalDevice& physicalDevice, const std::vector<const char*>& deviceExtensions) {
     try {
       uint32_t extensionCount;
       vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
@@ -271,7 +304,7 @@ namespace exqudens::vulkan {
       std::vector<VkExtensionProperties> availableExtensions(extensionCount);
       vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableExtensions.data());
 
-      std::set<std::string> requiredExtensions(deviceExtensions.pointers.begin(), deviceExtensions.pointers.end());
+      std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
 
       for (const auto& extension : availableExtensions) {
         requiredExtensions.erase(extension.extensionName);
@@ -452,9 +485,9 @@ namespace exqudens::vulkan {
       unsigned int engineVersionMinor = 0;
       unsigned int engineVersionPatch = 0;
       bool validationLayersEnabled = true;
-      StringVector validationLayers = StringVector({"VK_LAYER_KHRONOS_validation"});
-      StringVector extensions = StringVector({VK_EXT_DEBUG_UTILS_EXTENSION_NAME});
-      StringVector deviceExtensions = StringVector({VK_KHR_SWAPCHAIN_EXTENSION_NAME});
+      std::vector<const char*> validationLayers = {"VK_LAYER_KHRONOS_validation"};
+      std::vector<const char*> extensions = {VK_EXT_DEBUG_UTILS_EXTENSION_NAME};
+      std::vector<const char*> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
       bool computeQueueFamilyRequired = true;
       bool transferQueueFamilyRequired = true;
       bool graphicsQueueFamilyRequired = true;
@@ -501,7 +534,7 @@ namespace exqudens::vulkan {
       ) > function = [&stream](
           VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
           VkDebugUtilsMessageTypeFlagsEXT messageType,
-          std::string message
+          const std::string& message
       ) {
         //std::string function = std::string("(") + __FUNCTION__ + ")";
 
@@ -568,7 +601,7 @@ namespace exqudens::vulkan {
     try {
       VkInstance instance = nullptr;
 
-      if (configuration.validationLayersEnabled && !checkValidationLayerSupport(configuration.validationLayers.values)) {
+      if (configuration.validationLayersEnabled && !checkValidationLayerSupport(configuration.validationLayers)) {
         throw std::runtime_error(CALL_INFO() + ": validation layers requested, but not available!");
       }
 
@@ -583,14 +616,14 @@ namespace exqudens::vulkan {
       VkInstanceCreateInfo createInfo{};
       createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
       createInfo.pApplicationInfo = &appInfo;
-      createInfo.enabledExtensionCount = static_cast<uint32_t>(configuration.extensions.pointers.size());
-      createInfo.ppEnabledExtensionNames = configuration.extensions.pointers.data();
+      createInfo.enabledExtensionCount = static_cast<uint32_t>(configuration.extensions.size());
+      createInfo.ppEnabledExtensionNames = configuration.extensions.data();
 
       // declared before if statement for to not be destroyed before call vkCreateInstance
       VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
       if (configuration.validationLayersEnabled) {
-        createInfo.enabledLayerCount = static_cast<uint32_t>(configuration.validationLayers.pointers.size());
-        createInfo.ppEnabledLayerNames = configuration.validationLayers.pointers.data();
+        createInfo.enabledLayerCount = static_cast<uint32_t>(configuration.validationLayers.size());
+        createInfo.ppEnabledLayerNames = configuration.validationLayers.data();
         populateDebugMessengerCreateInfo(debugCreateInfo, logger);
         createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*) &debugCreateInfo;
       } else {
@@ -729,7 +762,7 @@ namespace exqudens::vulkan {
 
       std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 
-      std::set<uint32_t> uniqueQueueFamilies = familyIndices.uniqueQueueFamilies();
+      std::set<uint32_t> uniqueQueueFamilies = uniqueQueueFamilyIndices(familyIndices);
       float queuePriority = 1.0f;
       for (uint32_t queueFamily : uniqueQueueFamilies) {
         VkDeviceQueueCreateInfo queueCreateInfo{};
@@ -751,12 +784,12 @@ namespace exqudens::vulkan {
 
       createInfo.pEnabledFeatures = &deviceFeatures;
 
-      createInfo.enabledExtensionCount = static_cast<uint32_t>(configuration.deviceExtensions.pointers.size());
-      createInfo.ppEnabledExtensionNames = configuration.deviceExtensions.pointers.data();
+      createInfo.enabledExtensionCount = static_cast<uint32_t>(configuration.deviceExtensions.size());
+      createInfo.ppEnabledExtensionNames = configuration.deviceExtensions.data();
 
       if (configuration.validationLayersEnabled) {
-        createInfo.enabledLayerCount = static_cast<uint32_t>(configuration.validationLayers.pointers.size());
-        createInfo.ppEnabledLayerNames = configuration.validationLayers.pointers.data();
+        createInfo.enabledLayerCount = static_cast<uint32_t>(configuration.validationLayers.size());
+        createInfo.ppEnabledLayerNames = configuration.validationLayers.data();
       } else {
         createInfo.enabledLayerCount = 0;
       }
@@ -771,8 +804,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkQueue Functions::createQueue(
-      QueueType type,
+  VkQueue Functions::createComputeQueue(
       VkPhysicalDevice& physicalDevice,
       Configuration& configuration,
       VkSurfaceKHR& surface,
@@ -790,46 +822,100 @@ namespace exqudens::vulkan {
           surface
       );
 
-      if (type == QueueType::COMPUTE) {
-        if (!configuration.computeQueueFamilyRequired) {
-          throw std::runtime_error(
-              CALL_INFO()
-              + ": failed to create queue, '"
-              + TO_STRING(QueueType::COMPUTE)
-              + "' queue not required in configuration!");
-        }
-        vkGetDeviceQueue(device, familyIndices.computeFamily.value(), queueIndex, &queue);
-      } else if (type == QueueType::TRANSFER) {
-        if (!configuration.transferQueueFamilyRequired) {
-          throw std::runtime_error(
-              CALL_INFO()
-              + ": failed to create queue, '"
-              + TO_STRING(QueueType::TRANSFER)
-              + "' queue not required in configuration!");
-        }
-        vkGetDeviceQueue(device, familyIndices.transferFamily.value(), queueIndex, &queue);
-      } else if (type == QueueType::GRAPHICS) {
-        if (!configuration.graphicsQueueFamilyRequired) {
-          throw std::runtime_error(
-              CALL_INFO()
-              + ": failed to create queue, '"
-              + TO_STRING(QueueType::GRAPHICS)
-              + "' queue not required in configuration!");
-        }
-        vkGetDeviceQueue(device, familyIndices.graphicsFamily.value(), queueIndex, &queue);
-      } else if (type == QueueType::PRESENT) {
-        if (!configuration.presentQueueFamilyRequired || surface == nullptr) {
-          throw std::runtime_error(
-              CALL_INFO()
-              + ": failed to create queue, '"
-              + TO_STRING(QueueType::PRESENT)
-              + "' queue not required in configuration!");
-        }
-        vkGetDeviceQueue(device, familyIndices.presentFamily.value(), queueIndex, &queue);
-      }
+      vkGetDeviceQueue(device, familyIndices.computeFamily.value(), queueIndex, &queue);
 
       if (queue == nullptr) {
-        throw std::runtime_error(CALL_INFO() + ": failed to create queue!");
+        throw std::runtime_error(CALL_INFO() + ": failed to create compute queue!");
+      }
+
+      return queue;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  VkQueue Functions::createTransferQueue(
+      VkPhysicalDevice& physicalDevice,
+      Configuration& configuration,
+      VkSurfaceKHR& surface,
+      VkDevice& device,
+      uint32_t queueIndex
+  ) {
+    try {
+      VkQueue queue = nullptr;
+
+      QueueFamilyIndices familyIndices = findQueueFamilies(
+          physicalDevice,
+          configuration.computeQueueFamilyRequired,
+          configuration.transferQueueFamilyRequired,
+          configuration.graphicsQueueFamilyRequired,
+          surface
+      );
+
+      vkGetDeviceQueue(device, familyIndices.transferFamily.value(), queueIndex, &queue);
+
+      if (queue == nullptr) {
+        throw std::runtime_error(CALL_INFO() + ": failed to create transfer queue!");
+      }
+
+      return queue;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  VkQueue Functions::createGraphicsQueue(
+      VkPhysicalDevice& physicalDevice,
+      Configuration& configuration,
+      VkSurfaceKHR& surface,
+      VkDevice& device,
+      uint32_t queueIndex
+  ) {
+    try {
+      VkQueue queue = nullptr;
+
+      QueueFamilyIndices familyIndices = findQueueFamilies(
+          physicalDevice,
+          configuration.computeQueueFamilyRequired,
+          configuration.transferQueueFamilyRequired,
+          configuration.graphicsQueueFamilyRequired,
+          surface
+      );
+
+      vkGetDeviceQueue(device, familyIndices.graphicsFamily.value(), queueIndex, &queue);
+
+      if (queue == nullptr) {
+        throw std::runtime_error(CALL_INFO() + ": failed to create graphics queue!");
+      }
+
+      return queue;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  VkQueue Functions::createPresentQueue(
+      VkPhysicalDevice& physicalDevice,
+      Configuration& configuration,
+      VkSurfaceKHR& surface,
+      VkDevice& device,
+      uint32_t queueIndex
+  ) {
+    try {
+      VkQueue queue = nullptr;
+
+      QueueFamilyIndices familyIndices = findQueueFamilies(
+          physicalDevice,
+          configuration.computeQueueFamilyRequired,
+          configuration.transferQueueFamilyRequired,
+          configuration.graphicsQueueFamilyRequired,
+          surface
+      );
+
+      vkGetDeviceQueue(device, familyIndices.presentFamily.value(), queueIndex, &queue);
+
+      if (queue == nullptr) {
+        throw std::runtime_error(CALL_INFO() + ": failed to create present queue!");
       }
 
       return queue;
@@ -1039,7 +1125,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  Pipeline Functions::createPipeline(
+  Pipeline Functions::createGraphicsPipeline(
       VkDevice& device,
       VkExtent2D& extent,
       VkDescriptorSetLayout& descriptorSetLayout,
