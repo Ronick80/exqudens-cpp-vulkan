@@ -20,7 +20,13 @@
 
 namespace exqudens::vulkan {
 
-  TEST(CoreTests, test1) {
+  class CoreTests : public testing::Test {
+
+      //
+
+  };
+
+  TEST_F(CoreTests, test1) {
     try {
       Functions functions;
       Configuration configuration = functions.createConfiguration();
@@ -35,7 +41,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  TEST(CoreTests, test2) {
+  TEST_F(CoreTests, test2) {
     try {
       Functions functions;
 
@@ -88,7 +94,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  TEST(CoreTests, test3) {
+  TEST_F(CoreTests, test3) {
     try {
       Functions functions;
 

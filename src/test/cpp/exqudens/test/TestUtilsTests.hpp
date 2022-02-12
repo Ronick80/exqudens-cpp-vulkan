@@ -13,39 +13,45 @@
 
 namespace exqudens::vulkan {
 
-  void func3() {
-    try {
-      throw std::invalid_argument(CALL_INFO() + ": Test error message!");
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
+  class TestUtilsTests : public testing::Test {
 
-  void func2() {
-    try {
-      func3();
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
+    protected:
 
-  void func1() {
-    try {
-      func2();
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
+      void func3() {
+        try {
+          throw std::invalid_argument(CALL_INFO() + ": Test error message!");
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
 
-  TEST(TestUtilsTests, test1) {
+      void func2() {
+        try {
+          func3();
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      void func1() {
+        try {
+          func2();
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+  };
+
+  TEST_F(TestUtilsTests, test1) {
     try {
       RecordProperty("TestUtilsTests.test1.info1", "toString(const std::exception& e)");
       std::string thisFilePath = std::filesystem::path(__FILE__).make_preferred().string();
       std::ostringstream out;
-      out << "exqudens::vulkan::func3(" + thisFilePath + ":18): Test error message!" << std::endl;
-      out << "exqudens::vulkan::func3(" + thisFilePath + ":20)" << std::endl;
-      out << "exqudens::vulkan::func2(" + thisFilePath + ":28)" << std::endl;
-      out << "exqudens::vulkan::func1(" + thisFilePath + ":36)";
+      out << "exqudens::vulkan::TestUtilsTests::func3(" + thisFilePath + ":22): Test error message!" << std::endl;
+      out << "exqudens::vulkan::TestUtilsTests::func3(" + thisFilePath + ":24)" << std::endl;
+      out << "exqudens::vulkan::TestUtilsTests::func2(" + thisFilePath + ":32)" << std::endl;
+      out << "exqudens::vulkan::TestUtilsTests::func1(" + thisFilePath + ":40)";
       std::string expected = out.str();
       try {
         func1();
@@ -59,7 +65,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  TEST(TestUtilsTests, test2) {
+  TEST_F(TestUtilsTests, test2) {
     try {
       RecordProperty("TestUtilsTests.test2.info1", "readPng(const std::string& path)");
       RecordProperty(

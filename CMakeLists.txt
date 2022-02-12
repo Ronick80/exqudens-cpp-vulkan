@@ -10,6 +10,8 @@ message("project: '${PROJECT_NAME}-${PROJECT_VERSION}'")
 include("util.cmake")
 include("config.cmake")
 include("GenerateExportHeader")
+enable_testing()
+include("GoogleTest")
 
 set_conan_settings(CONAN_SETTINGS
     "${CMAKE_SYSTEM_NAME}"
@@ -217,7 +219,6 @@ install(
 
 add_library("test-lib" INTERFACE
     "src/test/cpp/exqudens/TestApplication.hpp"
-    "src/test/cpp/exqudens/TestUiApplication.hpp"
     "src/test/cpp/exqudens/TestConfiguration.hpp"
     "src/test/cpp/exqudens/TestMacros.hpp"
     "src/test/cpp/exqudens/TestUtils.hpp"
@@ -302,8 +303,6 @@ else()
     )
 endif()
 
-enable_testing()
-include(GoogleTest)
 gtest_discover_tests("test-app"
     WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/test/bin"
     PROPERTIES ENVIRONMENT "PARENT_PATH=;PATH="
