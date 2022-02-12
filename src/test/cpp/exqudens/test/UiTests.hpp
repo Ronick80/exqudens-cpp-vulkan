@@ -24,11 +24,63 @@ namespace exqudens::vulkan {
 
         public:
 
+          std::map<std::string, std::string> environmentVariables = {};
+          Configuration configuration = {};
+          Logger logger = {};
+          VkInstance instance = nullptr;
+          VkDebugUtilsMessengerEXT debugUtilsMessenger = nullptr;
+          VkSurfaceKHR surface = nullptr;
+          VkPhysicalDevice physicalDevice = nullptr;
+          VkDevice device = nullptr;
+          VkQueue computeQueue = nullptr;
+          VkQueue transferQueue = nullptr;
+          VkQueue graphicsQueue = nullptr;
+          VkQueue presentQueue = nullptr;
+          VkSwapchainKHR swapChain = nullptr;
+
           Environment() = default;
 
           void create(GLFWwindow*& window) {
             try {
-              //
+              uint32_t glfwExtensionCount = 0;
+              const char** glfwExtensions;
+              glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+              std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+
+              int width = 0;
+              int height = 0;
+              glfwGetFramebufferSize(window, &width, &height);
+
+              createSurfaceFunction = [&window](VkInstance& i) -> VkSurfaceKHR {
+                VkSurfaceKHR result;
+                if (glfwCreateWindowSurface(i, window, nullptr, &result) != VK_SUCCESS) {
+                  throw std::runtime_error(CALL_INFO() + ": failed to create window surface!");
+                }
+                return result;
+              };
+
+              environmentVariables = createEnvironmentVariables(TestConfiguration::getExecutableDir());
+
+              for (auto const& [name, value] : environmentVariables) {
+                setEnvironmentVariable(name, value);
+              }
+
+              configuration = createConfiguration();
+              for (const char*& extension : extensions) {
+                configuration.extensions.emplace_back(extension);
+              }
+              logger = createLogger();
+
+              instance = createInstance(configuration, logger);
+              debugUtilsMessenger = createDebugUtilsMessenger(instance, logger);
+              surface = createSurface(instance);
+              physicalDevice = createPhysicalDevice(instance, configuration, surface);
+              device = createDevice(physicalDevice, configuration, surface);
+              computeQueue = createComputeQueue(physicalDevice, configuration, surface, device, 0);
+              transferQueue = createTransferQueue(physicalDevice, configuration, surface, device, 0);
+              graphicsQueue = createGraphicsQueue(physicalDevice, configuration, surface, device, 0);
+              presentQueue = createPresentQueue(physicalDevice, configuration, surface, device, 0);
+              swapChain = createSwapChain(physicalDevice, configuration, surface, device, 800, 600);
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
             }
@@ -52,13 +104,18 @@ namespace exqudens::vulkan {
 
           void destroy() {
             try {
-              //
+              destroySwapChain(swapChain, device);
+              destroyDevice(device);
+              destroyPhysicalDevice(physicalDevice);
+              destroySurface(surface, instance);
+              destroyDebugUtilsMessenger(debugUtilsMessenger, instance);
+              destroyInstance(instance);
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
             }
           }
 
-          ~Environment() = default;
+          ~Environment() override = default;
 
       };
 

@@ -197,6 +197,8 @@ namespace exqudens::vulkan {
 
       virtual void destroyPhysicalDevice(VkPhysicalDevice& physicalDevice);
 
+      virtual void destroySurface(VkSurfaceKHR& surface, VkInstance& instance);
+
       virtual void destroyDebugUtilsMessenger(VkDebugUtilsMessengerEXT& debugUtilsMessenger, VkInstance& instance);
 
       virtual void destroyInstance(VkInstance& instance);

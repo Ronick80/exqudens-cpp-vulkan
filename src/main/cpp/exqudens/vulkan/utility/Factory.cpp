@@ -594,7 +594,7 @@ namespace exqudens::vulkan {
       auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
 
       if (func != nullptr) {
-        VkDebugUtilsMessengerCreateInfoEXT createInfo;
+        VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
         populateDebugMessengerCreateInfo(createInfo, logger);
         result = func(instance, &createInfo, nullptr, &debugUtilsMessenger);
       } else {
@@ -1368,6 +1368,17 @@ namespace exqudens::vulkan {
   void Factory::destroyPhysicalDevice(VkPhysicalDevice& physicalDevice) {
     try {
       physicalDevice = nullptr;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  void Factory::destroySurface(VkSurfaceKHR& surface, VkInstance& instance) {
+    try {
+      if (surface != nullptr) {
+        vkDestroySurfaceKHR(instance, surface, nullptr);
+        surface = nullptr;
+      }
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
