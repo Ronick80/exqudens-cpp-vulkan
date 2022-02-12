@@ -101,7 +101,7 @@ foreach(
         find_package("${cmakePackageName}" QUIET)
     elseif("glfw" STREQUAL "${conanPackageName}")
         list(APPEND NOT_FOUND_PACKAGE_NAMES "${cmakePackageName}")
-        find_package("${cmakePackageName}" QUIET)
+        find_package("${cmakePackageName}" "${cmakePackageVersion}" EXACT QUIET)
     else()
         list(APPEND NOT_FOUND_PACKAGE_NAMES "${cmakePackageName}")
         find_package("${cmakePackageName}" "${cmakePackageVersion}" EXACT QUIET CONFIG)
@@ -218,6 +218,7 @@ install(
 
 add_library("test-lib" INTERFACE
     "src/test/cpp/exqudens/TestApplication.hpp"
+    "src/test/cpp/exqudens/TestUiApplication.hpp"
     "src/test/cpp/exqudens/TestConfiguration.hpp"
     "src/test/cpp/exqudens/TestMacros.hpp"
     "src/test/cpp/exqudens/TestUtils.hpp"
