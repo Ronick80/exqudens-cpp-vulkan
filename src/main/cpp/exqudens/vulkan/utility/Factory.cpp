@@ -1,4 +1,4 @@
-#include "exqudens/vulkan/utility/Functions.hpp"
+#include "exqudens/vulkan/utility/Factory.hpp"
 #include "exqudens/vulkan/utility/Macros.hpp"
 #include "exqudens/vulkan/model/Vertex.hpp"
 
@@ -13,40 +13,40 @@
 
 namespace exqudens::vulkan {
 
-  Functions::Functions(
+  Factory::Factory(
       std::function<VkSurfaceKHR(VkInstance&)> createSurfaceFunction
   ):
       createSurfaceFunction(std::move(createSurfaceFunction))
   {
   }
 
-  Functions::Functions() = default;
+  Factory::Factory() = default;
 
-  Functions::Functions(const Functions& object): Functions(
+  Factory::Factory(const Factory& object): Factory(
       object.createSurfaceFunction
   ) {
   }
 
-  Functions::Functions(Functions&& object) noexcept: Functions() {
+  Factory::Factory(Factory&& object) noexcept: Factory() {
     swap(*this, object);
   }
 
-  Functions& Functions::operator=(const Functions& object) {
-    return *this = Functions(object);
+  Factory& Factory::operator=(const Factory& object) {
+    return *this = Factory(object);
   }
 
-  Functions& Functions::operator=(Functions&& object) noexcept {
+  Factory& Factory::operator=(Factory&& object) noexcept {
     swap(*this, object);
     return *this;
   }
 
-  void swap(Functions& first, Functions& second) {
+  void swap(Factory& first, Factory& second) {
     std::swap(first.createSurfaceFunction, second.createSurfaceFunction);
   }
 
   // utility
 
-  void Functions::setEnvironmentVariable(const std::string& name, const std::string& value) {
+  void Factory::setEnvironmentVariable(const std::string& name, const std::string& value) {
     try {
 #ifdef _WIN32
       _putenv_s(name.c_str(), value.c_str());
@@ -58,7 +58,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  std::optional<std::string> Functions::getEnvironmentVariable(const std::string& name) {
+  std::optional<std::string> Factory::getEnvironmentVariable(const std::string& name) {
     try {
       std::optional<std::string> value;
 #ifdef _WIN32
@@ -88,7 +88,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  std::vector<char> Functions::readFile(const std::string& path) {
+  std::vector<char> Factory::readFile(const std::string& path) {
     try {
       std::ifstream file(path, std::ios::ate | std::ios::binary);
 
@@ -110,7 +110,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  bool Functions::checkValidationLayerSupport(const std::vector<const char*>& validationLayers) {
+  bool Factory::checkValidationLayerSupport(const std::vector<const char*>& validationLayers) {
     try {
       uint32_t layerCount;
       vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -139,7 +139,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  void Functions::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& object, Logger& logger) {
+  void Factory::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& object, Logger& logger) {
     try {
       object = {};
       object.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -152,7 +152,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  bool Functions::isDeviceSuitable(
+  bool Factory::isDeviceSuitable(
       VkPhysicalDevice& physicalDevice,
       Configuration& configuration,
       VkSurfaceKHR& surface
@@ -202,7 +202,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  QueueFamilyIndices Functions::findQueueFamilies(
+  QueueFamilyIndices Factory::findQueueFamilies(
       VkPhysicalDevice& physicalDevice,
       bool computeFamilyRequired,
       bool transferFamilyRequired,
@@ -263,7 +263,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  bool Functions::isQueueFamilyIndicesComplete(QueueFamilyIndices& value) {
+  bool Factory::isQueueFamilyIndicesComplete(QueueFamilyIndices& value) {
     try {
       bool computeFamilyComplete = !value.computeFamilyRequired || value.computeFamily.has_value();
       bool transferFamilyComplete = !value.transferFamilyRequired || value.transferFamily.has_value();
@@ -275,7 +275,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  std::set<uint32_t> Functions::uniqueQueueFamilyIndices(QueueFamilyIndices& value) {
+  std::set<uint32_t> Factory::uniqueQueueFamilyIndices(QueueFamilyIndices& value) {
     try {
       std::set<uint32_t> result;
       if (value.computeFamilyRequired) {
@@ -296,7 +296,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  bool Functions::checkDeviceExtensionSupport(VkPhysicalDevice& physicalDevice, const std::vector<const char*>& deviceExtensions) {
+  bool Factory::checkDeviceExtensionSupport(VkPhysicalDevice& physicalDevice, const std::vector<const char*>& deviceExtensions) {
     try {
       uint32_t extensionCount;
       vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
@@ -316,7 +316,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  SwapChainSupportDetails Functions::querySwapChainSupport(VkPhysicalDevice& physicalDevice, VkSurfaceKHR& surface) {
+  SwapChainSupportDetails Factory::querySwapChainSupport(VkPhysicalDevice& physicalDevice, VkSurfaceKHR& surface) {
     try {
       if (surface == nullptr) {
         throw std::runtime_error(CALL_INFO() + ": failed to get swap chain support details!");
@@ -348,7 +348,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkSurfaceFormatKHR Functions::chooseSwapSurfaceFormat(std::vector<VkSurfaceFormatKHR>& availableFormats) {
+  VkSurfaceFormatKHR Factory::chooseSwapSurfaceFormat(std::vector<VkSurfaceFormatKHR>& availableFormats) {
     try {
       for (const auto& availableFormat : availableFormats) {
         if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
@@ -361,7 +361,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkPresentModeKHR Functions::chooseSwapPresentMode(std::vector<VkPresentModeKHR>& availablePresentModes) {
+  VkPresentModeKHR Factory::chooseSwapPresentMode(std::vector<VkPresentModeKHR>& availablePresentModes) {
     try {
       for (const auto& availablePresentMode : availablePresentModes) {
         if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
@@ -374,7 +374,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkExtent2D Functions::chooseSwapExtent(VkSurfaceCapabilitiesKHR& capabilities, const int& width, const int& height) {
+  VkExtent2D Factory::chooseSwapExtent(VkSurfaceCapabilitiesKHR& capabilities, const int& width, const int& height) {
     try {
       if (capabilities.currentExtent.width != UINT32_MAX) {
         return capabilities.currentExtent;
@@ -392,7 +392,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  uint32_t Functions::getSwapChainImageCount(SwapChainSupportDetails& swapChainSupport) {
+  uint32_t Factory::getSwapChainImageCount(SwapChainSupportDetails& swapChainSupport) {
     try {
       uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
 
@@ -408,7 +408,7 @@ namespace exqudens::vulkan {
 
   // create
 
-  std::map<std::string, std::string> Functions::createEnvironmentVariables(const std::string& executableDirPath) {
+  std::map<std::string, std::string> Factory::createEnvironmentVariables(const std::string& executableDirPath) {
     try {
       std::map<std::string, std::string> environmentVariables;
       environmentVariables["VK_LAYER_PATH"] = std::filesystem::path(executableDirPath).make_preferred().string();
@@ -418,7 +418,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  Configuration Functions::createConfiguration() {
+  Configuration Factory::createConfiguration() {
     try {
       std::string applicationName = "Exqudens Application";
       unsigned int applicationVersionMajor = 1;
@@ -461,7 +461,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  Logger Functions::createLogger() {
+  Logger Factory::createLogger() {
     try {
       return createLogger(std::cout);
     } catch (...) {
@@ -469,7 +469,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  Logger Functions::createLogger(std::ostream& stream) {
+  Logger Factory::createLogger(std::ostream& stream) {
     try {
       std::function < void(
           VkDebugUtilsMessageSeverityFlagBitsEXT,
@@ -527,7 +527,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  Logger Functions::createLogger(
+  Logger Factory::createLogger(
       const std::function<void(
           VkDebugUtilsMessageSeverityFlagBitsEXT,
           VkDebugUtilsMessageTypeFlagsEXT,
@@ -541,7 +541,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkInstance Functions::createInstance(Configuration& configuration, Logger& logger) {
+  VkInstance Factory::createInstance(Configuration& configuration, Logger& logger) {
     try {
       VkInstance instance = nullptr;
 
@@ -585,7 +585,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkDebugUtilsMessengerEXT Functions::createDebugUtilsMessenger(VkInstance& instance, Logger& logger) {
+  VkDebugUtilsMessengerEXT Factory::createDebugUtilsMessenger(VkInstance& instance, Logger& logger) {
     try {
       VkDebugUtilsMessengerEXT debugUtilsMessenger = nullptr;
 
@@ -611,7 +611,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkSurfaceKHR Functions::createSurface(VkInstance& instance) {
+  VkSurfaceKHR Factory::createSurface(VkInstance& instance) {
     try {
       VkSurfaceKHR surface = nullptr;
 
@@ -631,7 +631,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkPhysicalDevice Functions::createPhysicalDevice(
+  VkPhysicalDevice Factory::createPhysicalDevice(
       VkInstance& instance,
       Configuration& configuration,
       VkSurfaceKHR& surface
@@ -677,7 +677,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkDevice Functions::createDevice(
+  VkDevice Factory::createDevice(
       VkPhysicalDevice& physicalDevice,
       Configuration& configuration,
       VkSurfaceKHR& surface
@@ -748,7 +748,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkQueue Functions::createComputeQueue(
+  VkQueue Factory::createComputeQueue(
       VkPhysicalDevice& physicalDevice,
       Configuration& configuration,
       VkSurfaceKHR& surface,
@@ -778,7 +778,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkQueue Functions::createTransferQueue(
+  VkQueue Factory::createTransferQueue(
       VkPhysicalDevice& physicalDevice,
       Configuration& configuration,
       VkSurfaceKHR& surface,
@@ -808,7 +808,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkQueue Functions::createGraphicsQueue(
+  VkQueue Factory::createGraphicsQueue(
       VkPhysicalDevice& physicalDevice,
       Configuration& configuration,
       VkSurfaceKHR& surface,
@@ -838,7 +838,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkQueue Functions::createPresentQueue(
+  VkQueue Factory::createPresentQueue(
       VkPhysicalDevice& physicalDevice,
       Configuration& configuration,
       VkSurfaceKHR& surface,
@@ -868,7 +868,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkSwapchainKHR Functions::createSwapChain(
+  VkSwapchainKHR Factory::createSwapChain(
       VkPhysicalDevice& physicalDevice,
       Configuration& configuration,
       VkSurfaceKHR& surface,
@@ -936,7 +936,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  std::vector<VkImage> Functions::createSwapChainImages(
+  std::vector<VkImage> Factory::createSwapChainImages(
       VkPhysicalDevice& physicalDevice,
       VkSurfaceKHR& surface,
       VkDevice& device,
@@ -959,7 +959,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkImageView Functions::createImageView(VkDevice& device, VkImage& image, VkFormat& format) {
+  VkImageView Factory::createImageView(VkDevice& device, VkImage& image, VkFormat& format) {
     try {
       VkImageViewCreateInfo viewInfo{};
       viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -984,7 +984,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkRenderPass Functions::createRenderPass(VkDevice& device, VkFormat& format) {
+  VkRenderPass Factory::createRenderPass(VkDevice& device, VkFormat& format) {
     try {
       VkRenderPass renderPass = nullptr;
 
@@ -1034,7 +1034,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkDescriptorSetLayout Functions::createDescriptorSetLayout(VkDevice& device) {
+  VkDescriptorSetLayout Factory::createDescriptorSetLayout(VkDevice& device) {
     try {
       VkDescriptorSetLayout descriptorSetLayout = nullptr;
 
@@ -1069,7 +1069,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  Shader Functions::createShader(
+  Shader Factory::createShader(
       VkDevice& device,
       const std::string& path
   ) {
@@ -1116,7 +1116,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  Pipeline Functions::createGraphicsPipeline(
+  Pipeline Factory::createGraphicsPipeline(
       VkDevice& device,
       VkExtent2D& extent,
       VkDescriptorSetLayout& descriptorSetLayout,
@@ -1284,7 +1284,7 @@ namespace exqudens::vulkan {
 
   // destroy
 
-  void Functions::destroyPipeline(Pipeline& pipeline, VkDevice& device) {
+  void Factory::destroyPipeline(Pipeline& pipeline, VkDevice& device) {
     try {
       if (pipeline.value != nullptr) {
         vkDestroyPipeline(device, pipeline.value, nullptr);
@@ -1299,7 +1299,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  void Functions::destroyShader(Shader& shader, VkDevice& device) {
+  void Factory::destroyShader(Shader& shader, VkDevice& device) {
     try {
       if (shader.shaderModule != nullptr) {
         vkDestroyShaderModule(device, shader.shaderModule, nullptr);
@@ -1311,7 +1311,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  void Functions::destroyDescriptorSetLayout(VkDescriptorSetLayout& descriptorSetLayout, VkDevice& device) {
+  void Factory::destroyDescriptorSetLayout(VkDescriptorSetLayout& descriptorSetLayout, VkDevice& device) {
     try {
       if (descriptorSetLayout != nullptr) {
         vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
@@ -1322,7 +1322,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  void Functions::destroyRenderPass(VkRenderPass& renderPass, VkDevice& device) {
+  void Factory::destroyRenderPass(VkRenderPass& renderPass, VkDevice& device) {
     try {
       if (renderPass != nullptr) {
         vkDestroyRenderPass(device, renderPass, nullptr);
@@ -1333,7 +1333,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  void Functions::destroyImageView(VkImageView& imageView, VkDevice& device) {
+  void Factory::destroyImageView(VkImageView& imageView, VkDevice& device) {
     try {
       if (imageView != nullptr) {
         vkDestroyImageView(device, imageView, nullptr);
@@ -1343,7 +1343,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  void Functions::destroySwapChain(VkSwapchainKHR& swapChain, VkDevice& device) {
+  void Factory::destroySwapChain(VkSwapchainKHR& swapChain, VkDevice& device) {
     try {
       if (swapChain != nullptr) {
         vkDestroySwapchainKHR(device, swapChain, nullptr);
@@ -1354,7 +1354,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  void Functions::destroyDevice(VkDevice& device) {
+  void Factory::destroyDevice(VkDevice& device) {
     try {
       if (device != nullptr) {
         vkDestroyDevice(device, nullptr);
@@ -1365,7 +1365,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  void Functions::destroyPhysicalDevice(VkPhysicalDevice& physicalDevice) {
+  void Factory::destroyPhysicalDevice(VkPhysicalDevice& physicalDevice) {
     try {
       physicalDevice = nullptr;
     } catch (...) {
@@ -1373,7 +1373,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  void Functions::destroyDebugUtilsMessenger(VkDebugUtilsMessengerEXT& debugUtilsMessenger, VkInstance& instance) {
+  void Factory::destroyDebugUtilsMessenger(VkDebugUtilsMessengerEXT& debugUtilsMessenger, VkInstance& instance) {
     try {
       if (debugUtilsMessenger != nullptr) {
         auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
@@ -1385,7 +1385,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  void Functions::destroyInstance(VkInstance& instance) {
+  void Factory::destroyInstance(VkInstance& instance) {
     try {
       if (instance != nullptr) {
         vkDestroyInstance(instance, nullptr);
@@ -1396,6 +1396,6 @@ namespace exqudens::vulkan {
     }
   }
 
-  Functions::~Functions() = default;
+  Factory::~Factory() = default;
 
 }

@@ -21,23 +21,23 @@
 
 namespace exqudens::vulkan {
 
-  class EXQUDENS_VULKAN_EXPORT Functions {
+  class EXQUDENS_VULKAN_EXPORT Factory {
 
     public:
 
       std::function<VkSurfaceKHR(VkInstance&)> createSurfaceFunction;
 
-      explicit Functions(
+      explicit Factory(
           std::function<VkSurfaceKHR(VkInstance&)> createSurfaceFunction
       );
-      Functions();
-      Functions(const Functions& object);
-      Functions(Functions&& object) noexcept;
+      Factory();
+      Factory(const Factory& object);
+      Factory(Factory&& object) noexcept;
 
-      Functions& operator=(const Functions& object);
-      Functions& operator=(Functions&& object) noexcept;
+      Factory& operator=(const Factory& object);
+      Factory& operator=(Factory&& object) noexcept;
 
-      friend void swap(Functions& first, Functions& second);
+      friend void swap(Factory& first, Factory& second);
 
       // utility
 
@@ -201,7 +201,7 @@ namespace exqudens::vulkan {
 
       virtual void destroyInstance(VkInstance& instance);
 
-      virtual ~Functions();
+      virtual ~Factory();
 
   };
 

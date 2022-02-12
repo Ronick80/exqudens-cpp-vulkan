@@ -12,7 +12,7 @@
 #include "exqudens/TestMacros.hpp"
 #include "exqudens/TestConfiguration.hpp"
 #include "exqudens/TestUtils.hpp"
-#include "exqudens/vulkan/utility/Functions.hpp"
+#include "exqudens/vulkan/utility/Factory.hpp"
 
 namespace exqudens::vulkan {
 
@@ -20,7 +20,7 @@ namespace exqudens::vulkan {
 
     protected:
 
-      class Environment {
+      class Environment : public Factory {
 
         public:
 
