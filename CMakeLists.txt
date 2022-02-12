@@ -125,7 +125,6 @@ add_library("${PROJECT_NAME}"
     "src/main/cpp/exqudens/vulkan/utility/Logger.hpp"
     "src/main/cpp/exqudens/vulkan/utility/Logger.cpp"
 
-    "src/main/cpp/exqudens/vulkan/model/ShaderType.hpp"
     "src/main/cpp/exqudens/vulkan/model/Configuration.hpp"
     "src/main/cpp/exqudens/vulkan/model/Configuration.cpp"
     "src/main/cpp/exqudens/vulkan/model/QueueFamilyIndices.hpp"

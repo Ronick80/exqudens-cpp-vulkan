@@ -3,7 +3,6 @@
 #include <vulkan/vulkan.h>
 
 #include "exqudens/vulkan/Export.hpp"
-#include "exqudens/vulkan/model/ShaderType.hpp"
 
 namespace exqudens::vulkan {
 
@@ -11,12 +10,10 @@ namespace exqudens::vulkan {
 
     public:
 
-      ShaderType type = ShaderType::NONE;
       VkShaderModule shaderModule = nullptr;
       VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo = {};
 
       Shader(
-          ShaderType type,
           VkShaderModule shaderModule,
           VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo
       );

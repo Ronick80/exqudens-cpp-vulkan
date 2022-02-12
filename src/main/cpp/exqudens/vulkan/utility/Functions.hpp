@@ -13,7 +13,6 @@
 
 #include "exqudens/vulkan/Export.hpp"
 #include "exqudens/vulkan/utility/Logger.hpp"
-#include "exqudens/vulkan/model/ShaderType.hpp"
 #include "exqudens/vulkan/model/Configuration.hpp"
 #include "exqudens/vulkan/model/QueueFamilyIndices.hpp"
 #include "exqudens/vulkan/model/SwapChainSupportDetails.hpp"
@@ -81,8 +80,6 @@ namespace exqudens::vulkan {
       virtual VkExtent2D chooseSwapExtent(VkSurfaceCapabilitiesKHR& capabilities, const int& width, const int& height);
 
       virtual uint32_t getSwapChainImageCount(SwapChainSupportDetails& swapChainSupport);
-
-      virtual Shader createShader(VkDevice& device, const std::string& path);
 
       // create
 
@@ -172,6 +169,8 @@ namespace exqudens::vulkan {
 
       virtual VkDescriptorSetLayout createDescriptorSetLayout(VkDevice& device);
 
+      virtual Shader createShader(VkDevice& device, const std::string& path);
+
       virtual Pipeline createGraphicsPipeline(
           VkDevice& device,
           VkExtent2D& extent,
@@ -183,6 +182,8 @@ namespace exqudens::vulkan {
       // destroy
 
       virtual void destroyPipeline(Pipeline& pipeline, VkDevice& device);
+
+      virtual void destroyShader(Shader& shader, VkDevice& device);
 
       virtual void destroyDescriptorSetLayout(VkDescriptorSetLayout& descriptorSetLayout, VkDevice& device);
 

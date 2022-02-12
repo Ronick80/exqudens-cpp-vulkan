@@ -14,12 +14,10 @@ namespace exqudens::vulkan {
 
   class TestUiApplication {
 
-    private:
+    public:
 
       std::vector<std::string> arguments = {};
       GLFWwindow* window = nullptr;
-
-    public:
 
       TestUiApplication(const int& argc, char** argv) {
         try {
@@ -44,6 +42,8 @@ namespace exqudens::vulkan {
 
           glfwSetWindowUserPointer(window, this);
           glfwSetFramebufferSizeCallback(window, frameBufferResizeCallback);
+
+          //vulkanEnvironment = new VulkanEnvironment();
 
           while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();

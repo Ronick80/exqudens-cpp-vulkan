@@ -406,62 +406,6 @@ namespace exqudens::vulkan {
     }
   }
 
-  Shader Functions::createShader(
-      VkDevice& device,
-      const std::string& path
-  ) {
-    try {
-      VkShaderModule shaderModule = nullptr;
-
-      const std::vector<char>& code = readFile(path);
-
-      if (code.empty()) {
-        throw std::runtime_error(CALL_INFO() + ": failed to create shader module code is empty!");
-      }
-
-      VkShaderModuleCreateInfo createInfo{};
-      createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-      createInfo.codeSize = code.size();
-      createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
-
-      if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS || shaderModule == nullptr) {
-        throw std::runtime_error(CALL_INFO() + ": failed to create shader module!");
-      }
-
-      VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo{};
-      pipelineShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-
-      ShaderType type = ShaderType::NONE;
-
-      if (path.ends_with(".vert.spv")) {
-        type = ShaderType::VERTEX;
-      } else if (path.ends_with(".frag.spv")) {
-        type = ShaderType::FRAGMENT;
-      }
-
-      if (type == ShaderType::VERTEX) {
-        pipelineShaderStageCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-      } else if (type == ShaderType::FRAGMENT) {
-        pipelineShaderStageCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-      } else {
-        throw std::invalid_argument(CALL_INFO() + ": failed to create shader!");
-      }
-
-      pipelineShaderStageCreateInfo.module = shaderModule;
-      pipelineShaderStageCreateInfo.pName = "main";
-
-      Shader shader;
-
-      shader.type = type;
-      shader.shaderModule = shaderModule;
-      shader.pipelineShaderStageCreateInfo = pipelineShaderStageCreateInfo;
-
-      return shader;
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
-
   // create
 
   std::map<std::string, std::string> Functions::createEnvironmentVariables(const std::string& executableDirPath) {
@@ -1125,6 +1069,53 @@ namespace exqudens::vulkan {
     }
   }
 
+  Shader Functions::createShader(
+      VkDevice& device,
+      const std::string& path
+  ) {
+    try {
+      VkShaderModule shaderModule = nullptr;
+
+      const std::vector<char>& code = readFile(path);
+
+      if (code.empty()) {
+        throw std::runtime_error(CALL_INFO() + ": failed to create shader module code is empty!");
+      }
+
+      VkShaderModuleCreateInfo createInfo{};
+      createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+      createInfo.codeSize = code.size();
+      createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+
+      if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS || shaderModule == nullptr) {
+        throw std::runtime_error(CALL_INFO() + ": failed to create shader module!");
+      }
+
+      VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo{};
+      pipelineShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+
+      if (path.ends_with(".vert.spv")) {
+        pipelineShaderStageCreateInfo.stage = VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
+      } else if (path.ends_with(".frag.spv")) {
+        pipelineShaderStageCreateInfo.stage = VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT;
+      } else {
+        throw std::invalid_argument(CALL_INFO() + ": '" + path + "' failed to create shader!");
+      }
+
+      pipelineShaderStageCreateInfo.module = shaderModule;
+      pipelineShaderStageCreateInfo.pName = "main";
+
+      Shader shader;
+
+      shader.shaderModule = shaderModule;
+      shader.pipelineShaderStageCreateInfo = pipelineShaderStageCreateInfo;
+
+      return shader;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
   Pipeline Functions::createGraphicsPipeline(
       VkDevice& device,
       VkExtent2D& extent,
@@ -1234,9 +1225,9 @@ namespace exqudens::vulkan {
 
       for (const std::string& path : shaderPaths) {
         Shader shader = createShader(device, path);
-        if (shader.type == ShaderType::VERTEX) {
+        if (shader.pipelineShaderStageCreateInfo.stage == VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT) {
           vertexShaders.emplace_back(shader);
-        } else if (shader.type == ShaderType::FRAGMENT) {
+        } else if (shader.pipelineShaderStageCreateInfo.stage == VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT) {
           fragmentShaders.emplace_back(shader);
         }
       }
@@ -1275,11 +1266,11 @@ namespace exqudens::vulkan {
         throw std::runtime_error(CALL_INFO() + ": failed to create graphics pipeline!");
       }
 
-      for (const Shader& shader : vertexShaders) {
-        vkDestroyShaderModule(device, shader.shaderModule, nullptr);
+      for (Shader& shader : vertexShaders) {
+        destroyShader(shader, device);
       }
-      for (const Shader& shader : fragmentShaders) {
-        vkDestroyShaderModule(device, shader.shaderModule, nullptr);
+      for (Shader& shader : fragmentShaders) {
+        destroyShader(shader, device);
       }
 
       Pipeline result;
@@ -1303,6 +1294,18 @@ namespace exqudens::vulkan {
         vkDestroyPipelineLayout(device, pipeline.layout, nullptr);
         pipeline.layout = nullptr;
       }
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  void Functions::destroyShader(Shader& shader, VkDevice& device) {
+    try {
+      if (shader.shaderModule != nullptr) {
+        vkDestroyShaderModule(device, shader.shaderModule, nullptr);
+        shader.shaderModule = nullptr;
+      }
+      shader.pipelineShaderStageCreateInfo = {};
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }

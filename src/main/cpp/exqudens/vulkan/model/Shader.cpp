@@ -5,11 +5,9 @@
 namespace exqudens::vulkan {
 
   Shader::Shader(
-      ShaderType type,
       VkShaderModule shaderModule,
       VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo
   ):
-      type(type),
       shaderModule(shaderModule),
       pipelineShaderStageCreateInfo(pipelineShaderStageCreateInfo)
   {
@@ -18,7 +16,6 @@ namespace exqudens::vulkan {
   Shader::Shader() = default;
 
   Shader::Shader(const Shader& object): Shader(
-      object.type,
       object.shaderModule,
       object.pipelineShaderStageCreateInfo
   ) {
@@ -38,7 +35,6 @@ namespace exqudens::vulkan {
   }
 
   void swap(Shader& first, Shader& second) {
-    std::swap(first.type, second.type);
     std::swap(first.shaderModule, second.shaderModule);
     std::swap(first.pipelineShaderStageCreateInfo, second.pipelineShaderStageCreateInfo);
   }
