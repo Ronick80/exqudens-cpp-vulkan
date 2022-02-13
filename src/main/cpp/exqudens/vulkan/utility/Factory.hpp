@@ -123,7 +123,6 @@ namespace exqudens::vulkan {
           VkDevice& device,
           uint32_t queueIndex
       );
-
       virtual VkQueue createTransferQueue(
           VkPhysicalDevice& physicalDevice,
           Configuration& configuration,
@@ -131,7 +130,6 @@ namespace exqudens::vulkan {
           VkDevice& device,
           uint32_t queueIndex
       );
-
       virtual VkQueue createGraphicsQueue(
           VkPhysicalDevice& physicalDevice,
           Configuration& configuration,
@@ -139,7 +137,6 @@ namespace exqudens::vulkan {
           VkDevice& device,
           uint32_t queueIndex
       );
-
       virtual VkQueue createPresentQueue(
           VkPhysicalDevice& physicalDevice,
           Configuration& configuration,
@@ -196,7 +193,40 @@ namespace exqudens::vulkan {
           const int& height
       );
 
+      virtual VkCommandPool createComputeCommandPool(
+          VkPhysicalDevice& physicalDevice,
+          Configuration& configuration,
+          VkSurfaceKHR& surface,
+          VkDevice& device
+      );
+      virtual VkCommandPool createTransferCommandPool(
+          VkPhysicalDevice& physicalDevice,
+          Configuration& configuration,
+          VkSurfaceKHR& surface,
+          VkDevice& device
+      );
+      virtual VkCommandPool createGraphicsCommandPool(
+          VkPhysicalDevice& physicalDevice,
+          Configuration& configuration,
+          VkSurfaceKHR& surface,
+          VkDevice& device
+      );
+      virtual VkCommandPool createPresentCommandPool(
+          VkPhysicalDevice& physicalDevice,
+          Configuration& configuration,
+          VkSurfaceKHR& surface,
+          VkDevice& device
+      );
+
+      virtual VkCommandBuffer createCommandBuffer(VkDevice& device, VkCommandPool& commandPool);
+      virtual std::vector<VkCommandBuffer> createCommandBuffers(VkDevice& device, VkCommandPool& commandPool, std::size_t size);
+
       // destroy
+
+      virtual void destroyCommandBuffer(VkCommandBuffer& commandBuffer, VkCommandPool& commandPool, VkDevice& device);
+      virtual void destroyCommandBuffers(std::vector<VkCommandBuffer>& commandBuffers, VkCommandPool& commandPool, VkDevice& device);
+
+      virtual void destroyCommandPool(VkCommandPool& commandPool, VkDevice& device);
 
       virtual void destroyFrameBuffer(VkFramebuffer& frameBuffer, VkDevice& device);
       virtual void destroyFrameBuffers(std::vector<VkFramebuffer>& frameBuffers, VkDevice& device);

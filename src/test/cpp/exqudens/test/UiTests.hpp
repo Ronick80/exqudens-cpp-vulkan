@@ -43,6 +43,10 @@ namespace exqudens::vulkan {
           VkDescriptorSetLayout descriptorSetLayout = nullptr;
           Pipeline graphicsPipeline = {};
           std::vector<VkFramebuffer> swapChainFrameBuffers = {};
+          VkCommandPool transferCommandPool = nullptr;
+          VkCommandPool graphicsCommandPool = nullptr;
+          std::vector<VkCommandBuffer> transferCommandBuffers = {};
+          std::vector<VkCommandBuffer> graphicsCommandBuffers = {};
 
           Environment() = default;
 
@@ -93,6 +97,10 @@ namespace exqudens::vulkan {
               descriptorSetLayout = createDescriptorSetLayout(device);
               graphicsPipeline = createGraphicsPipeline(device, swapChain.extent, descriptorSetLayout, {"resources/shader/shader.vert.spv", "resources/shader/shader.frag.spv"}, renderPass);
               swapChainFrameBuffers = createFrameBuffers(device, swapChainImageViews, renderPass, swapChain.width, swapChain.height);
+              transferCommandPool = createTransferCommandPool(physicalDevice, configuration, surface, device);
+              graphicsCommandPool = createGraphicsCommandPool(physicalDevice, configuration, surface, device);
+              transferCommandBuffers = createCommandBuffers(device, transferCommandPool, 1);
+              graphicsCommandBuffers = createCommandBuffers(device, graphicsCommandPool, 1);
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
             }
@@ -116,6 +124,10 @@ namespace exqudens::vulkan {
 
           void destroy() {
             try {
+              destroyCommandBuffers(graphicsCommandBuffers, graphicsCommandPool, device);
+              destroyCommandBuffers(transferCommandBuffers, transferCommandPool, device);
+              destroyCommandPool(graphicsCommandPool, device);
+              destroyCommandPool(transferCommandPool, device);
               destroyFrameBuffers(swapChainFrameBuffers, device);
               destroyPipeline(graphicsPipeline, device);
               destroyDescriptorSetLayout(descriptorSetLayout, device);

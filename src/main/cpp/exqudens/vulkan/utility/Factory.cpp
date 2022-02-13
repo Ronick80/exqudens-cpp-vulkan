@@ -1361,7 +1361,232 @@ namespace exqudens::vulkan {
     }
   }
 
+  VkCommandPool Factory::createComputeCommandPool(
+      VkPhysicalDevice& physicalDevice,
+      Configuration& configuration,
+      VkSurfaceKHR& surface,
+      VkDevice& device
+  ) {
+    try {
+      VkCommandPool commandPool = nullptr;
+
+      QueueFamilyIndices familyIndices = findQueueFamilies(
+          physicalDevice,
+          configuration.computeQueueFamilyRequired,
+          configuration.transferQueueFamilyRequired,
+          configuration.graphicsQueueFamilyRequired,
+          surface
+      );
+
+      VkCommandPoolCreateInfo createInfo = {};
+      createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+      createInfo.queueFamilyIndex = familyIndices.computeFamily.value();
+      createInfo.flags = 0; // Optional
+
+      if (
+          vkCreateCommandPool(device, &createInfo, nullptr, &commandPool) != VK_SUCCESS
+          || commandPool == nullptr
+      ) {
+        throw std::runtime_error(CALL_INFO() + ": failed to create compute command pool!");
+      }
+
+      return commandPool;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  VkCommandPool Factory::createTransferCommandPool(
+      VkPhysicalDevice& physicalDevice,
+      Configuration& configuration,
+      VkSurfaceKHR& surface,
+      VkDevice& device
+  ) {
+    try {
+      VkCommandPool commandPool = nullptr;
+
+      QueueFamilyIndices familyIndices = findQueueFamilies(
+          physicalDevice,
+          configuration.computeQueueFamilyRequired,
+          configuration.transferQueueFamilyRequired,
+          configuration.graphicsQueueFamilyRequired,
+          surface
+      );
+
+      VkCommandPoolCreateInfo createInfo = {};
+      createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+      createInfo.queueFamilyIndex = familyIndices.transferFamily.value();
+      createInfo.flags = 0; // Optional
+
+      if (
+          vkCreateCommandPool(device, &createInfo, nullptr, &commandPool) != VK_SUCCESS
+          || commandPool == nullptr
+          ) {
+        throw std::runtime_error(CALL_INFO() + ": failed to create transfer command pool!");
+      }
+
+      return commandPool;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  VkCommandPool Factory::createGraphicsCommandPool(
+      VkPhysicalDevice& physicalDevice,
+      Configuration& configuration,
+      VkSurfaceKHR& surface,
+      VkDevice& device
+  ) {
+    try {
+      VkCommandPool commandPool = nullptr;
+
+      QueueFamilyIndices familyIndices = findQueueFamilies(
+          physicalDevice,
+          configuration.computeQueueFamilyRequired,
+          configuration.transferQueueFamilyRequired,
+          configuration.graphicsQueueFamilyRequired,
+          surface
+      );
+
+      VkCommandPoolCreateInfo createInfo = {};
+      createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+      createInfo.queueFamilyIndex = familyIndices.graphicsFamily.value();
+      createInfo.flags = 0; // Optional
+
+      if (
+          vkCreateCommandPool(device, &createInfo, nullptr, &commandPool) != VK_SUCCESS
+          || commandPool == nullptr
+          ) {
+        throw std::runtime_error(CALL_INFO() + ": failed to create graphics command pool!");
+      }
+
+      return commandPool;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  VkCommandPool Factory::createPresentCommandPool(
+      VkPhysicalDevice& physicalDevice,
+      Configuration& configuration,
+      VkSurfaceKHR& surface,
+      VkDevice& device
+  ) {
+    try {
+      VkCommandPool commandPool = nullptr;
+
+      QueueFamilyIndices familyIndices = findQueueFamilies(
+          physicalDevice,
+          configuration.computeQueueFamilyRequired,
+          configuration.transferQueueFamilyRequired,
+          configuration.graphicsQueueFamilyRequired,
+          surface
+      );
+
+      VkCommandPoolCreateInfo createInfo = {};
+      createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+      createInfo.queueFamilyIndex = familyIndices.presentFamily.value();
+      createInfo.flags = 0; // Optional
+
+      if (
+          vkCreateCommandPool(device, &createInfo, nullptr, &commandPool) != VK_SUCCESS
+          || commandPool == nullptr
+          ) {
+        throw std::runtime_error(CALL_INFO() + ": failed to create present command pool!");
+      }
+
+      return commandPool;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  VkCommandBuffer Factory::createCommandBuffer(VkDevice& device, VkCommandPool& commandPool) {
+    try {
+      VkCommandBuffer commandBuffer = nullptr;
+
+      std::vector<VkCommandBuffer> commandBuffers;
+      commandBuffers.resize(1);
+
+      VkCommandBufferAllocateInfo allocInfo{};
+      allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+      allocInfo.commandPool = commandPool;
+      allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+      allocInfo.commandBufferCount = (uint32_t) commandBuffers.size();
+
+      if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
+        throw std::runtime_error(CALL_INFO() + ": failed to allocate command buffer!");
+      }
+
+      commandBuffer = commandBuffers[0];
+
+      if (commandBuffer == nullptr) {
+        throw std::runtime_error(CALL_INFO() + ": failed to create command buffer!");
+      }
+
+      return commandBuffer;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  std::vector<VkCommandBuffer> Factory::createCommandBuffers(
+      VkDevice& device,
+      VkCommandPool& commandPool,
+      std::size_t size
+  ) {
+    try {
+      std::vector<VkCommandBuffer> commandBuffers;
+      commandBuffers.resize(1);
+
+      VkCommandBufferAllocateInfo allocInfo{};
+      allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+      allocInfo.commandPool = commandPool;
+      allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+      allocInfo.commandBufferCount = (uint32_t) commandBuffers.size();
+
+      if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
+        throw std::runtime_error(CALL_INFO() + ": failed to allocate command buffers!");
+      }
+
+      return commandBuffers;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
   // destroy
+
+  void Factory::destroyCommandBuffer(VkCommandBuffer& commandBuffer, VkCommandPool& commandPool, VkDevice& device) {
+    try {
+      if (commandBuffer != nullptr) {
+        std::vector<VkCommandBuffer> commandBuffers = {commandBuffer};
+        vkFreeCommandBuffers(device, commandPool, 1, commandBuffers.data());
+        commandBuffer = nullptr;
+      }
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  void Factory::destroyCommandBuffers(std::vector<VkCommandBuffer>& commandBuffers, VkCommandPool& commandPool, VkDevice& device) {
+    try {
+      vkFreeCommandBuffers(device, commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  void Factory::destroyCommandPool(VkCommandPool& commandPool, VkDevice& device) {
+    try {
+      if (commandPool != nullptr) {
+        vkDestroyCommandPool(device, commandPool, nullptr);
+        commandPool = nullptr;
+      }
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
 
   void Factory::destroyFrameBuffer(VkFramebuffer& frameBuffer, VkDevice& device) {
     try {
