@@ -10,11 +10,15 @@ namespace exqudens::vulkan {
 
       VkFormat format = VkFormat::VK_FORMAT_UNDEFINED;
       VkExtent2D extent = {};
+      int width = 0;
+      int height = 0;
       VkSwapchainKHR value = nullptr;
 
       SwapChain(
           VkFormat format,
           VkExtent2D extent,
+          int width,
+          int height,
           VkSwapchainKHR value
       );
       SwapChain();

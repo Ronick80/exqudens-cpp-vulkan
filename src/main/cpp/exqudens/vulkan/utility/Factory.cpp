@@ -933,6 +933,8 @@ namespace exqudens::vulkan {
       SwapChain result;
       result.format = surfaceFormat.format;
       result.extent = extent;
+      result.width = width;
+      result.height = height;
       result.value = swapChain;
       return result;
     } catch (...) {
@@ -1304,7 +1306,83 @@ namespace exqudens::vulkan {
     }
   }
 
+  VkFramebuffer Factory::createFrameBuffer(
+      VkDevice& device,
+      VkImageView& imageView,
+      VkRenderPass& renderPass,
+      const int& width,
+      const int& height
+  ) {
+    try {
+      VkFramebuffer frameBuffer = nullptr;
+
+      std::vector<VkImageView> attachments = {
+          imageView
+      };
+
+      VkFramebufferCreateInfo frameBufferInfo{};
+      frameBufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+      frameBufferInfo.renderPass = renderPass;
+      frameBufferInfo.attachmentCount = 1;
+      frameBufferInfo.pAttachments = attachments.data();
+      frameBufferInfo.width = width;
+      frameBufferInfo.height = height;
+      frameBufferInfo.layers = 1;
+
+      if (
+          vkCreateFramebuffer(device, &frameBufferInfo, nullptr, &frameBuffer) != VK_SUCCESS
+          || frameBuffer == nullptr
+      ) {
+        throw std::runtime_error(CALL_INFO() + ": failed to create frame buffer!");
+      }
+
+      return frameBuffer;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  std::vector<VkFramebuffer> Factory::createFrameBuffers(
+      VkDevice& device,
+      std::vector<VkImageView>& imageViews,
+      VkRenderPass& renderPass,
+      const int& width,
+      const int& height
+  ) {
+    try {
+      std::vector<VkFramebuffer> frameBuffers;
+      frameBuffers.resize(imageViews.size());
+      for (std::size_t i = 0; i < imageViews.size(); i++) {
+        frameBuffers[i] = createFrameBuffer(device, imageViews[i], renderPass, width, height);
+      }
+      return frameBuffers;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
   // destroy
+
+  void Factory::destroyFrameBuffer(VkFramebuffer& frameBuffer, VkDevice& device) {
+    try {
+      if (frameBuffer != nullptr) {
+        vkDestroyFramebuffer(device, frameBuffer, nullptr);
+        frameBuffer = nullptr;
+      }
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  void Factory::destroyFrameBuffers(std::vector<VkFramebuffer>& frameBuffers, VkDevice& device) {
+    try {
+      for (std::size_t i = 0; i < frameBuffers.size(); i++) {
+        destroyFrameBuffer(frameBuffers[i], device);
+      }
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
 
   void Factory::destroyPipeline(Pipeline& pipeline, VkDevice& device) {
     try {

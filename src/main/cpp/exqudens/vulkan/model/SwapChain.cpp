@@ -7,10 +7,14 @@ namespace exqudens::vulkan {
   SwapChain::SwapChain(
       VkFormat format,
       VkExtent2D extent,
+      int width,
+      int height,
       VkSwapchainKHR value
   ):
       format(format),
       extent(extent),
+      width(width),
+      height(height),
       value(value)
   {
   }
@@ -20,6 +24,8 @@ namespace exqudens::vulkan {
   SwapChain::SwapChain(const SwapChain& object): SwapChain(
       object.format,
       object.extent,
+      object.width,
+      object.height,
       object.value
   ) {
   }
@@ -40,6 +46,8 @@ namespace exqudens::vulkan {
   void swap(SwapChain& first, SwapChain& second) {
     std::swap(first.format, second.format);
     std::swap(first.extent, second.extent);
+    std::swap(first.width, second.width);
+    std::swap(first.height, second.height);
     std::swap(first.value, second.value);
   }
 

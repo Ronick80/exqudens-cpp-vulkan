@@ -181,7 +181,25 @@ namespace exqudens::vulkan {
           VkRenderPass& renderPass
       );
 
+      virtual VkFramebuffer createFrameBuffer(
+          VkDevice& device,
+          VkImageView& imageView,
+          VkRenderPass& renderPass,
+          const int& width,
+          const int& height
+      );
+      virtual std::vector<VkFramebuffer> createFrameBuffers(
+          VkDevice& device,
+          std::vector<VkImageView>& imageViews,
+          VkRenderPass& renderPass,
+          const int& width,
+          const int& height
+      );
+
       // destroy
+
+      virtual void destroyFrameBuffer(VkFramebuffer& frameBuffer, VkDevice& device);
+      virtual void destroyFrameBuffers(std::vector<VkFramebuffer>& frameBuffers, VkDevice& device);
 
       virtual void destroyPipeline(Pipeline& pipeline, VkDevice& device);
       virtual void destroyPipeline(VkPipeline& pipeline, VkDevice& device);
