@@ -988,6 +988,25 @@ namespace exqudens::vulkan {
     }
   }
 
+  std::vector<VkImageView> Factory::createImageViews(
+      VkDevice& device,
+      std::vector<VkImage>& images,
+      VkFormat& format
+  ) {
+    try {
+      std::vector<VkImageView> imageViews;
+
+      imageViews.resize(images.size());
+      for (uint32_t i = 0; i < images.size(); i++) {
+        imageViews[i] = createImageView(device, images[i], format);
+      }
+
+      return imageViews;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
   VkRenderPass Factory::createRenderPass(VkDevice& device, VkFormat& format) {
     try {
       VkRenderPass renderPass = nullptr;
@@ -1289,13 +1308,29 @@ namespace exqudens::vulkan {
 
   void Factory::destroyPipeline(Pipeline& pipeline, VkDevice& device) {
     try {
-      if (pipeline.value != nullptr) {
-        vkDestroyPipeline(device, pipeline.value, nullptr);
-        pipeline.value = nullptr;
+      destroyPipeline(pipeline.value, device);
+      destroyPipelineLayout(pipeline.layout, device);
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  void Factory::destroyPipeline(VkPipeline& pipeline, VkDevice& device) {
+    try {
+      if (pipeline != nullptr) {
+        vkDestroyPipeline(device, pipeline, nullptr);
+        pipeline = nullptr;
       }
-      if (pipeline.layout != nullptr) {
-        vkDestroyPipelineLayout(device, pipeline.layout, nullptr);
-        pipeline.layout = nullptr;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  void Factory::destroyPipelineLayout(VkPipelineLayout& pipelineLayout, VkDevice& device) {
+    try {
+      if (pipelineLayout != nullptr) {
+        vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+        pipelineLayout = nullptr;
       }
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
@@ -1346,12 +1381,30 @@ namespace exqudens::vulkan {
     }
   }
 
+  void Factory::destroyImageViews(std::vector<VkImageView>& imageViews, VkDevice& device) {
+    try {
+      for (std::size_t i = 0; i < imageViews.size(); i++) {
+        destroyImageView(imageViews[i], device);
+      }
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
   void Factory::destroySwapChain(SwapChain& swapChain, VkDevice& device) {
     try {
-      if (swapChain.value != nullptr) {
-        vkDestroySwapchainKHR(device, swapChain.value, nullptr);
-        swapChain.value = nullptr;
-        swapChain.extent = {};
+      destroySwapChain(swapChain.value, device);
+      swapChain.extent = {};
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  void Factory::destroySwapChain(VkSwapchainKHR& swapChain, VkDevice& device) {
+    try {
+      if (swapChain != nullptr) {
+        vkDestroySwapchainKHR(device, swapChain, nullptr);
+        swapChain = nullptr;
       }
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));

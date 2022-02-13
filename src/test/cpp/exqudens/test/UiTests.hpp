@@ -37,6 +37,8 @@ namespace exqudens::vulkan {
           VkQueue graphicsQueue = nullptr;
           VkQueue presentQueue = nullptr;
           SwapChain swapChain = {};
+          std::vector<VkImage> swapChainImages = {};
+          std::vector<VkImageView> swapChainImageViews = {};
           VkRenderPass renderPass = nullptr;
           VkDescriptorSetLayout descriptorSetLayout = nullptr;
           Pipeline graphicsPipeline = {};
@@ -84,6 +86,8 @@ namespace exqudens::vulkan {
               graphicsQueue = createGraphicsQueue(physicalDevice, configuration, surface, device, 0);
               presentQueue = createPresentQueue(physicalDevice, configuration, surface, device, 0);
               swapChain = createSwapChain(physicalDevice, configuration, surface, device, 800, 600);
+              swapChainImages = createSwapChainImages(physicalDevice, surface, device, swapChain.value);
+              swapChainImageViews = createImageViews(device, swapChainImages, swapChain.format);
               renderPass = createRenderPass(device, swapChain.format);
               descriptorSetLayout = createDescriptorSetLayout(device);
               graphicsPipeline = createGraphicsPipeline(device, swapChain.extent, descriptorSetLayout, {"resources/shader/shader.vert.spv", "resources/shader/shader.frag.spv"}, renderPass);
@@ -113,6 +117,7 @@ namespace exqudens::vulkan {
               destroyPipeline(graphicsPipeline, device);
               destroyDescriptorSetLayout(descriptorSetLayout, device);
               destroyRenderPass(renderPass, device);
+              destroyImageViews(swapChainImageViews, device);
               destroySwapChain(swapChain, device);
               destroyDevice(device);
               destroyPhysicalDevice(physicalDevice);
