@@ -1537,9 +1537,9 @@ namespace exqudens::vulkan {
   ) {
     try {
       std::vector<VkCommandBuffer> commandBuffers;
-      commandBuffers.resize(1);
+      commandBuffers.resize(size);
 
-      VkCommandBufferAllocateInfo allocInfo{};
+      VkCommandBufferAllocateInfo allocInfo = {};
       allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
       allocInfo.commandPool = commandPool;
       allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;

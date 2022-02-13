@@ -99,8 +99,8 @@ namespace exqudens::vulkan {
               swapChainFrameBuffers = createFrameBuffers(device, swapChainImageViews, renderPass, swapChain.width, swapChain.height);
               transferCommandPool = createTransferCommandPool(physicalDevice, configuration, surface, device);
               graphicsCommandPool = createGraphicsCommandPool(physicalDevice, configuration, surface, device);
-              transferCommandBuffers = createCommandBuffers(device, transferCommandPool, 1);
-              graphicsCommandBuffers = createCommandBuffers(device, graphicsCommandPool, 1);
+              transferCommandBuffers = createCommandBuffers(device, transferCommandPool, swapChainImageViews.size());
+              graphicsCommandBuffers = createCommandBuffers(device, graphicsCommandPool, swapChainImageViews.size());
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
             }
@@ -116,7 +116,7 @@ namespace exqudens::vulkan {
 
           void waitIdle() {
             try {
-              //
+              vkDeviceWaitIdle(device);
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
             }
@@ -174,6 +174,7 @@ namespace exqudens::vulkan {
 
               glfwInit();
               glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+              glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
               window = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
 
