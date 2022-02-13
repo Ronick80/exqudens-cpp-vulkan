@@ -36,7 +36,10 @@ namespace exqudens::vulkan {
           VkQueue transferQueue = nullptr;
           VkQueue graphicsQueue = nullptr;
           VkQueue presentQueue = nullptr;
-          VkSwapchainKHR swapChain = nullptr;
+          SwapChain swapChain = {};
+          VkRenderPass renderPass = nullptr;
+          VkDescriptorSetLayout descriptorSetLayout = nullptr;
+          Pipeline graphicsPipeline = {};
 
           Environment() = default;
 
@@ -81,6 +84,9 @@ namespace exqudens::vulkan {
               graphicsQueue = createGraphicsQueue(physicalDevice, configuration, surface, device, 0);
               presentQueue = createPresentQueue(physicalDevice, configuration, surface, device, 0);
               swapChain = createSwapChain(physicalDevice, configuration, surface, device, 800, 600);
+              renderPass = createRenderPass(device, swapChain.format);
+              descriptorSetLayout = createDescriptorSetLayout(device);
+              graphicsPipeline = createGraphicsPipeline(device, swapChain.extent, descriptorSetLayout, {"resources/shader/shader.vert.spv", "resources/shader/shader.frag.spv"}, renderPass);
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
             }
@@ -104,6 +110,9 @@ namespace exqudens::vulkan {
 
           void destroy() {
             try {
+              destroyPipeline(graphicsPipeline, device);
+              destroyDescriptorSetLayout(descriptorSetLayout, device);
+              destroyRenderPass(renderPass, device);
               destroySwapChain(swapChain, device);
               destroyDevice(device);
               destroyPhysicalDevice(physicalDevice);

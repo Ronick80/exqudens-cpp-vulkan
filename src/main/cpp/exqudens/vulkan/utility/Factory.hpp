@@ -16,6 +16,7 @@
 #include "exqudens/vulkan/model/Configuration.hpp"
 #include "exqudens/vulkan/model/QueueFamilyIndices.hpp"
 #include "exqudens/vulkan/model/SwapChainSupportDetails.hpp"
+#include "exqudens/vulkan/model/SwapChain.hpp"
 #include "exqudens/vulkan/model/Shader.hpp"
 #include "exqudens/vulkan/model/Pipeline.hpp"
 
@@ -147,7 +148,7 @@ namespace exqudens::vulkan {
           uint32_t queueIndex
       );
 
-      virtual VkSwapchainKHR createSwapChain(
+      virtual SwapChain createSwapChain(
           VkPhysicalDevice& physicalDevice,
           Configuration& configuration,
           VkSurfaceKHR& surface,
@@ -191,7 +192,7 @@ namespace exqudens::vulkan {
 
       virtual void destroyImageView(VkImageView& imageView, VkDevice& device);
 
-      virtual void destroySwapChain(VkSwapchainKHR& swapChain, VkDevice& device);
+      virtual void destroySwapChain(SwapChain& swapChain, VkDevice& device);
 
       virtual void destroyDevice(VkDevice& device);
 

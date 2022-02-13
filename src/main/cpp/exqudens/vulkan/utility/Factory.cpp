@@ -483,26 +483,26 @@ namespace exqudens::vulkan {
         //std::string function = std::string("(") + __FUNCTION__ + ")";
 
         std::string level;
-        if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT == messageSeverity) {
+        if (VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT == messageSeverity) {
           level = "[VERBOSE]";
-        } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT == messageSeverity) {
+        } else if (VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT == messageSeverity) {
           level = "[INFO]";
-        } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT == messageSeverity) {
+        } else if (VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT == messageSeverity) {
           level = "[WARNING]";
-        } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT == messageSeverity) {
+        } else if (VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT == messageSeverity) {
           level = "[ERROR]";
-        } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT == messageSeverity) {
+        } else if (VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT == messageSeverity) {
           level = "[MAX]";
         }
 
         std::string type;
-        if (VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT == messageType) {
+        if (VkDebugUtilsMessageTypeFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT == messageType) {
           type = "(GENERAL)";
-        } else if (VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT == messageType) {
+        } else if (VkDebugUtilsMessageTypeFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT == messageType) {
           type = "(VALIDATION)";
-        } else if (VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT == messageType) {
+        } else if (VkDebugUtilsMessageTypeFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT == messageType) {
           type = "(PERFORMANCE)";
-        } else if (VK_DEBUG_UTILS_MESSAGE_TYPE_FLAG_BITS_MAX_ENUM_EXT == messageType) {
+        } else if (VkDebugUtilsMessageTypeFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_TYPE_FLAG_BITS_MAX_ENUM_EXT == messageType) {
           type = "(MAX)";
         }
 
@@ -868,7 +868,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkSwapchainKHR Factory::createSwapChain(
+  SwapChain Factory::createSwapChain(
       VkPhysicalDevice& physicalDevice,
       Configuration& configuration,
       VkSurfaceKHR& surface,
@@ -930,7 +930,11 @@ namespace exqudens::vulkan {
         throw std::runtime_error(CALL_INFO() + ": failed to create swap chain!");
       }
 
-      return swapChain;
+      SwapChain result;
+      result.format = surfaceFormat.format;
+      result.extent = extent;
+      result.value = swapChain;
+      return result;
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -1091,7 +1095,7 @@ namespace exqudens::vulkan {
         throw std::runtime_error(CALL_INFO() + ": failed to create shader module!");
       }
 
-      VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo{};
+      VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo = {};
       pipelineShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 
       if (path.ends_with(".vert.spv")) {
@@ -1233,7 +1237,6 @@ namespace exqudens::vulkan {
       }
 
       std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
-      shaderStages.resize(vertexShaders.size() + fragmentShaders.size());
       for (const Shader& shader : vertexShaders) {
         shaderStages.emplace_back(shader.pipelineShaderStageCreateInfo);
       }
@@ -1343,11 +1346,12 @@ namespace exqudens::vulkan {
     }
   }
 
-  void Factory::destroySwapChain(VkSwapchainKHR& swapChain, VkDevice& device) {
+  void Factory::destroySwapChain(SwapChain& swapChain, VkDevice& device) {
     try {
-      if (swapChain != nullptr) {
-        vkDestroySwapchainKHR(device, swapChain, nullptr);
-        swapChain = nullptr;
+      if (swapChain.value != nullptr) {
+        vkDestroySwapchainKHR(device, swapChain.value, nullptr);
+        swapChain.value = nullptr;
+        swapChain.extent = {};
       }
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
