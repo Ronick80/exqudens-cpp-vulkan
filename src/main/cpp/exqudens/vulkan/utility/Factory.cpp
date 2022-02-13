@@ -1059,6 +1059,35 @@ namespace exqudens::vulkan {
     }
   }
 
+  VkDescriptorPool Factory::createDescriptorPool(VkDevice& device, std::size_t size) {
+    try {
+      VkDescriptorPool descriptorPool = nullptr;
+
+      std::array<VkDescriptorPoolSize, 2> poolSizes{};
+
+      poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+      poolSizes[0].descriptorCount = static_cast<uint32_t>(size);
+
+      poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+      poolSizes[1].descriptorCount = static_cast<uint32_t>(size);
+
+      VkDescriptorPoolCreateInfo poolInfo{};
+      poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+      poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+      poolInfo.pPoolSizes = poolSizes.data();
+      poolInfo.maxSets = static_cast<uint32_t>(size);
+      poolInfo.flags = 0; // Optional
+
+      if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
+        throw std::runtime_error(CALL_INFO() + ": failed to create descriptor pool!");
+      }
+
+      return descriptorPool;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
   VkDescriptorSetLayout Factory::createDescriptorSetLayout(VkDevice& device) {
     try {
       VkDescriptorSetLayout descriptorSetLayout = nullptr;
@@ -1657,6 +1686,17 @@ namespace exqudens::vulkan {
       if (descriptorSetLayout != nullptr) {
         vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
         descriptorSetLayout = nullptr;
+      }
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  void Factory::destroyDescriptorPool(VkDescriptorPool& descriptorPool, VkDevice& device) {
+    try {
+      if (descriptorPool != nullptr) {
+        vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+        descriptorPool = nullptr;
       }
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));

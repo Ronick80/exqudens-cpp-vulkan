@@ -166,6 +166,8 @@ namespace exqudens::vulkan {
 
       virtual VkRenderPass createRenderPass(VkDevice& device, VkFormat& format);
 
+      virtual VkDescriptorPool createDescriptorPool(VkDevice& device, std::size_t size);
+
       virtual VkDescriptorSetLayout createDescriptorSetLayout(VkDevice& device);
 
       virtual Shader createShader(VkDevice& device, const std::string& path);
@@ -239,6 +241,8 @@ namespace exqudens::vulkan {
       virtual void destroyShader(Shader& shader, VkDevice& device);
 
       virtual void destroyDescriptorSetLayout(VkDescriptorSetLayout& descriptorSetLayout, VkDevice& device);
+
+      virtual void destroyDescriptorPool(VkDescriptorPool& descriptorPool, VkDevice& device);
 
       virtual void destroyRenderPass(VkRenderPass& renderPass, VkDevice& device);
 
