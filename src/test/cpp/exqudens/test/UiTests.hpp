@@ -92,7 +92,7 @@ namespace exqudens::vulkan {
               graphicsQueue = createGraphicsQueue(physicalDevice, configuration, surface, device, 0);
               presentQueue = createPresentQueue(physicalDevice, configuration, surface, device, 0);
               swapChain = createSwapChain(physicalDevice, configuration, surface, device, 800, 600);
-              swapChainImages = createSwapChainImages(physicalDevice, surface, device, swapChain.value);
+              swapChainImages = createSwapChainImages(device, swapChain.value);
               swapChainImageViews = createImageViews(device, swapChainImages, swapChain.format);
               renderPass = createRenderPass(device, swapChain.format);
               descriptorPool = createDescriptorPool(device, swapChainImageViews.size());

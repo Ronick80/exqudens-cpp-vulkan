@@ -392,20 +392,6 @@ namespace exqudens::vulkan {
     }
   }
 
-  uint32_t Factory::getSwapChainImageCount(SwapChainSupportDetails& swapChainSupport) {
-    try {
-      uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
-
-      if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
-        imageCount = swapChainSupport.capabilities.maxImageCount;
-      }
-
-      return imageCount;
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
-
   // create
 
   std::map<std::string, std::string> Factory::createEnvironmentVariables(const std::string& executableDirPath) {
@@ -889,7 +875,11 @@ namespace exqudens::vulkan {
       VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
       VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities, width, height);
 
-      uint32_t imageCount = getSwapChainImageCount(swapChainSupport);
+      uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+
+      if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
+        imageCount = swapChainSupport.capabilities.maxImageCount;
+      }
 
       VkSwapchainCreateInfoKHR createInfo{};
       createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -943,18 +933,11 @@ namespace exqudens::vulkan {
   }
 
   std::vector<VkImage> Factory::createSwapChainImages(
-      VkPhysicalDevice& physicalDevice,
-      VkSurfaceKHR& surface,
       VkDevice& device,
       VkSwapchainKHR& swapChain
   ) {
     try {
-      if (surface == nullptr) {
-        throw std::runtime_error(CALL_INFO() + ": surface is null failed to create swap chain images!");
-      }
-
-      SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice, surface);
-      uint32_t imageCount = getSwapChainImageCount(swapChainSupport);
+      uint32_t imageCount = 0;
       std::vector<VkImage> swapChainImages;
       vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
       swapChainImages.resize(imageCount);

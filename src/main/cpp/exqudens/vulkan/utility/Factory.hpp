@@ -80,8 +80,6 @@ namespace exqudens::vulkan {
 
       virtual VkExtent2D chooseSwapExtent(VkSurfaceCapabilitiesKHR& capabilities, const int& width, const int& height);
 
-      virtual uint32_t getSwapChainImageCount(SwapChainSupportDetails& swapChainSupport);
-
       // create
 
       virtual std::map<std::string, std::string> createEnvironmentVariables(const std::string& executableDirPath);
@@ -155,8 +153,6 @@ namespace exqudens::vulkan {
       );
 
       virtual std::vector<VkImage> createSwapChainImages(
-          VkPhysicalDevice& physicalDevice,
-          VkSurfaceKHR& surface,
           VkDevice& device,
           VkSwapchainKHR& swapChain
       );
