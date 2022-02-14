@@ -1,6 +1,6 @@
 #pragma once
 
-#include <array>
+#include <vector>
 
 #include <glm/glm.hpp>
 #include <vulkan/vulkan.h>
@@ -15,7 +15,7 @@ namespace exqudens::vulkan {
 
       static VkVertexInputBindingDescription getBindingDescription();
 
-      static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions();
+      static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
 
       glm::vec2 pos = {};
       glm::vec3 color = {};

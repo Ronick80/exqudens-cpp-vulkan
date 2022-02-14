@@ -6,7 +6,7 @@
 namespace exqudens::vulkan {
 
   VkVertexInputBindingDescription Vertex::getBindingDescription() {
-    VkVertexInputBindingDescription bindingDescription{};
+    VkVertexInputBindingDescription bindingDescription = {};
 
     bindingDescription.binding = 0;
     bindingDescription.stride = sizeof(Vertex);
@@ -15,8 +15,9 @@ namespace exqudens::vulkan {
     return bindingDescription;
   }
 
-  std::array<VkVertexInputAttributeDescription, 3> Vertex::getAttributeDescriptions() {
-    std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
+  std::vector<VkVertexInputAttributeDescription> Vertex::getAttributeDescriptions() {
+    std::vector<VkVertexInputAttributeDescription> attributeDescriptions = {};
+    attributeDescriptions.resize(3);
 
     attributeDescriptions[0].binding = 0;
     attributeDescriptions[0].location = 0;

@@ -162,8 +162,6 @@ namespace exqudens::vulkan {
 
       virtual VkRenderPass createRenderPass(VkDevice& device, VkFormat& format);
 
-      virtual VkDescriptorPool createDescriptorPool(VkDevice& device, std::size_t size);
-
       virtual VkDescriptorSetLayout createDescriptorSetLayout(VkDevice& device);
 
       virtual Shader createShader(VkDevice& device, const std::string& path);
@@ -171,9 +169,18 @@ namespace exqudens::vulkan {
       virtual Pipeline createGraphicsPipeline(
           VkDevice& device,
           VkExtent2D& extent,
-          VkDescriptorSetLayout& descriptorSetLayout,
           const std::vector<std::string>& shaderPaths,
           VkRenderPass& renderPass
+      );
+      virtual Pipeline createGraphicsPipeline(
+          VkDevice& device,
+          VkExtent2D& extent,
+          const std::vector<std::string>& shaderPaths,
+          VkRenderPass& renderPass,
+          VkFrontFace frontFace,
+          VkDescriptorSetLayout& descriptorSetLayout,
+          std::optional<VkVertexInputBindingDescription> bindingDescription,
+          std::vector<VkVertexInputAttributeDescription> attributeDescriptions
       );
 
       virtual VkFramebuffer createFrameBuffer(
@@ -190,6 +197,8 @@ namespace exqudens::vulkan {
           const int& width,
           const int& height
       );
+
+      virtual VkDescriptorPool createDescriptorPool(VkDevice& device, std::size_t size);
 
       virtual VkCommandPool createComputeCommandPool(
           VkPhysicalDevice& physicalDevice,
@@ -226,6 +235,8 @@ namespace exqudens::vulkan {
 
       virtual void destroyCommandPool(VkCommandPool& commandPool, VkDevice& device);
 
+      virtual void destroyDescriptorPool(VkDescriptorPool& descriptorPool, VkDevice& device);
+
       virtual void destroyFrameBuffer(VkFramebuffer& frameBuffer, VkDevice& device);
       virtual void destroyFrameBuffers(std::vector<VkFramebuffer>& frameBuffers, VkDevice& device);
 
@@ -237,8 +248,6 @@ namespace exqudens::vulkan {
       virtual void destroyShader(Shader& shader, VkDevice& device);
 
       virtual void destroyDescriptorSetLayout(VkDescriptorSetLayout& descriptorSetLayout, VkDevice& device);
-
-      virtual void destroyDescriptorPool(VkDescriptorPool& descriptorPool, VkDevice& device);
 
       virtual void destroyRenderPass(VkRenderPass& renderPass, VkDevice& device);
 

@@ -1,6 +1,5 @@
 #include "exqudens/vulkan/utility/Factory.hpp"
 #include "exqudens/vulkan/utility/Macros.hpp"
-#include "exqudens/vulkan/model/Vertex.hpp"
 
 #include <array>
 #include <set>
@@ -950,11 +949,15 @@ namespace exqudens::vulkan {
 
   VkImageView Factory::createImageView(VkDevice& device, VkImage& image, VkFormat& format) {
     try {
-      VkImageViewCreateInfo viewInfo{};
+      VkImageViewCreateInfo viewInfo = {};
       viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
       viewInfo.image = image;
       viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
       viewInfo.format = format;
+      //viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+      //viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+      //viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+      //viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
       viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
       viewInfo.subresourceRange.baseMipLevel = 0;
       viewInfo.subresourceRange.levelCount = 1;
@@ -996,7 +999,7 @@ namespace exqudens::vulkan {
     try {
       VkRenderPass renderPass = nullptr;
 
-      VkAttachmentDescription colorAttachment{};
+      VkAttachmentDescription colorAttachment = {};
       colorAttachment.format = format;
       colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
       colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -1006,16 +1009,16 @@ namespace exqudens::vulkan {
       colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
       colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-      VkAttachmentReference colorAttachmentRef{};
+      VkAttachmentReference colorAttachmentRef = {};
       colorAttachmentRef.attachment = 0;
       colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-      VkSubpassDescription subPass{};
+      VkSubpassDescription subPass = {};
       subPass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
       subPass.colorAttachmentCount = 1;
       subPass.pColorAttachments = &colorAttachmentRef;
 
-      VkSubpassDependency dependency{};
+      VkSubpassDependency dependency = {};
       dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
       dependency.dstSubpass = 0;
       dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -1023,7 +1026,7 @@ namespace exqudens::vulkan {
       dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
       dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-      VkRenderPassCreateInfo renderPassInfo{};
+      VkRenderPassCreateInfo renderPassInfo = {};
       renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
       renderPassInfo.attachmentCount = 1;
       renderPassInfo.pAttachments = &colorAttachment;
@@ -1037,35 +1040,6 @@ namespace exqudens::vulkan {
       }
 
       return renderPass;
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
-
-  VkDescriptorPool Factory::createDescriptorPool(VkDevice& device, std::size_t size) {
-    try {
-      VkDescriptorPool descriptorPool = nullptr;
-
-      std::array<VkDescriptorPoolSize, 2> poolSizes{};
-
-      poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-      poolSizes[0].descriptorCount = static_cast<uint32_t>(size);
-
-      poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-      poolSizes[1].descriptorCount = static_cast<uint32_t>(size);
-
-      VkDescriptorPoolCreateInfo poolInfo{};
-      poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-      poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-      poolInfo.pPoolSizes = poolSizes.data();
-      poolInfo.maxSets = static_cast<uint32_t>(size);
-      poolInfo.flags = 0; // Optional
-
-      if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
-        throw std::runtime_error(CALL_INFO() + ": failed to create descriptor pool!");
-      }
-
-      return descriptorPool;
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -1156,30 +1130,56 @@ namespace exqudens::vulkan {
   Pipeline Factory::createGraphicsPipeline(
       VkDevice& device,
       VkExtent2D& extent,
-      VkDescriptorSetLayout& descriptorSetLayout,
       const std::vector<std::string>& shaderPaths,
       VkRenderPass& renderPass
   ) {
     try {
+      VkFrontFace frontFace = VkFrontFace::VK_FRONT_FACE_CLOCKWISE;
+      VkDescriptorSetLayout descriptorSetLayout = nullptr;
+      std::optional<VkVertexInputBindingDescription> bindingDescription = {}; //Vertex::getBindingDescription();
+      std::vector<VkVertexInputAttributeDescription> attributeDescriptions = {}; //Vertex::getAttributeDescriptions();
+      return createGraphicsPipeline(
+          device,
+          extent,
+          shaderPaths,
+          renderPass,
+          frontFace,
+          descriptorSetLayout,
+          bindingDescription,
+          attributeDescriptions
+      );
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  Pipeline Factory::createGraphicsPipeline(
+      VkDevice& device,
+      VkExtent2D& extent,
+      const std::vector<std::string>& shaderPaths,
+      VkRenderPass& renderPass,
+      VkFrontFace frontFace,
+      VkDescriptorSetLayout& descriptorSetLayout,
+      std::optional<VkVertexInputBindingDescription> bindingDescription,
+      std::vector<VkVertexInputAttributeDescription> attributeDescriptions
+  ) {
+    try {
       VkPipelineLayout pipelineLayout = nullptr;
 
-      VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+      VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
       vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-      auto bindingDescription = Vertex::getBindingDescription();
-      auto attributeDescriptions = Vertex::getAttributeDescriptions();
-
-      vertexInputInfo.vertexBindingDescriptionCount = 1;
+      vertexInputInfo.vertexBindingDescriptionCount = bindingDescription.has_value() ? 1 : 0;
       vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-      vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-      vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+      vertexInputInfo.pVertexBindingDescriptions = bindingDescription.has_value() ? &bindingDescription.value() : nullptr;
+      vertexInputInfo.pVertexAttributeDescriptions = !attributeDescriptions.empty() ? attributeDescriptions.data() : nullptr;
 
       VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
       inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
       inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
       inputAssembly.primitiveRestartEnable = VK_FALSE;
 
-      VkViewport viewport{};
+      VkViewport viewport = {};
       viewport.x = 0.0f;
       viewport.y = 0.0f;
       viewport.width = (float) extent.width;
@@ -1187,31 +1187,31 @@ namespace exqudens::vulkan {
       viewport.minDepth = 0.0f;
       viewport.maxDepth = 1.0f;
 
-      VkRect2D scissor{};
+      VkRect2D scissor = {};
       scissor.offset = {0, 0};
       scissor.extent = extent;
 
-      VkPipelineViewportStateCreateInfo viewportState{};
+      VkPipelineViewportStateCreateInfo viewportState = {};
       viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
       viewportState.viewportCount = 1;
       viewportState.pViewports = &viewport;
       viewportState.scissorCount = 1;
       viewportState.pScissors = &scissor;
 
-      VkPipelineRasterizationStateCreateInfo rasterizer{};
+      VkPipelineRasterizationStateCreateInfo rasterizer = {};
       rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
       rasterizer.depthClampEnable = VK_FALSE;
       rasterizer.rasterizerDiscardEnable = VK_FALSE;
       rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
       rasterizer.lineWidth = 1.0f;
       rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-      rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+      rasterizer.frontFace = frontFace; // black screen WARNING!!!
       rasterizer.depthBiasEnable = VK_FALSE;
       rasterizer.depthBiasConstantFactor = 0.0f; // Optional
       rasterizer.depthBiasClamp = 0.0f; // Optional
       rasterizer.depthBiasSlopeFactor = 0.0f; // Optional
 
-      VkPipelineMultisampleStateCreateInfo multisampling{};
+      VkPipelineMultisampleStateCreateInfo multisampling = {};
       multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
       multisampling.sampleShadingEnable = VK_FALSE;
       multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
@@ -1220,7 +1220,7 @@ namespace exqudens::vulkan {
       multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
       multisampling.alphaToOneEnable = VK_FALSE; // Optional
 
-      VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+      VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
       colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
       colorBlendAttachment.blendEnable = VK_FALSE;
       colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
@@ -1230,7 +1230,7 @@ namespace exqudens::vulkan {
       colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
       colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD; // Optional
 
-      VkPipelineColorBlendStateCreateInfo colorBlending{};
+      VkPipelineColorBlendStateCreateInfo colorBlending = {};
       colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
       colorBlending.logicOpEnable = VK_FALSE;
       colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
@@ -1243,8 +1243,8 @@ namespace exqudens::vulkan {
 
       VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
       pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-      pipelineLayoutInfo.setLayoutCount = 1;
-      pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
+      pipelineLayoutInfo.setLayoutCount = descriptorSetLayout != nullptr ? 1 : 0;
+      pipelineLayoutInfo.pSetLayouts = descriptorSetLayout != nullptr ? &descriptorSetLayout : nullptr;
       pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
       pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
@@ -1257,24 +1257,13 @@ namespace exqudens::vulkan {
 
       VkPipeline pipeline = nullptr;
 
-      std::vector<Shader> vertexShaders;
-      std::vector<Shader> fragmentShaders;
-
-      for (const std::string& path : shaderPaths) {
-        Shader shader = createShader(device, path);
-        if (shader.pipelineShaderStageCreateInfo.stage == VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT) {
-          vertexShaders.emplace_back(shader);
-        } else if (shader.pipelineShaderStageCreateInfo.stage == VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT) {
-          fragmentShaders.emplace_back(shader);
-        }
-      }
-
+      std::vector<Shader> shaders;
+      shaders.resize(shaderPaths.size());
       std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
-      for (const Shader& shader : vertexShaders) {
-        shaderStages.emplace_back(shader.pipelineShaderStageCreateInfo);
-      }
-      for (const Shader& shader : fragmentShaders) {
-        shaderStages.emplace_back(shader.pipelineShaderStageCreateInfo);
+      shaderStages.resize(shaders.size());
+      for (std::size_t i = 0; i < shaderPaths.size(); i++) {
+        shaders[i] = createShader(device, shaderPaths[i]);
+        shaderStages[i] = shaders[i].pipelineShaderStageCreateInfo;
       }
 
       VkGraphicsPipelineCreateInfo pipelineInfo{};
@@ -1302,10 +1291,7 @@ namespace exqudens::vulkan {
         throw std::runtime_error(CALL_INFO() + ": failed to create graphics pipeline!");
       }
 
-      for (Shader& shader : vertexShaders) {
-        destroyShader(shader, device);
-      }
-      for (Shader& shader : fragmentShaders) {
+      for (Shader& shader : shaders) {
         destroyShader(shader, device);
       }
 
@@ -1368,6 +1354,35 @@ namespace exqudens::vulkan {
         frameBuffers[i] = createFrameBuffer(device, imageViews[i], renderPass, width, height);
       }
       return frameBuffers;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  VkDescriptorPool Factory::createDescriptorPool(VkDevice& device, std::size_t size) {
+    try {
+      VkDescriptorPool descriptorPool = nullptr;
+
+      std::array<VkDescriptorPoolSize, 2> poolSizes{};
+
+      poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+      poolSizes[0].descriptorCount = static_cast<uint32_t>(size);
+
+      poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+      poolSizes[1].descriptorCount = static_cast<uint32_t>(size);
+
+      VkDescriptorPoolCreateInfo poolInfo{};
+      poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+      poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+      poolInfo.pPoolSizes = poolSizes.data();
+      poolInfo.maxSets = static_cast<uint32_t>(size);
+      poolInfo.flags = 0; // Optional
+
+      if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
+        throw std::runtime_error(CALL_INFO() + ": failed to create descriptor pool!");
+      }
+
+      return descriptorPool;
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -1600,6 +1615,17 @@ namespace exqudens::vulkan {
     }
   }
 
+  void Factory::destroyDescriptorPool(VkDescriptorPool& descriptorPool, VkDevice& device) {
+    try {
+      if (descriptorPool != nullptr) {
+        vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+        descriptorPool = nullptr;
+      }
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
   void Factory::destroyFrameBuffer(VkFramebuffer& frameBuffer, VkDevice& device) {
     try {
       if (frameBuffer != nullptr) {
@@ -1669,17 +1695,6 @@ namespace exqudens::vulkan {
       if (descriptorSetLayout != nullptr) {
         vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
         descriptorSetLayout = nullptr;
-      }
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
-
-  void Factory::destroyDescriptorPool(VkDescriptorPool& descriptorPool, VkDevice& device) {
-    try {
-      if (descriptorPool != nullptr) {
-        vkDestroyDescriptorPool(device, descriptorPool, nullptr);
-        descriptorPool = nullptr;
       }
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));

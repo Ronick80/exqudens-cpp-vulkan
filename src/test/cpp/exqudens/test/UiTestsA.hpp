@@ -16,7 +16,7 @@
 
 namespace exqudens::vulkan {
 
-  class UiTests : public testing::Test {
+  class UiTestsA : public testing::Test {
 
     protected:
 
@@ -32,22 +32,30 @@ namespace exqudens::vulkan {
           VkSurfaceKHR surface = nullptr;
           VkPhysicalDevice physicalDevice = nullptr;
           VkDevice device = nullptr;
-          VkQueue computeQueue = nullptr;
-          VkQueue transferQueue = nullptr;
+          //VkQueue computeQueue = nullptr;
+          //VkQueue transferQueue = nullptr;
           VkQueue graphicsQueue = nullptr;
           VkQueue presentQueue = nullptr;
           SwapChain swapChain = {};
           std::vector<VkImage> swapChainImages = {};
           std::vector<VkImageView> swapChainImageViews = {};
           VkRenderPass renderPass = nullptr;
-          VkDescriptorPool descriptorPool = nullptr;
-          VkDescriptorSetLayout descriptorSetLayout = nullptr;
+          //VkDescriptorSetLayout descriptorSetLayout = nullptr;
           Pipeline graphicsPipeline = {};
           std::vector<VkFramebuffer> swapChainFrameBuffers = {};
-          VkCommandPool transferCommandPool = nullptr;
+          //VkDescriptorPool descriptorPool = nullptr;
+          //VkCommandPool transferCommandPool = nullptr;
           VkCommandPool graphicsCommandPool = nullptr;
-          std::vector<VkCommandBuffer> transferCommandBuffers = {};
+          //std::vector<VkCommandBuffer> transferCommandBuffers = {};
           std::vector<VkCommandBuffer> graphicsCommandBuffers = {};
+
+          std::vector<VkSemaphore> imageAvailableSemaphores = {};
+          std::vector<VkSemaphore> renderFinishedSemaphores = {};
+          std::vector<VkFence> inFlightFences = {};
+          std::vector<VkFence> imagesInFlight = {};
+
+          size_t currentFrame = 0;
+          int MAX_FRAMES_IN_FLIGHT = 2;
 
           Environment() = default;
 
@@ -80,6 +88,7 @@ namespace exqudens::vulkan {
               for (const char*& extension : extensions) {
                 configuration.extensions.emplace_back(extension);
               }
+              configuration.anisotropyRequired = false;
               logger = createLogger();
 
               instance = createInstance(configuration, logger);
@@ -87,22 +96,76 @@ namespace exqudens::vulkan {
               surface = createSurface(instance);
               physicalDevice = createPhysicalDevice(instance, configuration, surface);
               device = createDevice(physicalDevice, configuration, surface);
-              computeQueue = createComputeQueue(physicalDevice, configuration, surface, device, 0);
-              transferQueue = createTransferQueue(physicalDevice, configuration, surface, device, 0);
+              //computeQueue = createComputeQueue(physicalDevice, configuration, surface, device, 0);
+              //transferQueue = createTransferQueue(physicalDevice, configuration, surface, device, 0);
               graphicsQueue = createGraphicsQueue(physicalDevice, configuration, surface, device, 0);
               presentQueue = createPresentQueue(physicalDevice, configuration, surface, device, 0);
               swapChain = createSwapChain(physicalDevice, configuration, surface, device, 800, 600);
               swapChainImages = createSwapChainImages(device, swapChain.value);
               swapChainImageViews = createImageViews(device, swapChainImages, swapChain.format);
               renderPass = createRenderPass(device, swapChain.format);
-              descriptorPool = createDescriptorPool(device, swapChainImageViews.size());
-              descriptorSetLayout = createDescriptorSetLayout(device);
-              graphicsPipeline = createGraphicsPipeline(device, swapChain.extent, descriptorSetLayout, {"resources/shader/shader.vert.spv", "resources/shader/shader.frag.spv"}, renderPass);
+              //descriptorSetLayout = createDescriptorSetLayout(device);
+              graphicsPipeline = createGraphicsPipeline(device, swapChain.extent, {"resources/shader/shader.vert.spv", "resources/shader/shader.frag.spv"}, renderPass);
               swapChainFrameBuffers = createFrameBuffers(device, swapChainImageViews, renderPass, swapChain.width, swapChain.height);
-              transferCommandPool = createTransferCommandPool(physicalDevice, configuration, surface, device);
+              //descriptorPool = createDescriptorPool(device, swapChainImageViews.size());
+              //transferCommandPool = createTransferCommandPool(physicalDevice, configuration, surface, device);
               graphicsCommandPool = createGraphicsCommandPool(physicalDevice, configuration, surface, device);
-              transferCommandBuffers = createCommandBuffers(device, transferCommandPool, swapChainImageViews.size());
+              //transferCommandBuffers = createCommandBuffers(device, transferCommandPool, swapChainImageViews.size());
               graphicsCommandBuffers = createCommandBuffers(device, graphicsCommandPool, swapChainImageViews.size());
+
+              for (size_t i = 0; i < graphicsCommandBuffers.size(); i++) {
+                VkCommandBufferBeginInfo beginInfo{};
+                beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+                if (vkBeginCommandBuffer(graphicsCommandBuffers[i], &beginInfo) != VK_SUCCESS) {
+                  throw std::runtime_error(CALL_INFO() + ": failed to begin recording command buffer!");
+                }
+
+                VkRenderPassBeginInfo renderPassInfo{};
+                renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+                renderPassInfo.renderPass = renderPass;
+                renderPassInfo.framebuffer = swapChainFrameBuffers[i];
+                renderPassInfo.renderArea.offset = {0, 0};
+                renderPassInfo.renderArea.extent = swapChain.extent;
+
+                VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+                renderPassInfo.clearValueCount = 1;
+                renderPassInfo.pClearValues = &clearColor;
+
+                vkCmdBeginRenderPass(graphicsCommandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+                vkCmdBindPipeline(graphicsCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.value);
+
+                vkCmdDraw(graphicsCommandBuffers[i], 3, 1, 0, 0);
+
+                vkCmdEndRenderPass(graphicsCommandBuffers[i]);
+
+                if (vkEndCommandBuffer(graphicsCommandBuffers[i]) != VK_SUCCESS) {
+                  throw std::runtime_error(CALL_INFO() + ": failed to record command buffer!");
+                }
+              }
+
+              imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+              renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+              inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+              imagesInFlight.resize(swapChainImages.size(), VK_NULL_HANDLE);
+
+              VkSemaphoreCreateInfo semaphoreInfo{};
+              semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+              VkFenceCreateInfo fenceInfo{};
+              fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+              fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+              for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+                if (
+                    vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS
+                    || vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS
+                    || vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS
+                ) {
+                  throw std::runtime_error(CALL_INFO() + ": failed to create synchronization objects for a frame!");
+                }
+              }
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
             }
@@ -110,7 +173,53 @@ namespace exqudens::vulkan {
 
           void drawFrame(int width, int height) {
             try {
-              //
+              vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+
+              uint32_t imageIndex;
+              vkAcquireNextImageKHR(device, swapChain.value, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+
+              if (imagesInFlight[imageIndex] != VK_NULL_HANDLE) {
+                vkWaitForFences(device, 1, &imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
+              }
+              imagesInFlight[imageIndex] = inFlightFences[currentFrame];
+
+              VkSubmitInfo submitInfo{};
+              submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+              VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
+              VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+              submitInfo.waitSemaphoreCount = 1;
+              submitInfo.pWaitSemaphores = waitSemaphores;
+              submitInfo.pWaitDstStageMask = waitStages;
+
+              submitInfo.commandBufferCount = 1;
+              submitInfo.pCommandBuffers = &graphicsCommandBuffers[imageIndex];
+
+              VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
+              submitInfo.signalSemaphoreCount = 1;
+              submitInfo.pSignalSemaphores = signalSemaphores;
+
+              vkResetFences(device, 1, &inFlightFences[currentFrame]);
+
+              if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
+                throw std::runtime_error("failed to submit draw command buffer!");
+              }
+
+              VkPresentInfoKHR presentInfo{};
+              presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+              presentInfo.waitSemaphoreCount = 1;
+              presentInfo.pWaitSemaphores = signalSemaphores;
+
+              VkSwapchainKHR swapChains[] = {swapChain.value};
+              presentInfo.swapchainCount = 1;
+              presentInfo.pSwapchains = swapChains;
+
+              presentInfo.pImageIndices = &imageIndex;
+
+              vkQueuePresentKHR(presentQueue, &presentInfo);
+
+              currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
             }
@@ -126,14 +235,20 @@ namespace exqudens::vulkan {
 
           void destroy() {
             try {
+              for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+                vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
+                vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
+                vkDestroyFence(device, inFlightFences[i], nullptr);
+              }
+
               destroyCommandBuffers(graphicsCommandBuffers, graphicsCommandPool, device);
-              destroyCommandBuffers(transferCommandBuffers, transferCommandPool, device);
+              //destroyCommandBuffers(transferCommandBuffers, transferCommandPool, device);
               destroyCommandPool(graphicsCommandPool, device);
-              destroyCommandPool(transferCommandPool, device);
+              //destroyCommandPool(transferCommandPool, device);
+              //destroyDescriptorPool(descriptorPool, device);
               destroyFrameBuffers(swapChainFrameBuffers, device);
               destroyPipeline(graphicsPipeline, device);
-              destroyDescriptorSetLayout(descriptorSetLayout, device);
-              destroyDescriptorPool(descriptorPool, device);
+              //destroyDescriptorSetLayout(descriptorSetLayout, device);
               destroyRenderPass(renderPass, device);
               destroyImageViews(swapChainImageViews, device);
               destroySwapChain(swapChain, device);
@@ -181,21 +296,19 @@ namespace exqudens::vulkan {
 
               window = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
 
-              glfwSetWindowUserPointer(window, this);
-              glfwSetFramebufferSizeCallback(window, frameBufferResizeCallback);
+              //glfwSetWindowUserPointer(window, this);
+              //glfwSetFramebufferSizeCallback(window, frameBufferResizeCallback);
 
               environment = new Environment();
               environment->create(window);
 
               while (!glfwWindowShouldClose(window)) {
                 glfwPollEvents();
-                int width = 0;
-                int height = 0;
-                glfwGetFramebufferSize(window, &width, &height);
+                /*glfwGetFramebufferSize(window, &width, &height);
                 while (width == 0 || height == 0) {
                   glfwGetFramebufferSize(window, &width, &height);
                   glfwWaitEvents();
-                }
+                }*/
                 environment->drawFrame(width, height);
               }
               environment->waitIdle();
@@ -225,7 +338,7 @@ namespace exqudens::vulkan {
 
   };
 
-  TEST_F(UiTests, test1) {
+  TEST_F(UiTestsA, test1) {
     try {
       int argc = 0;
       char** argv = nullptr;
@@ -236,7 +349,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  TEST_F(UiTests, test2) {
+  TEST_F(UiTestsA, test2) {
     try {
       ASSERT_EQ(1, 2);
     } catch (const std::exception& e) {
