@@ -17,6 +17,8 @@
 #include "exqudens/vulkan/model/QueueFamilyIndices.hpp"
 #include "exqudens/vulkan/model/SwapChainSupportDetails.hpp"
 #include "exqudens/vulkan/model/SwapChain.hpp"
+#include "exqudens/vulkan/model/Buffer.hpp"
+#include "exqudens/vulkan/model/Image.hpp"
 #include "exqudens/vulkan/model/Shader.hpp"
 #include "exqudens/vulkan/model/Pipeline.hpp"
 
@@ -79,6 +81,8 @@ namespace exqudens::vulkan {
       virtual VkPresentModeKHR chooseSwapPresentMode(std::vector<VkPresentModeKHR>& availablePresentModes);
 
       virtual VkExtent2D chooseSwapExtent(VkSurfaceCapabilitiesKHR& capabilities, const int& width, const int& height);
+
+      virtual uint32_t findMemoryType(VkPhysicalDevice& physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
       // create
 
@@ -150,6 +154,36 @@ namespace exqudens::vulkan {
           VkDevice& device,
           const int& width,
           const int& height
+      );
+
+      virtual Buffer createBuffer(
+          VkPhysicalDevice& physicalDevice,
+          VkDevice& device,
+          VkDeviceSize size,
+          VkBufferUsageFlags usage,
+          VkMemoryPropertyFlags properties
+      );
+
+      virtual Image createImage(
+          VkPhysicalDevice& physicalDevice,
+          VkDevice& device,
+          uint32_t width,
+          uint32_t height,
+          VkFormat format,
+          VkImageTiling tiling,
+          VkImageUsageFlags usage,
+          VkMemoryPropertyFlags properties
+      );
+      virtual std::vector<Image> createImages(
+          VkPhysicalDevice& physicalDevice,
+          VkDevice& device,
+          uint32_t width,
+          uint32_t height,
+          VkFormat format,
+          VkImageTiling tiling,
+          VkImageUsageFlags usage,
+          VkMemoryPropertyFlags properties,
+          std::size_t size
       );
 
       virtual std::vector<VkImage> createSwapChainImages(
@@ -253,6 +287,11 @@ namespace exqudens::vulkan {
 
       virtual void destroyImageView(VkImageView& imageView, VkDevice& device);
       virtual void destroyImageViews(std::vector<VkImageView>& imageViews, VkDevice& device);
+
+      virtual void destroyImage(Image& image, VkDevice& device);
+      virtual void destroyImages(std::vector<Image>& images, VkDevice& device);
+
+      virtual void destroyBuffer(Buffer& buffer, VkDevice& device);
 
       virtual void destroySwapChain(SwapChain& swapChain, VkDevice& device);
       virtual void destroySwapChain(VkSwapchainKHR& swapChain, VkDevice& device);

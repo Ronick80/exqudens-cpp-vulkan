@@ -391,6 +391,23 @@ namespace exqudens::vulkan {
     }
   }
 
+  uint32_t Factory::findMemoryType(VkPhysicalDevice& physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties) {
+    try {
+      VkPhysicalDeviceMemoryProperties memProperties;
+      vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+
+      for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+        if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+          return i;
+        }
+      }
+
+      throw std::runtime_error(CALL_INFO() + ": failed to find suitable memory type!");
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
   // create
 
   std::map<std::string, std::string> Factory::createEnvironmentVariables(const std::string& executableDirPath) {
@@ -926,6 +943,140 @@ namespace exqudens::vulkan {
       result.height = height;
       result.value = swapChain;
       return result;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  Buffer Factory::createBuffer(
+      VkPhysicalDevice& physicalDevice,
+      VkDevice& device,
+      VkDeviceSize size,
+      VkBufferUsageFlags usage,
+      VkMemoryPropertyFlags properties
+  ) {
+    try {
+      VkBuffer buffer = nullptr;
+
+      VkBufferCreateInfo bufferInfo{};
+      bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+      bufferInfo.size = size;
+      bufferInfo.usage = usage;
+      bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+      if (
+          vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS
+          || buffer == nullptr
+      ) {
+        throw std::runtime_error(CALL_INFO() + ": failed to create buffer!");
+      }
+
+      VkDeviceMemory bufferMemory = nullptr;
+
+      VkMemoryRequirements memRequirements;
+      vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
+
+      VkMemoryAllocateInfo allocInfo{};
+      allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+      allocInfo.allocationSize = memRequirements.size;
+      allocInfo.memoryTypeIndex = findMemoryType(physicalDevice, memRequirements.memoryTypeBits, properties);
+
+      if (
+          vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS
+          || bufferMemory == nullptr
+      ) {
+        throw std::runtime_error(CALL_INFO() + ": failed to allocate buffer memory!");
+      }
+
+      vkBindBufferMemory(device, buffer, bufferMemory, 0);
+
+      Buffer result;
+      result.value = buffer;
+      result.memory = bufferMemory;
+      return result;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  Image Factory::createImage(
+      VkPhysicalDevice& physicalDevice,
+      VkDevice& device,
+      uint32_t width,
+      uint32_t height,
+      VkFormat format,
+      VkImageTiling tiling,
+      VkImageUsageFlags usage,
+      VkMemoryPropertyFlags properties
+  ) {
+    try {
+      VkImageCreateInfo imageInfo = {};
+      imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+      imageInfo.imageType = VK_IMAGE_TYPE_2D;
+      imageInfo.extent.width = width;
+      imageInfo.extent.height = height;
+      imageInfo.extent.depth = 1;
+      imageInfo.mipLevels = 1;
+      imageInfo.arrayLayers = 1;
+      imageInfo.format = format;
+      imageInfo.tiling = tiling;
+      imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+      imageInfo.usage = usage;
+      imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+      imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+      VkImage image = nullptr;
+
+      if (
+          vkCreateImage(device, &imageInfo, nullptr, &image) != VK_SUCCESS
+          || image == nullptr
+      ) {
+        throw std::runtime_error(CALL_INFO() + ": failed to create image!");
+      }
+
+      VkDeviceMemory imageMemory = nullptr;
+
+      VkMemoryRequirements memRequirements;
+      vkGetImageMemoryRequirements(device, image, &memRequirements);
+
+      VkMemoryAllocateInfo allocInfo{};
+      allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+      allocInfo.allocationSize = memRequirements.size;
+      allocInfo.memoryTypeIndex = findMemoryType(physicalDevice, memRequirements.memoryTypeBits, properties);
+
+      if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate image memory!");
+      }
+
+      vkBindImageMemory(device, image, imageMemory, 0);
+
+      Image result;
+      result.value = image;
+      result.memory = imageMemory;
+      return result;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  std::vector<Image> Factory::createImages(
+      VkPhysicalDevice& physicalDevice,
+      VkDevice& device,
+      uint32_t width,
+      uint32_t height,
+      VkFormat format,
+      VkImageTiling tiling,
+      VkImageUsageFlags usage,
+      VkMemoryPropertyFlags properties,
+      std::size_t size
+  ) {
+    try {
+      std::vector<Image> images;
+      images.resize(size);
+      for (std::size_t i = 0; i < size; i++) {
+        images[i] = createImage(physicalDevice, device, width, height, format, tiling, usage, properties);
+      }
+      return images;
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -1726,6 +1877,46 @@ namespace exqudens::vulkan {
     try {
       for (std::size_t i = 0; i < imageViews.size(); i++) {
         destroyImageView(imageViews[i], device);
+      }
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  void Factory::destroyImage(Image& image, VkDevice& device) {
+    try {
+      if (image.value != nullptr) {
+        vkDestroyImage(device, image.value, nullptr);
+        image.value = nullptr;
+      }
+      if (image.memory != nullptr) {
+        vkFreeMemory(device, image.memory, nullptr);
+        image.memory = nullptr;
+      }
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  void Factory::destroyImages(std::vector<Image>& images, VkDevice& device) {
+    try {
+      for (std::size_t i = 0; i < images.size(); i++) {
+        destroyImage(images[i], device);
+      }
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  void Factory::destroyBuffer(Buffer& buffer, VkDevice& device) {
+    try {
+      if (buffer.value != nullptr) {
+        vkDestroyBuffer(device, buffer.value, nullptr);
+        buffer.value = nullptr;
+      }
+      if (buffer.memory != nullptr) {
+        vkFreeMemory(device, buffer.memory, nullptr);
+        buffer.memory = nullptr;
       }
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
