@@ -21,8 +21,8 @@ namespace exqudens::vulkan {
       Buffer(const Buffer& object);
       Buffer(Buffer&& object) noexcept;
 
-      virtual Buffer& operator=(const Buffer& object);
-      virtual Buffer& operator=(Buffer&& object) noexcept;
+      Buffer& operator=(const Buffer& object);
+      Buffer& operator=(Buffer&& object) noexcept;
 
       friend void swap(Buffer& first, Buffer& second);
 

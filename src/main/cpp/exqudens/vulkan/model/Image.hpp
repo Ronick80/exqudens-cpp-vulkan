@@ -29,8 +29,8 @@ namespace exqudens::vulkan {
       Image(const Image& object);
       Image(Image&& object) noexcept;
 
-      virtual Image& operator=(const Image& object);
-      virtual Image& operator=(Image&& object) noexcept;
+      Image& operator=(const Image& object);
+      Image& operator=(Image&& object) noexcept;
 
       friend void swap(Image& first, Image& second);
 
