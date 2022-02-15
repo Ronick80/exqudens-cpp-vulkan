@@ -151,56 +151,6 @@ namespace exqudens::vulkan {
     }
   }
 
-  bool Factory::isDeviceSuitable(
-      VkPhysicalDevice& physicalDevice,
-      Configuration& configuration,
-      VkSurfaceKHR& surface
-  ) {
-    try {
-      if (configuration.presentQueueFamilyRequired && surface == nullptr) {
-        throw std::runtime_error(
-            CALL_INFO()
-            + ": '"
-            + TO_STRING(configuration.presentQueueFamilyRequired)
-            + "': true but '"
-            + TO_STRING(surface)
-            + "' is null!"
-        );
-      }
-
-      QueueFamilyIndices familyIndices = findQueueFamilies(
-          physicalDevice,
-          configuration.computeQueueFamilyRequired,
-          configuration.transferQueueFamilyRequired,
-          configuration.graphicsQueueFamilyRequired,
-          surface
-      );
-
-      bool extensionsSupported = checkDeviceExtensionSupport(physicalDevice, configuration.deviceExtensions);
-
-      bool swapChainAdequate = surface == nullptr;
-      if (extensionsSupported && surface != nullptr) {
-        SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice, surface);
-        swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
-      }
-
-      VkPhysicalDeviceFeatures supportedFeatures;
-      vkGetPhysicalDeviceFeatures(physicalDevice, &supportedFeatures);
-
-      bool anisotropyAdequate = true;
-      if (configuration.anisotropyRequired) {
-        anisotropyAdequate = supportedFeatures.samplerAnisotropy;
-      }
-
-      return isQueueFamilyIndicesComplete(familyIndices) &&
-             extensionsSupported &&
-             swapChainAdequate &&
-             anisotropyAdequate;
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
-
   QueueFamilyIndices Factory::findQueueFamilies(
       VkPhysicalDevice& physicalDevice,
       bool computeFamilyRequired,
@@ -633,7 +583,16 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkPhysicalDevice Factory::createPhysicalDevice(
+  PhysicalDevice Factory::createPhysicalDevice(VkInstance& instance, Configuration& configuration) {
+    try {
+      VkSurfaceKHR surface = nullptr;
+      return createPhysicalDevice(instance, configuration, surface);
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  PhysicalDevice Factory::createPhysicalDevice(
       VkInstance& instance,
       Configuration& configuration,
       VkSurfaceKHR& surface
@@ -662,8 +621,45 @@ namespace exqudens::vulkan {
       std::vector<VkPhysicalDevice> devices(deviceCount);
       vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
+      QueueFamilyIndices queueFamilyIndicesInfo = {};
+      std::optional<SwapChainSupportDetails> swapChainSupportDetails = {};
+
       for (VkPhysicalDevice& object : devices) {
-        if (isDeviceSuitable(object, configuration, surface)) {
+
+        QueueFamilyIndices familyIndices = findQueueFamilies(
+            object,
+            configuration.computeQueueFamilyRequired,
+            configuration.transferQueueFamilyRequired,
+            configuration.graphicsQueueFamilyRequired,
+            surface
+        );
+
+        bool extensionsSupported = checkDeviceExtensionSupport(object, configuration.deviceExtensions);
+
+        bool swapChainAdequate = surface == nullptr;
+        std::optional<SwapChainSupportDetails> optionalSwapChainSupport = {};
+        if (extensionsSupported && surface != nullptr) {
+          SwapChainSupportDetails swapChainSupport = querySwapChainSupport(object, surface);
+          swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+          optionalSwapChainSupport = swapChainSupport;
+        }
+
+        VkPhysicalDeviceFeatures supportedFeatures;
+        vkGetPhysicalDeviceFeatures(object, &supportedFeatures);
+
+        bool anisotropyAdequate = true;
+        if (configuration.anisotropyRequired) {
+          anisotropyAdequate = supportedFeatures.samplerAnisotropy;
+        }
+
+        bool isDeviceSuitable = isQueueFamilyIndicesComplete(familyIndices) &&
+               extensionsSupported &&
+               swapChainAdequate &&
+               anisotropyAdequate;
+
+        if (isDeviceSuitable) {
+          queueFamilyIndicesInfo = familyIndices;
+          swapChainSupportDetails = optionalSwapChainSupport;
           physicalDevice = object;
           break;
         }
@@ -673,7 +669,12 @@ namespace exqudens::vulkan {
         throw std::runtime_error(CALL_INFO() + ": failed to find a suitable GPU!");
       }
 
-      return physicalDevice;
+      PhysicalDevice result;
+      result.queueFamilyIndicesInfo = queueFamilyIndicesInfo;
+      result.swapChainSupportDetails = swapChainSupportDetails;
+      result.queueFamilyIndices = uniqueQueueFamilyIndices(queueFamilyIndicesInfo);
+      result.value = physicalDevice;
+      return result;
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -682,35 +683,15 @@ namespace exqudens::vulkan {
   VkDevice Factory::createDevice(
       VkPhysicalDevice& physicalDevice,
       Configuration& configuration,
-      VkSurfaceKHR& surface
+      const std::set<uint32_t>& queueFamilyIndices
   ) {
     try {
       VkDevice device = nullptr;
 
-      if (configuration.presentQueueFamilyRequired && surface == nullptr) {
-        throw std::runtime_error(
-            CALL_INFO()
-            + ": '"
-            + TO_STRING(configuration.presentQueueFamilyRequired)
-            + "': true but '"
-            + TO_STRING(surface)
-            + "' is null!"
-        );
-      }
-
-      QueueFamilyIndices familyIndices = findQueueFamilies(
-          physicalDevice,
-          configuration.computeQueueFamilyRequired,
-          configuration.transferQueueFamilyRequired,
-          configuration.graphicsQueueFamilyRequired,
-          surface
-      );
-
       std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 
-      std::set<uint32_t> uniqueQueueFamilies = uniqueQueueFamilyIndices(familyIndices);
       float queuePriority = 1.0f;
-      for (uint32_t queueFamily : uniqueQueueFamilies) {
+      for (uint32_t queueFamily : queueFamilyIndices) {
         VkDeviceQueueCreateInfo queueCreateInfo{};
         queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queueCreateInfo.queueFamilyIndex = queueFamily;
@@ -750,25 +731,15 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkQueue Factory::createComputeQueue(
-      VkPhysicalDevice& physicalDevice,
-      Configuration& configuration,
-      VkSurfaceKHR& surface,
+  VkQueue Factory::createQueue(
       VkDevice& device,
+      uint32_t queueFamilyIndex,
       uint32_t queueIndex
   ) {
     try {
       VkQueue queue = nullptr;
 
-      QueueFamilyIndices familyIndices = findQueueFamilies(
-          physicalDevice,
-          configuration.computeQueueFamilyRequired,
-          configuration.transferQueueFamilyRequired,
-          configuration.graphicsQueueFamilyRequired,
-          surface
-      );
-
-      vkGetDeviceQueue(device, familyIndices.computeFamily.value(), queueIndex, &queue);
+      vkGetDeviceQueue(device, queueFamilyIndex, queueIndex, &queue);
 
       if (queue == nullptr) {
         throw std::runtime_error(CALL_INFO() + ": failed to create compute queue!");
@@ -780,99 +751,9 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkQueue Factory::createTransferQueue(
-      VkPhysicalDevice& physicalDevice,
-      Configuration& configuration,
-      VkSurfaceKHR& surface,
-      VkDevice& device,
-      uint32_t queueIndex
-  ) {
-    try {
-      VkQueue queue = nullptr;
-
-      QueueFamilyIndices familyIndices = findQueueFamilies(
-          physicalDevice,
-          configuration.computeQueueFamilyRequired,
-          configuration.transferQueueFamilyRequired,
-          configuration.graphicsQueueFamilyRequired,
-          surface
-      );
-
-      vkGetDeviceQueue(device, familyIndices.transferFamily.value(), queueIndex, &queue);
-
-      if (queue == nullptr) {
-        throw std::runtime_error(CALL_INFO() + ": failed to create transfer queue!");
-      }
-
-      return queue;
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
-
-  VkQueue Factory::createGraphicsQueue(
-      VkPhysicalDevice& physicalDevice,
-      Configuration& configuration,
-      VkSurfaceKHR& surface,
-      VkDevice& device,
-      uint32_t queueIndex
-  ) {
-    try {
-      VkQueue queue = nullptr;
-
-      QueueFamilyIndices familyIndices = findQueueFamilies(
-          physicalDevice,
-          configuration.computeQueueFamilyRequired,
-          configuration.transferQueueFamilyRequired,
-          configuration.graphicsQueueFamilyRequired,
-          surface
-      );
-
-      vkGetDeviceQueue(device, familyIndices.graphicsFamily.value(), queueIndex, &queue);
-
-      if (queue == nullptr) {
-        throw std::runtime_error(CALL_INFO() + ": failed to create graphics queue!");
-      }
-
-      return queue;
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
-
-  VkQueue Factory::createPresentQueue(
-      VkPhysicalDevice& physicalDevice,
-      Configuration& configuration,
-      VkSurfaceKHR& surface,
-      VkDevice& device,
-      uint32_t queueIndex
-  ) {
-    try {
-      VkQueue queue = nullptr;
-
-      QueueFamilyIndices familyIndices = findQueueFamilies(
-          physicalDevice,
-          configuration.computeQueueFamilyRequired,
-          configuration.transferQueueFamilyRequired,
-          configuration.graphicsQueueFamilyRequired,
-          surface
-      );
-
-      vkGetDeviceQueue(device, familyIndices.presentFamily.value(), queueIndex, &queue);
-
-      if (queue == nullptr) {
-        throw std::runtime_error(CALL_INFO() + ": failed to create present queue!");
-      }
-
-      return queue;
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
-
   SwapChain Factory::createSwapChain(
-      VkPhysicalDevice& physicalDevice,
-      Configuration& configuration,
+      SwapChainSupportDetails& swapChainSupport,
+      QueueFamilyIndices& queueFamilyIndexInfo,
       VkSurfaceKHR& surface,
       VkDevice& device,
       const int& width,
@@ -884,8 +765,6 @@ namespace exqudens::vulkan {
       }
 
       VkSwapchainKHR swapChain = nullptr;
-
-      SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice, surface);
 
       VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
       VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
@@ -908,19 +787,15 @@ namespace exqudens::vulkan {
       createInfo.imageArrayLayers = 1;
       createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-      QueueFamilyIndices familyIndices = findQueueFamilies(
-          physicalDevice,
-          configuration.computeQueueFamilyRequired,
-          configuration.transferQueueFamilyRequired,
-          configuration.graphicsQueueFamilyRequired,
-          surface
-      );
-      uint32_t queueFamilyIndices[] = {familyIndices.graphicsFamily.value(), familyIndices.presentFamily.value()};
+      std::vector<uint32_t> queueFamilyIndices = {
+          queueFamilyIndexInfo.graphicsFamily.value(),
+          queueFamilyIndexInfo.presentFamily.value()
+      };
 
-      if (familyIndices.graphicsFamily != familyIndices.presentFamily) {
+      if (queueFamilyIndices[0] != queueFamilyIndices[1]) {
         createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-        createInfo.queueFamilyIndexCount = 2;
-        createInfo.pQueueFamilyIndices = queueFamilyIndices;
+        createInfo.queueFamilyIndexCount = static_cast<uint32_t>(queueFamilyIndices.size());;
+        createInfo.pQueueFamilyIndices = queueFamilyIndices.data();
       } else {
         createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
       }
@@ -1943,6 +1818,14 @@ namespace exqudens::vulkan {
     }
   }
 
+  void Factory::destroyQueue(VkQueue& queue) {
+    try {
+      queue = nullptr;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
   void Factory::destroyDevice(VkDevice& device) {
     try {
       if (device != nullptr) {
@@ -1954,9 +1837,12 @@ namespace exqudens::vulkan {
     }
   }
 
-  void Factory::destroyPhysicalDevice(VkPhysicalDevice& physicalDevice) {
+  void Factory::destroyPhysicalDevice(PhysicalDevice& physicalDevice) {
     try {
-      physicalDevice = nullptr;
+      physicalDevice.queueFamilyIndicesInfo = {};
+      physicalDevice.swapChainSupportDetails = {};
+      physicalDevice.queueFamilyIndices = {};
+      physicalDevice.value = nullptr;
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }

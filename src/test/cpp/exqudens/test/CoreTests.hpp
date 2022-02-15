@@ -59,9 +59,8 @@ namespace exqudens::vulkan {
 
       VkInstance instance = factory.createInstance(configuration, logger);
       VkDebugUtilsMessengerEXT debugUtilsMessenger = factory.createDebugUtilsMessenger(instance, logger);
-      VkSurfaceKHR surface = nullptr;//functions.createSurface(instance);
-      VkPhysicalDevice physicalDevice = factory.createPhysicalDevice(instance, configuration, surface);
-      VkDevice device = factory.createDevice(physicalDevice, configuration, surface);
+      PhysicalDevice physicalDevice = factory.createPhysicalDevice(instance, configuration);
+      VkDevice device = factory.createDevice(physicalDevice.value, configuration, physicalDevice.queueFamilyIndices);
 
       Shader vertexShader1 = factory.createShader(device, "resources/shader/shader.vert.spv");
       Shader fragmentShader1 = factory.createShader(device, "resources/shader/shader.frag.spv");
@@ -112,12 +111,11 @@ namespace exqudens::vulkan {
 
       VkInstance instance = factory.createInstance(configuration, logger);
       VkDebugUtilsMessengerEXT debugUtilsMessenger = factory.createDebugUtilsMessenger(instance, logger);
-      VkSurfaceKHR surface = nullptr;//functions.createSurface(instance);
-      VkPhysicalDevice physicalDevice = factory.createPhysicalDevice(instance, configuration, surface);
-      VkDevice device = factory.createDevice(physicalDevice, configuration, surface);
-      VkQueue computeQueue = factory.createComputeQueue(physicalDevice, configuration, surface, device, 0);
-      VkQueue transferQueue = factory.createTransferQueue(physicalDevice, configuration, surface, device, 0);
-      VkQueue graphicsQueue = factory.createGraphicsQueue(physicalDevice, configuration, surface, device, 0);
+      PhysicalDevice physicalDevice = factory.createPhysicalDevice(instance, configuration);
+      VkDevice device = factory.createDevice(physicalDevice.value, configuration, physicalDevice.queueFamilyIndices);
+      VkQueue computeQueue = factory.createQueue(device, physicalDevice.queueFamilyIndicesInfo.computeFamily.value(), 0);
+      VkQueue transferQueue = factory.createQueue(device, physicalDevice.queueFamilyIndicesInfo.transferFamily.value(), 0);
+      VkQueue graphicsQueue = factory.createQueue(device, physicalDevice.queueFamilyIndicesInfo.graphicsFamily.value(), 0);
       VkQueue presentQueue = nullptr;//functions.createPresentQueue(physicalDevice, configuration, surface, device, 0);
       VkSwapchainKHR swapChain = nullptr;//functions.createSwapChain(physicalDevice, configuration, surface, device, 800, 600);
 
@@ -125,8 +123,7 @@ namespace exqudens::vulkan {
 
       ASSERT_TRUE(instance != nullptr);
       ASSERT_TRUE(debugUtilsMessenger != nullptr);
-      ASSERT_TRUE(surface == nullptr);
-      ASSERT_TRUE(physicalDevice != nullptr);
+      ASSERT_TRUE(physicalDevice.value != nullptr);
       ASSERT_TRUE(device != nullptr);
       ASSERT_TRUE(computeQueue != nullptr);
       ASSERT_TRUE(transferQueue != nullptr);

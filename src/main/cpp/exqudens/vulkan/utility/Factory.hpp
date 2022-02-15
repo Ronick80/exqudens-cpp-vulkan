@@ -16,6 +16,7 @@
 #include "exqudens/vulkan/model/Configuration.hpp"
 #include "exqudens/vulkan/model/QueueFamilyIndices.hpp"
 #include "exqudens/vulkan/model/SwapChainSupportDetails.hpp"
+#include "exqudens/vulkan/model/PhysicalDevice.hpp"
 #include "exqudens/vulkan/model/SwapChain.hpp"
 #include "exqudens/vulkan/model/Buffer.hpp"
 #include "exqudens/vulkan/model/Image.hpp"
@@ -53,12 +54,6 @@ namespace exqudens::vulkan {
       virtual bool checkValidationLayerSupport(const std::vector<const char*>& validationLayers);
 
       virtual void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& object, Logger& logger);
-
-      virtual bool isDeviceSuitable(
-          VkPhysicalDevice& physicalDevice,
-          Configuration& configuration,
-          VkSurfaceKHR& surface
-      );
 
       virtual QueueFamilyIndices findQueueFamilies(
           VkPhysicalDevice& physicalDevice,
@@ -106,7 +101,11 @@ namespace exqudens::vulkan {
 
       virtual VkSurfaceKHR createSurface(VkInstance& instance);
 
-      virtual VkPhysicalDevice createPhysicalDevice(
+      virtual PhysicalDevice createPhysicalDevice(
+          VkInstance& instance,
+          Configuration& configuration
+      );
+      virtual PhysicalDevice createPhysicalDevice(
           VkInstance& instance,
           Configuration& configuration,
           VkSurfaceKHR& surface
@@ -115,41 +114,18 @@ namespace exqudens::vulkan {
       virtual VkDevice createDevice(
           VkPhysicalDevice& physicalDevice,
           Configuration& configuration,
-          VkSurfaceKHR& surface
+          const std::set<uint32_t>& queueFamilyIndices
       );
 
-      virtual VkQueue createComputeQueue(
-          VkPhysicalDevice& physicalDevice,
-          Configuration& configuration,
-          VkSurfaceKHR& surface,
+      virtual VkQueue createQueue(
           VkDevice& device,
-          uint32_t queueIndex
-      );
-      virtual VkQueue createTransferQueue(
-          VkPhysicalDevice& physicalDevice,
-          Configuration& configuration,
-          VkSurfaceKHR& surface,
-          VkDevice& device,
-          uint32_t queueIndex
-      );
-      virtual VkQueue createGraphicsQueue(
-          VkPhysicalDevice& physicalDevice,
-          Configuration& configuration,
-          VkSurfaceKHR& surface,
-          VkDevice& device,
-          uint32_t queueIndex
-      );
-      virtual VkQueue createPresentQueue(
-          VkPhysicalDevice& physicalDevice,
-          Configuration& configuration,
-          VkSurfaceKHR& surface,
-          VkDevice& device,
+          uint32_t queueFamilyIndex,
           uint32_t queueIndex
       );
 
       virtual SwapChain createSwapChain(
-          VkPhysicalDevice& physicalDevice,
-          Configuration& configuration,
+          SwapChainSupportDetails& swapChainSupport,
+          QueueFamilyIndices& queueFamilyIndices,
           VkSurfaceKHR& surface,
           VkDevice& device,
           const int& width,
@@ -296,9 +272,11 @@ namespace exqudens::vulkan {
       virtual void destroySwapChain(SwapChain& swapChain, VkDevice& device);
       virtual void destroySwapChain(VkSwapchainKHR& swapChain, VkDevice& device);
 
+      virtual void destroyQueue(VkQueue& queue);
+
       virtual void destroyDevice(VkDevice& device);
 
-      virtual void destroyPhysicalDevice(VkPhysicalDevice& physicalDevice);
+      virtual void destroyPhysicalDevice(PhysicalDevice& physicalDevice);
 
       virtual void destroySurface(VkSurfaceKHR& surface, VkInstance& instance);
 
