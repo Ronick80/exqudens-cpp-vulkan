@@ -1,11 +1,10 @@
 #pragma once
 
 #include <optional>
-#include <set>
 
 #include <vulkan/vulkan.h>
 
-#include "exqudens/vulkan/model/QueueFamilyIndices.hpp"
+#include "exqudens/vulkan/model/QueueFamilyIndexInfo.hpp"
 #include "exqudens/vulkan/model/SwapChainSupportDetails.hpp"
 
 namespace exqudens::vulkan {
@@ -14,15 +13,13 @@ namespace exqudens::vulkan {
 
     public:
 
-      QueueFamilyIndices queueFamilyIndicesInfo;
+      QueueFamilyIndexInfo queueFamilyIndexInfo;
       std::optional<SwapChainSupportDetails> swapChainSupportDetails;
-      std::set<uint32_t> queueFamilyIndices = {};
       VkPhysicalDevice value = nullptr;
 
       PhysicalDevice(
-          QueueFamilyIndices queueFamilyIndices,
+          QueueFamilyIndexInfo queueFamilyIndexInfo,
           std::optional<SwapChainSupportDetails> swapChainSupportDetails,
-          std::set<uint32_t> uniqueQueueFamilyIndices,
           VkPhysicalDevice value
       );
       PhysicalDevice();

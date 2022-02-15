@@ -5,14 +5,12 @@
 namespace exqudens::vulkan {
 
   PhysicalDevice::PhysicalDevice(
-      QueueFamilyIndices queueFamilyIndicesInfo,
+      QueueFamilyIndexInfo queueFamilyIndexInfo,
       std::optional<SwapChainSupportDetails> swapChainSupportDetails,
-      std::set<uint32_t> queueFamilyIndices,
       VkPhysicalDevice value
   ):
-      queueFamilyIndicesInfo(std::move(queueFamilyIndicesInfo)),
+      queueFamilyIndexInfo(std::move(queueFamilyIndexInfo)),
       swapChainSupportDetails(std::move(swapChainSupportDetails)),
-      queueFamilyIndices(std::move(queueFamilyIndices)),
       value(value)
   {
   }
@@ -20,9 +18,8 @@ namespace exqudens::vulkan {
   PhysicalDevice::PhysicalDevice() = default;
 
   PhysicalDevice::PhysicalDevice(const PhysicalDevice& object): PhysicalDevice(
-      object.queueFamilyIndicesInfo,
+      object.queueFamilyIndexInfo,
       object.swapChainSupportDetails,
-      object.queueFamilyIndices,
       object.value
   ) {
   }
@@ -41,9 +38,8 @@ namespace exqudens::vulkan {
   }
 
   void swap(PhysicalDevice& first, PhysicalDevice& second) {
-    std::swap(first.queueFamilyIndicesInfo, second.queueFamilyIndicesInfo);
+    std::swap(first.queueFamilyIndexInfo, second.queueFamilyIndexInfo);
     std::swap(first.swapChainSupportDetails, second.swapChainSupportDetails);
-    std::swap(first.queueFamilyIndices, second.queueFamilyIndices);
     std::swap(first.value, second.value);
   }
 

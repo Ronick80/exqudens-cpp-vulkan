@@ -14,7 +14,7 @@
 #include "exqudens/vulkan/Export.hpp"
 #include "exqudens/vulkan/utility/Logger.hpp"
 #include "exqudens/vulkan/model/Configuration.hpp"
-#include "exqudens/vulkan/model/QueueFamilyIndices.hpp"
+#include "exqudens/vulkan/model/QueueFamilyIndexInfo.hpp"
 #include "exqudens/vulkan/model/SwapChainSupportDetails.hpp"
 #include "exqudens/vulkan/model/PhysicalDevice.hpp"
 #include "exqudens/vulkan/model/SwapChain.hpp"
@@ -55,17 +55,13 @@ namespace exqudens::vulkan {
 
       virtual void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& object, Logger& logger);
 
-      virtual QueueFamilyIndices findQueueFamilies(
+      virtual QueueFamilyIndexInfo findQueueFamilies(
           VkPhysicalDevice& physicalDevice,
           bool computeFamilyRequired,
           bool transferFamilyRequired,
           bool graphicsFamilyRequired,
           VkSurfaceKHR& surface
       );
-
-      virtual bool isQueueFamilyIndicesComplete(QueueFamilyIndices& value);
-
-      virtual std::set<uint32_t> uniqueQueueFamilyIndices(QueueFamilyIndices& value);
 
       virtual bool checkDeviceExtensionSupport(VkPhysicalDevice& physicalDevice, const std::vector<const char*>& deviceExtensions);
 
@@ -114,7 +110,7 @@ namespace exqudens::vulkan {
       virtual VkDevice createDevice(
           VkPhysicalDevice& physicalDevice,
           Configuration& configuration,
-          const std::set<uint32_t>& queueFamilyIndices
+          QueueFamilyIndexInfo& queueFamilyIndexInfo
       );
 
       virtual VkQueue createQueue(
@@ -125,7 +121,7 @@ namespace exqudens::vulkan {
 
       virtual SwapChain createSwapChain(
           SwapChainSupportDetails& swapChainSupport,
-          QueueFamilyIndices& queueFamilyIndices,
+          QueueFamilyIndexInfo& queueFamilyIndexInfo,
           VkSurfaceKHR& surface,
           VkDevice& device,
           const int& width,

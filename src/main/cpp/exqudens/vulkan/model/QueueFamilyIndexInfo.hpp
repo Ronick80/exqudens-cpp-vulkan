@@ -2,12 +2,13 @@
 
 #include <optional>
 #include <cstdint>
+#include <set>
 
 #include "exqudens/vulkan/Export.hpp"
 
 namespace exqudens::vulkan {
 
-  class EXQUDENS_VULKAN_EXPORT QueueFamilyIndices {
+  class EXQUDENS_VULKAN_EXPORT QueueFamilyIndexInfo {
 
     public:
 
@@ -23,7 +24,10 @@ namespace exqudens::vulkan {
       bool presentFamilyRequired = true;
       std::optional<uint32_t> presentFamily = {};
 
-      QueueFamilyIndices(
+      bool complete = false;
+      std::set<uint32_t> uniqueQueueFamilyIndices = {};
+
+      QueueFamilyIndexInfo(
           bool computeFamilyRequired,
           std::optional<uint32_t> computeFamily,
 
@@ -34,18 +38,21 @@ namespace exqudens::vulkan {
           std::optional<uint32_t> graphicsFamily,
 
           bool presentFamilyRequired,
-          std::optional<uint32_t> presentFamily
+          std::optional<uint32_t> presentFamily,
+
+          bool complete,
+          std::set<uint32_t> uniqueQueueFamilyIndices
       );
-      QueueFamilyIndices();
-      QueueFamilyIndices(const QueueFamilyIndices& object);
-      QueueFamilyIndices(QueueFamilyIndices&& object) noexcept;
+      QueueFamilyIndexInfo();
+      QueueFamilyIndexInfo(const QueueFamilyIndexInfo& object);
+      QueueFamilyIndexInfo(QueueFamilyIndexInfo&& object) noexcept;
 
-      QueueFamilyIndices& operator=(const QueueFamilyIndices& object);
-      QueueFamilyIndices& operator=(QueueFamilyIndices&& object) noexcept;
+      QueueFamilyIndexInfo& operator=(const QueueFamilyIndexInfo& object);
+      QueueFamilyIndexInfo& operator=(QueueFamilyIndexInfo&& object) noexcept;
 
-      friend void swap(QueueFamilyIndices& first, QueueFamilyIndices& second);
+      friend void swap(QueueFamilyIndexInfo& first, QueueFamilyIndexInfo& second);
 
-      virtual ~QueueFamilyIndices();
+      virtual ~QueueFamilyIndexInfo();
 
   };
 

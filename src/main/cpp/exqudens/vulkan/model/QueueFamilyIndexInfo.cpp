@@ -1,10 +1,10 @@
-#include "exqudens/vulkan/model/QueueFamilyIndices.hpp"
+#include "exqudens/vulkan/model/QueueFamilyIndexInfo.hpp"
 
 #include <utility>
 
 namespace exqudens::vulkan {
 
-  QueueFamilyIndices::QueueFamilyIndices(
+  QueueFamilyIndexInfo::QueueFamilyIndexInfo(
       bool computeFamilyRequired,
       std::optional<uint32_t> computeFamily,
 
@@ -15,7 +15,10 @@ namespace exqudens::vulkan {
       std::optional<uint32_t> graphicsFamily,
 
       bool presentFamilyRequired,
-      std::optional<uint32_t> presentFamily
+      std::optional<uint32_t> presentFamily,
+
+      bool complete,
+      std::set<uint32_t> uniqueQueueFamilyIndices
   ):
       computeFamilyRequired(computeFamilyRequired),
       computeFamily(computeFamily),
@@ -27,13 +30,16 @@ namespace exqudens::vulkan {
       graphicsFamily(graphicsFamily),
 
       presentFamilyRequired(presentFamilyRequired),
-      presentFamily(presentFamily)
+      presentFamily(presentFamily),
+
+      complete(complete),
+      uniqueQueueFamilyIndices(std::move(uniqueQueueFamilyIndices))
   {
   }
 
-  QueueFamilyIndices::QueueFamilyIndices() = default;
+  QueueFamilyIndexInfo::QueueFamilyIndexInfo() = default;
 
-  QueueFamilyIndices::QueueFamilyIndices(const QueueFamilyIndices& object): QueueFamilyIndices(
+  QueueFamilyIndexInfo::QueueFamilyIndexInfo(const QueueFamilyIndexInfo& object): QueueFamilyIndexInfo(
       object.computeFamilyRequired,
       object.computeFamily,
 
@@ -44,24 +50,27 @@ namespace exqudens::vulkan {
       object.graphicsFamily,
 
       object.presentFamilyRequired,
-      object.presentFamily
+      object.presentFamily,
+
+      object.complete,
+      object.uniqueQueueFamilyIndices
   ) {
   }
 
-  QueueFamilyIndices::QueueFamilyIndices(QueueFamilyIndices&& object) noexcept: QueueFamilyIndices() {
+  QueueFamilyIndexInfo::QueueFamilyIndexInfo(QueueFamilyIndexInfo&& object) noexcept: QueueFamilyIndexInfo() {
     swap(*this, object);
   }
 
-  QueueFamilyIndices& QueueFamilyIndices::operator=(const QueueFamilyIndices& object) {
-    return *this = QueueFamilyIndices(object);
+  QueueFamilyIndexInfo& QueueFamilyIndexInfo::operator=(const QueueFamilyIndexInfo& object) {
+    return *this = QueueFamilyIndexInfo(object);
   }
 
-  QueueFamilyIndices& QueueFamilyIndices::operator=(QueueFamilyIndices&& object) noexcept {
+  QueueFamilyIndexInfo& QueueFamilyIndexInfo::operator=(QueueFamilyIndexInfo&& object) noexcept {
     swap(*this, object);
     return *this;
   }
 
-  void swap(QueueFamilyIndices& first, QueueFamilyIndices& second) {
+  void swap(QueueFamilyIndexInfo& first, QueueFamilyIndexInfo& second) {
     std::swap(first.computeFamilyRequired, second.computeFamilyRequired);
     std::swap(first.computeFamily, second.computeFamily);
 
@@ -73,8 +82,11 @@ namespace exqudens::vulkan {
 
     std::swap(first.presentFamilyRequired, second.presentFamilyRequired);
     std::swap(first.presentFamily, second.presentFamily);
+
+    std::swap(first.complete, second.complete);
+    std::swap(first.uniqueQueueFamilyIndices, second.uniqueQueueFamilyIndices);
   }
 
-  QueueFamilyIndices::~QueueFamilyIndices() = default;
+  QueueFamilyIndexInfo::~QueueFamilyIndexInfo() = default;
 
 }

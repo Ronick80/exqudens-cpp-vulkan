@@ -95,12 +95,12 @@ namespace exqudens::vulkan {
               debugUtilsMessenger = createDebugUtilsMessenger(instance, logger);
               surface = createSurface(instance);
               physicalDevice = createPhysicalDevice(instance, configuration, surface);
-              device = createDevice(physicalDevice.value, configuration, physicalDevice.queueFamilyIndices);
+              device = createDevice(physicalDevice.value, configuration, physicalDevice.queueFamilyIndexInfo);
               //computeQueue = createComputeQueue(physicalDevice, configuration, surface, device, 0);
               //transferQueue = createTransferQueue(physicalDevice, configuration, surface, device, 0);
-              graphicsQueue = createQueue(device, physicalDevice.queueFamilyIndicesInfo.graphicsFamily.value(), 0);
-              presentQueue = createQueue(device, physicalDevice.queueFamilyIndicesInfo.presentFamily.value(), 0);
-              swapChain = createSwapChain(physicalDevice.swapChainSupportDetails.value(), physicalDevice.queueFamilyIndicesInfo, surface, device, 800, 600);
+              graphicsQueue = createQueue(device, physicalDevice.queueFamilyIndexInfo.graphicsFamily.value(), 0);
+              presentQueue = createQueue(device, physicalDevice.queueFamilyIndexInfo.presentFamily.value(), 0);
+              swapChain = createSwapChain(physicalDevice.swapChainSupportDetails.value(), physicalDevice.queueFamilyIndexInfo, surface, device, 800, 600);
               swapChainImages = createSwapChainImages(device, swapChain.value);
               swapChainImageViews = createImageViews(device, swapChainImages, swapChain.format);
               renderPass = createRenderPass(device, swapChain.format);

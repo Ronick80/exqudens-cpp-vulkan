@@ -60,7 +60,7 @@ namespace exqudens::vulkan {
       VkInstance instance = factory.createInstance(configuration, logger);
       VkDebugUtilsMessengerEXT debugUtilsMessenger = factory.createDebugUtilsMessenger(instance, logger);
       PhysicalDevice physicalDevice = factory.createPhysicalDevice(instance, configuration);
-      VkDevice device = factory.createDevice(physicalDevice.value, configuration, physicalDevice.queueFamilyIndices);
+      VkDevice device = factory.createDevice(physicalDevice.value, configuration, physicalDevice.queueFamilyIndexInfo);
 
       Shader vertexShader1 = factory.createShader(device, "resources/shader/shader.vert.spv");
       Shader fragmentShader1 = factory.createShader(device, "resources/shader/shader.frag.spv");
@@ -112,10 +112,10 @@ namespace exqudens::vulkan {
       VkInstance instance = factory.createInstance(configuration, logger);
       VkDebugUtilsMessengerEXT debugUtilsMessenger = factory.createDebugUtilsMessenger(instance, logger);
       PhysicalDevice physicalDevice = factory.createPhysicalDevice(instance, configuration);
-      VkDevice device = factory.createDevice(physicalDevice.value, configuration, physicalDevice.queueFamilyIndices);
-      VkQueue computeQueue = factory.createQueue(device, physicalDevice.queueFamilyIndicesInfo.computeFamily.value(), 0);
-      VkQueue transferQueue = factory.createQueue(device, physicalDevice.queueFamilyIndicesInfo.transferFamily.value(), 0);
-      VkQueue graphicsQueue = factory.createQueue(device, physicalDevice.queueFamilyIndicesInfo.graphicsFamily.value(), 0);
+      VkDevice device = factory.createDevice(physicalDevice.value, configuration, physicalDevice.queueFamilyIndexInfo);
+      VkQueue computeQueue = factory.createQueue(device, physicalDevice.queueFamilyIndexInfo.computeFamily.value(), 0);
+      VkQueue transferQueue = factory.createQueue(device, physicalDevice.queueFamilyIndexInfo.transferFamily.value(), 0);
+      VkQueue graphicsQueue = factory.createQueue(device, physicalDevice.queueFamilyIndexInfo.graphicsFamily.value(), 0);
       VkQueue presentQueue = nullptr;//functions.createPresentQueue(physicalDevice, configuration, surface, device, 0);
       VkSwapchainKHR swapChain = nullptr;//functions.createSwapChain(physicalDevice, configuration, surface, device, 800, 600);
 
