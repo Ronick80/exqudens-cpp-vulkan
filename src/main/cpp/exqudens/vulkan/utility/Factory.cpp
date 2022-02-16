@@ -312,7 +312,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkExtent2D Factory::chooseSwapExtent(VkSurfaceCapabilitiesKHR& capabilities, const int& width, const int& height) {
+  VkExtent2D Factory::chooseSwapExtent(VkSurfaceCapabilitiesKHR& capabilities, const uint32_t& width, const uint32_t& height) {
     try {
       if (capabilities.currentExtent.width != UINT32_MAX) {
         return capabilities.currentExtent;
@@ -719,7 +719,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkQueue Factory::createQueue(
+  Queue Factory::createQueue(
       VkDevice& device,
       uint32_t queueFamilyIndex,
       uint32_t queueIndex
@@ -733,7 +733,10 @@ namespace exqudens::vulkan {
         throw std::runtime_error(CALL_INFO() + ": failed to create compute queue!");
       }
 
-      return queue;
+      Queue result;
+      result.familyIndex = queueFamilyIndex;
+      result.value = queue;
+      return result;
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -744,8 +747,8 @@ namespace exqudens::vulkan {
       QueueFamilyIndexInfo& queueFamilyIndexInfo,
       VkSurfaceKHR& surface,
       VkDevice& device,
-      const int& width,
-      const int& height
+      const uint32_t& width,
+      const uint32_t& height
   ) {
     try {
       if (surface == nullptr) {
@@ -802,6 +805,7 @@ namespace exqudens::vulkan {
       SwapChain result;
       result.format = surfaceFormat.format;
       result.extent = extent;
+      result.imageCount = imageCount;
       result.width = width;
       result.height = height;
       result.value = swapChain;
@@ -914,6 +918,9 @@ namespace exqudens::vulkan {
       vkBindImageMemory(device, image, imageMemory, 0);
 
       Image result;
+      result.width = width;
+      result.height = height;
+      result.format = format;
       result.value = image;
       result.memory = imageMemory;
       return result;
@@ -1021,7 +1028,7 @@ namespace exqudens::vulkan {
       colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
       colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
       colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-      colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+      colorAttachment.finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;//VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
       VkAttachmentReference colorAttachmentRef = {};
       colorAttachmentRef.attachment = 0;
@@ -1143,7 +1150,7 @@ namespace exqudens::vulkan {
 
   Pipeline Factory::createGraphicsPipeline(
       VkDevice& device,
-      VkExtent2D& extent,
+      const VkExtent2D& extent,
       const std::vector<std::string>& shaderPaths,
       VkRenderPass& renderPass
   ) {
@@ -1169,7 +1176,7 @@ namespace exqudens::vulkan {
 
   Pipeline Factory::createGraphicsPipeline(
       VkDevice& device,
-      VkExtent2D& extent,
+      const VkExtent2D& extent,
       const std::vector<std::string>& shaderPaths,
       VkRenderPass& renderPass,
       VkFrontFace frontFace,
@@ -1322,8 +1329,8 @@ namespace exqudens::vulkan {
       VkDevice& device,
       VkImageView& imageView,
       VkRenderPass& renderPass,
-      const int& width,
-      const int& height
+      uint32_t& width,
+      uint32_t& height
   ) {
     try {
       VkFramebuffer frameBuffer = nullptr;
@@ -1358,8 +1365,8 @@ namespace exqudens::vulkan {
       VkDevice& device,
       std::vector<VkImageView>& imageViews,
       VkRenderPass& renderPass,
-      const int& width,
-      const int& height
+      uint32_t& width,
+      uint32_t& height
   ) {
     try {
       std::vector<VkFramebuffer> frameBuffers;
@@ -1402,26 +1409,16 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkCommandPool Factory::createComputeCommandPool(
-      VkPhysicalDevice& physicalDevice,
-      Configuration& configuration,
-      VkSurfaceKHR& surface,
-      VkDevice& device
+  VkCommandPool Factory::createCommandPool(
+      VkDevice& device,
+      uint32_t queueFamilyIndex
   ) {
     try {
       VkCommandPool commandPool = nullptr;
 
-      QueueFamilyIndexInfo familyIndices = findQueueFamilies(
-          physicalDevice,
-          configuration.computeQueueFamilyRequired,
-          configuration.transferQueueFamilyRequired,
-          configuration.graphicsQueueFamilyRequired,
-          surface
-      );
-
       VkCommandPoolCreateInfo createInfo = {};
       createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-      createInfo.queueFamilyIndex = familyIndices.computeFamily.value();
+      createInfo.queueFamilyIndex = queueFamilyIndex;
       createInfo.flags = 0; // Optional
 
       if (
@@ -1429,111 +1426,6 @@ namespace exqudens::vulkan {
           || commandPool == nullptr
       ) {
         throw std::runtime_error(CALL_INFO() + ": failed to create compute command pool!");
-      }
-
-      return commandPool;
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
-
-  VkCommandPool Factory::createTransferCommandPool(
-      VkPhysicalDevice& physicalDevice,
-      Configuration& configuration,
-      VkSurfaceKHR& surface,
-      VkDevice& device
-  ) {
-    try {
-      VkCommandPool commandPool = nullptr;
-
-      QueueFamilyIndexInfo familyIndices = findQueueFamilies(
-          physicalDevice,
-          configuration.computeQueueFamilyRequired,
-          configuration.transferQueueFamilyRequired,
-          configuration.graphicsQueueFamilyRequired,
-          surface
-      );
-
-      VkCommandPoolCreateInfo createInfo = {};
-      createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-      createInfo.queueFamilyIndex = familyIndices.transferFamily.value();
-      createInfo.flags = 0; // Optional
-
-      if (
-          vkCreateCommandPool(device, &createInfo, nullptr, &commandPool) != VK_SUCCESS
-          || commandPool == nullptr
-          ) {
-        throw std::runtime_error(CALL_INFO() + ": failed to create transfer command pool!");
-      }
-
-      return commandPool;
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
-
-  VkCommandPool Factory::createGraphicsCommandPool(
-      VkPhysicalDevice& physicalDevice,
-      Configuration& configuration,
-      VkSurfaceKHR& surface,
-      VkDevice& device
-  ) {
-    try {
-      VkCommandPool commandPool = nullptr;
-
-      QueueFamilyIndexInfo familyIndices = findQueueFamilies(
-          physicalDevice,
-          configuration.computeQueueFamilyRequired,
-          configuration.transferQueueFamilyRequired,
-          configuration.graphicsQueueFamilyRequired,
-          surface
-      );
-
-      VkCommandPoolCreateInfo createInfo = {};
-      createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-      createInfo.queueFamilyIndex = familyIndices.graphicsFamily.value();
-      createInfo.flags = 0; // Optional
-
-      if (
-          vkCreateCommandPool(device, &createInfo, nullptr, &commandPool) != VK_SUCCESS
-          || commandPool == nullptr
-          ) {
-        throw std::runtime_error(CALL_INFO() + ": failed to create graphics command pool!");
-      }
-
-      return commandPool;
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
-
-  VkCommandPool Factory::createPresentCommandPool(
-      VkPhysicalDevice& physicalDevice,
-      Configuration& configuration,
-      VkSurfaceKHR& surface,
-      VkDevice& device
-  ) {
-    try {
-      VkCommandPool commandPool = nullptr;
-
-      QueueFamilyIndexInfo familyIndices = findQueueFamilies(
-          physicalDevice,
-          configuration.computeQueueFamilyRequired,
-          configuration.transferQueueFamilyRequired,
-          configuration.graphicsQueueFamilyRequired,
-          surface
-      );
-
-      VkCommandPoolCreateInfo createInfo = {};
-      createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-      createInfo.queueFamilyIndex = familyIndices.presentFamily.value();
-      createInfo.flags = 0; // Optional
-
-      if (
-          vkCreateCommandPool(device, &createInfo, nullptr, &commandPool) != VK_SUCCESS
-          || commandPool == nullptr
-          ) {
-        throw std::runtime_error(CALL_INFO() + ": failed to create present command pool!");
       }
 
       return commandPool;
@@ -1748,13 +1640,14 @@ namespace exqudens::vulkan {
 
   void Factory::destroyImage(Image& image, VkDevice& device) {
     try {
+      if (image.memory != nullptr) {
+        //vkUnmapMemory(device, image.memory);
+        vkFreeMemory(device, image.memory, nullptr);
+        image.memory = nullptr;
+      }
       if (image.value != nullptr) {
         vkDestroyImage(device, image.value, nullptr);
         image.value = nullptr;
-      }
-      if (image.memory != nullptr) {
-        vkFreeMemory(device, image.memory, nullptr);
-        image.memory = nullptr;
       }
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
@@ -1773,13 +1666,14 @@ namespace exqudens::vulkan {
 
   void Factory::destroyBuffer(Buffer& buffer, VkDevice& device) {
     try {
+      if (buffer.memory != nullptr) {
+        //vkUnmapMemory(device, buffer.memory);
+        vkFreeMemory(device, buffer.memory, nullptr);
+        buffer.memory = nullptr;
+      }
       if (buffer.value != nullptr) {
         vkDestroyBuffer(device, buffer.value, nullptr);
         buffer.value = nullptr;
-      }
-      if (buffer.memory != nullptr) {
-        vkFreeMemory(device, buffer.memory, nullptr);
-        buffer.memory = nullptr;
       }
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
@@ -1806,9 +1700,10 @@ namespace exqudens::vulkan {
     }
   }
 
-  void Factory::destroyQueue(VkQueue& queue) {
+  void Factory::destroyQueue(Queue& queue) {
     try {
-      queue = nullptr;
+      queue.familyIndex = 0;
+      queue.value = nullptr;
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }

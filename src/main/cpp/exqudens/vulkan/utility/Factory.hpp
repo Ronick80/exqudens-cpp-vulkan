@@ -17,6 +17,7 @@
 #include "exqudens/vulkan/model/QueueFamilyIndexInfo.hpp"
 #include "exqudens/vulkan/model/SwapChainSupportDetails.hpp"
 #include "exqudens/vulkan/model/PhysicalDevice.hpp"
+#include "exqudens/vulkan/model/Queue.hpp"
 #include "exqudens/vulkan/model/SwapChain.hpp"
 #include "exqudens/vulkan/model/Buffer.hpp"
 #include "exqudens/vulkan/model/Image.hpp"
@@ -71,7 +72,7 @@ namespace exqudens::vulkan {
 
       virtual VkPresentModeKHR chooseSwapPresentMode(std::vector<VkPresentModeKHR>& availablePresentModes);
 
-      virtual VkExtent2D chooseSwapExtent(VkSurfaceCapabilitiesKHR& capabilities, const int& width, const int& height);
+      virtual VkExtent2D chooseSwapExtent(VkSurfaceCapabilitiesKHR& capabilities, const uint32_t& width, const uint32_t& height);
 
       virtual uint32_t findMemoryType(VkPhysicalDevice& physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
@@ -113,7 +114,7 @@ namespace exqudens::vulkan {
           QueueFamilyIndexInfo& queueFamilyIndexInfo
       );
 
-      virtual VkQueue createQueue(
+      virtual Queue createQueue(
           VkDevice& device,
           uint32_t queueFamilyIndex,
           uint32_t queueIndex
@@ -124,8 +125,8 @@ namespace exqudens::vulkan {
           QueueFamilyIndexInfo& queueFamilyIndexInfo,
           VkSurfaceKHR& surface,
           VkDevice& device,
-          const int& width,
-          const int& height
+          const uint32_t& width,
+          const uint32_t& height
       );
 
       virtual Buffer createBuffer(
@@ -174,13 +175,13 @@ namespace exqudens::vulkan {
 
       virtual Pipeline createGraphicsPipeline(
           VkDevice& device,
-          VkExtent2D& extent,
+          const VkExtent2D& extent,
           const std::vector<std::string>& shaderPaths,
           VkRenderPass& renderPass
       );
       virtual Pipeline createGraphicsPipeline(
           VkDevice& device,
-          VkExtent2D& extent,
+          const VkExtent2D& extent,
           const std::vector<std::string>& shaderPaths,
           VkRenderPass& renderPass,
           VkFrontFace frontFace,
@@ -193,42 +194,22 @@ namespace exqudens::vulkan {
           VkDevice& device,
           VkImageView& imageView,
           VkRenderPass& renderPass,
-          const int& width,
-          const int& height
+          uint32_t& width,
+          uint32_t& height
       );
       virtual std::vector<VkFramebuffer> createFrameBuffers(
           VkDevice& device,
           std::vector<VkImageView>& imageViews,
           VkRenderPass& renderPass,
-          const int& width,
-          const int& height
+          uint32_t& width,
+          uint32_t& height
       );
 
       virtual VkDescriptorPool createDescriptorPool(VkDevice& device, std::size_t size);
 
-      virtual VkCommandPool createComputeCommandPool(
-          VkPhysicalDevice& physicalDevice,
-          Configuration& configuration,
-          VkSurfaceKHR& surface,
-          VkDevice& device
-      );
-      virtual VkCommandPool createTransferCommandPool(
-          VkPhysicalDevice& physicalDevice,
-          Configuration& configuration,
-          VkSurfaceKHR& surface,
-          VkDevice& device
-      );
-      virtual VkCommandPool createGraphicsCommandPool(
-          VkPhysicalDevice& physicalDevice,
-          Configuration& configuration,
-          VkSurfaceKHR& surface,
-          VkDevice& device
-      );
-      virtual VkCommandPool createPresentCommandPool(
-          VkPhysicalDevice& physicalDevice,
-          Configuration& configuration,
-          VkSurfaceKHR& surface,
-          VkDevice& device
+      virtual VkCommandPool createCommandPool(
+          VkDevice& device,
+          uint32_t queueFamilyIndex
       );
 
       virtual VkCommandBuffer createCommandBuffer(VkDevice& device, VkCommandPool& commandPool);
@@ -268,7 +249,7 @@ namespace exqudens::vulkan {
       virtual void destroySwapChain(SwapChain& swapChain, VkDevice& device);
       virtual void destroySwapChain(VkSwapchainKHR& swapChain, VkDevice& device);
 
-      virtual void destroyQueue(VkQueue& queue);
+      virtual void destroyQueue(Queue& queue);
 
       virtual void destroyDevice(VkDevice& device);
 

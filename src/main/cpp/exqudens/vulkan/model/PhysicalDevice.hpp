@@ -4,12 +4,13 @@
 
 #include <vulkan/vulkan.h>
 
+#include "exqudens/vulkan/Export.hpp"
 #include "exqudens/vulkan/model/QueueFamilyIndexInfo.hpp"
 #include "exqudens/vulkan/model/SwapChainSupportDetails.hpp"
 
 namespace exqudens::vulkan {
 
-  class PhysicalDevice {
+  class EXQUDENS_VULKAN_EXPORT PhysicalDevice {
 
     public:
 

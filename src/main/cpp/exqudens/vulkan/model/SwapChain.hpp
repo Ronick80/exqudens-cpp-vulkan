@@ -1,24 +1,30 @@
 #pragma once
 
+#include <cstdint>
+
 #include <vulkan/vulkan.h>
+
+#include "exqudens/vulkan/Export.hpp"
 
 namespace exqudens::vulkan {
 
-  class SwapChain {
+  class EXQUDENS_VULKAN_EXPORT SwapChain {
 
     public:
 
       VkFormat format = VkFormat::VK_FORMAT_UNDEFINED;
       VkExtent2D extent = {};
-      int width = 0;
-      int height = 0;
+      uint32_t imageCount = 0;
+      uint32_t width = 0;
+      uint32_t height = 0;
       VkSwapchainKHR value = nullptr;
 
       SwapChain(
           VkFormat format,
           VkExtent2D extent,
-          int width,
-          int height,
+          uint32_t imageCount,
+          uint32_t width,
+          uint32_t height,
           VkSwapchainKHR value
       );
       SwapChain();

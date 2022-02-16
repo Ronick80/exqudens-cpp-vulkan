@@ -5,9 +5,15 @@
 namespace exqudens::vulkan {
 
   Image::Image(
-      VkImage value,
-      VkDeviceMemory memory
+      uint32_t width,
+      uint32_t height,
+      VkFormat format,
+      VkDeviceMemory memory,
+      VkImage value
   ):
+      width(width),
+      height(height),
+      format(format),
       value(value),
       memory(memory)
   {
@@ -16,8 +22,11 @@ namespace exqudens::vulkan {
   Image::Image() = default;
 
   Image::Image(const Image& object): Image(
-      object.value,
-      object.memory
+      object.width,
+      object.height,
+      object.format,
+      object.memory,
+      object.value
   ) {
   }
 
@@ -35,8 +44,11 @@ namespace exqudens::vulkan {
   }
 
   void swap(Image& first, Image& second) {
-    std::swap(first.value, second.value);
+    std::swap(first.width, second.width);
+    std::swap(first.height, second.height);
+    std::swap(first.format, second.format);
     std::swap(first.memory, second.memory);
+    std::swap(first.value, second.value);
   }
 
   Image::~Image() = default;

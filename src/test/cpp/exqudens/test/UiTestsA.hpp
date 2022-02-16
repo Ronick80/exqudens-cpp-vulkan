@@ -34,8 +34,8 @@ namespace exqudens::vulkan {
           VkDevice device = nullptr;
           //VkQueue computeQueue = nullptr;
           //VkQueue transferQueue = nullptr;
-          VkQueue graphicsQueue = nullptr;
-          VkQueue presentQueue = nullptr;
+          Queue graphicsQueue = {};
+          Queue presentQueue = {};
           SwapChain swapChain = {};
           std::vector<VkImage> swapChainImages = {};
           std::vector<VkImageView> swapChainImageViews = {};
@@ -109,7 +109,7 @@ namespace exqudens::vulkan {
               swapChainFrameBuffers = createFrameBuffers(device, swapChainImageViews, renderPass, swapChain.width, swapChain.height);
               //descriptorPool = createDescriptorPool(device, swapChainImageViews.size());
               //transferCommandPool = createTransferCommandPool(physicalDevice, configuration, surface, device);
-              graphicsCommandPool = createGraphicsCommandPool(physicalDevice.value, configuration, surface, device);
+              graphicsCommandPool = createCommandPool(device, graphicsQueue.familyIndex);
               //transferCommandBuffers = createCommandBuffers(device, transferCommandPool, swapChainImageViews.size());
               graphicsCommandBuffers = createCommandBuffers(device, graphicsCommandPool, swapChainImageViews.size());
 
@@ -201,7 +201,7 @@ namespace exqudens::vulkan {
 
               vkResetFences(device, 1, &inFlightFences[currentFrame]);
 
-              if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
+              if (vkQueueSubmit(graphicsQueue.value, 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
                 throw std::runtime_error("failed to submit draw command buffer!");
               }
 
@@ -217,7 +217,7 @@ namespace exqudens::vulkan {
 
               presentInfo.pImageIndices = &imageIndex;
 
-              vkQueuePresentKHR(presentQueue, &presentInfo);
+              vkQueuePresentKHR(presentQueue.value, &presentInfo);
 
               currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
             } catch (...) {
