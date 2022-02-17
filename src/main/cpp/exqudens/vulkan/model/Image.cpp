@@ -9,13 +9,15 @@ namespace exqudens::vulkan {
       uint32_t height,
       VkFormat format,
       VkDeviceMemory memory,
+      VkDeviceSize memorySize,
       VkImage value
   ):
       width(width),
       height(height),
       format(format),
-      value(value),
-      memory(memory)
+      memory(memory),
+      memorySize(memorySize),
+      value(value)
   {
   }
 
@@ -26,6 +28,7 @@ namespace exqudens::vulkan {
       object.height,
       object.format,
       object.memory,
+      object.memorySize,
       object.value
   ) {
   }
@@ -48,6 +51,7 @@ namespace exqudens::vulkan {
     std::swap(first.height, second.height);
     std::swap(first.format, second.format);
     std::swap(first.memory, second.memory);
+    std::swap(first.memorySize, second.memorySize);
     std::swap(first.value, second.value);
   }
 

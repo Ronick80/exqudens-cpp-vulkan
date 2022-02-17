@@ -149,12 +149,13 @@ namespace exqudens::vulkan {
       Pipeline graphicsPipeline = factory.createGraphicsPipeline(device, {.width = image.width, .height = image.height}, {"resources/shader/shader.vert.spv", "resources/shader/shader.frag.spv"}, renderPass);
       VkCommandBuffer graphicsCommandBuffer = factory.createCommandBuffer(device, graphicsCommandPool);
       Image imageOut = factory.createImage(physicalDevice.value, device, 800, 600, image.format, VK_IMAGE_TILING_LINEAR, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+      VkCommandBuffer copyCommandBuffer = factory.createCommandBuffer(device, graphicsCommandPool);
 
       VkCommandBufferBeginInfo beginInfo = {};
       beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
       if (vkBeginCommandBuffer(graphicsCommandBuffer, &beginInfo) != VK_SUCCESS) {
-        throw std::runtime_error(CALL_INFO() + ": failed to begin recording command buffer!");
+        throw std::runtime_error(CALL_INFO() + ": failed to begin graphics command buffer!");
       }
 
       VkRenderPassBeginInfo renderPassInfo{};
@@ -176,6 +177,13 @@ namespace exqudens::vulkan {
 
       vkCmdEndRenderPass(graphicsCommandBuffer);
 
+      if (vkEndCommandBuffer(graphicsCommandBuffer) != VK_SUCCESS) {
+        throw std::runtime_error(CALL_INFO() + ": failed to end graphics command buffer!");
+      }
+
+      submitBlocking(device, graphicsCommandBuffer, graphicsQueue.value);
+      vkDeviceWaitIdle(device);
+
       /*VkImageSubresourceRange subresourceRange = {};
       subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
       subresourceRange.baseMipLevel = 0;
@@ -191,6 +199,10 @@ namespace exqudens::vulkan {
       memoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
       memoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
       memoryBarrier.subresourceRange = subresourceRange;*/
+
+      if (vkBeginCommandBuffer(copyCommandBuffer, &beginInfo) != VK_SUCCESS) {
+        throw std::runtime_error(CALL_INFO() + ": failed to begin copy command buffer!");
+      }
 
       VkImageMemoryBarrier imageMemoryBarrier1 = {
           .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
@@ -209,7 +221,7 @@ namespace exqudens::vulkan {
       };
 
       vkCmdPipelineBarrier(
-          graphicsCommandBuffer,
+          copyCommandBuffer,
           VK_PIPELINE_STAGE_TRANSFER_BIT,
           VK_PIPELINE_STAGE_TRANSFER_BIT,
           0,
@@ -231,7 +243,7 @@ namespace exqudens::vulkan {
       imageCopyRegion.extent.depth = 1;
 
       vkCmdCopyImage(
-          graphicsCommandBuffer,
+          copyCommandBuffer,
           image.value,
           VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
           imageOut.value,
@@ -257,7 +269,7 @@ namespace exqudens::vulkan {
       };
 
       vkCmdPipelineBarrier(
-          graphicsCommandBuffer,
+          copyCommandBuffer,
           VK_PIPELINE_STAGE_TRANSFER_BIT,
           VK_PIPELINE_STAGE_TRANSFER_BIT,
           0,
@@ -269,11 +281,11 @@ namespace exqudens::vulkan {
           &imageMemoryBarrier2
       );
 
-      if (vkEndCommandBuffer(graphicsCommandBuffer) != VK_SUCCESS) {
-        throw std::runtime_error(CALL_INFO() + ": failed to record command buffer!");
+      if (vkEndCommandBuffer(copyCommandBuffer) != VK_SUCCESS) {
+        throw std::runtime_error(CALL_INFO() + ": failed to end copy command buffer!!");
       }
 
-      submitBlocking(device, graphicsCommandBuffer, graphicsQueue.value);
+      submitBlocking(device, copyCommandBuffer, graphicsQueue.value);
 
       ///
 
@@ -285,15 +297,35 @@ namespace exqudens::vulkan {
       vkGetImageSubresourceLayout(device, imageOut.value, &subResource, &subResourceLayout);
 
       const char* imageData;
-      vkMapMemory(device, imageOut.memory, 0, VK_WHOLE_SIZE, 0, (void**) &imageData);
+      vkMapMemory(device, imageOut.memory, 0, imageOut.memorySize, 0, (void**) &imageData);
       imageData += subResourceLayout.offset;
-      // save 'imageData' to 'vector'
+
+      //////
+      std::vector<std::string> imageDataVector;
+      std::vector<VkFormat> formatsBGR = { VK_FORMAT_B8G8R8A8_SRGB, VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_B8G8R8A8_SNORM };
+      const bool colorSwizzle = (std::find(formatsBGR.begin(), formatsBGR.end(), VK_FORMAT_R8G8B8A8_UNORM) != formatsBGR.end());
+      for (int32_t y = 0; y < imageOut.height; y++) {
+        auto row = (unsigned int*) imageData;
+        for (int32_t x = 0; x < imageOut.width; x++) {
+          //file.write((char*) row + 2, 1);
+          //file.write((char*) row + 1, 1);
+          //file.write((char*) row, 1);
+          imageDataVector.emplace_back((char*) row + 2);
+          imageDataVector.emplace_back((char*) row + 1);
+          imageDataVector.emplace_back((char*) row);
+          row++;
+        }
+        imageData += subResourceLayout.rowPitch;
+      }
+      //////
+
       vkUnmapMemory(device, imageOut.memory);
 
       ///
 
       vkQueueWaitIdle(graphicsQueue.value);
 
+      factory.destroyCommandBuffer(copyCommandBuffer, graphicsCommandPool, device);
       factory.destroyImage(imageOut, device);
       factory.destroyCommandBuffer(graphicsCommandBuffer, graphicsCommandPool, device);
       factory.destroyPipeline(graphicsPipeline, device);
@@ -309,6 +341,11 @@ namespace exqudens::vulkan {
       factory.destroyInstance(instance);
 
       std::cout << stream.str();
+
+      std::cout << (imageOut.height * imageOut.width * 3) << "/" << imageDataVector.size() << std::endl;
+      std::cout << "r: '" << imageDataVector[0] << "'" << std::endl;
+      std::cout << "g: '" << imageDataVector[1] << "'" << std::endl;
+      std::cout << "b: '" << imageDataVector[2] << "'" << std::endl;
     } catch (const std::exception& e) {
       FAIL() << TestUtils::toString(e);
     }

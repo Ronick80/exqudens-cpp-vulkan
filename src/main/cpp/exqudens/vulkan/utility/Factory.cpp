@@ -906,7 +906,7 @@ namespace exqudens::vulkan {
       VkMemoryRequirements memRequirements;
       vkGetImageMemoryRequirements(device, image, &memRequirements);
 
-      VkMemoryAllocateInfo allocInfo{};
+      VkMemoryAllocateInfo allocInfo = {};
       allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
       allocInfo.allocationSize = memRequirements.size;
       allocInfo.memoryTypeIndex = findMemoryType(physicalDevice, memRequirements.memoryTypeBits, properties);
@@ -923,6 +923,7 @@ namespace exqudens::vulkan {
       result.format = format;
       result.value = image;
       result.memory = imageMemory;
+      result.memorySize = memRequirements.size;
       return result;
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));

@@ -19,6 +19,7 @@ namespace exqudens::vulkan {
       uint32_t height = 0;
       VkFormat format = VkFormat::VK_FORMAT_UNDEFINED; // VkFormat::VK_FORMAT_R8G8B8A8_SRGB || VK_FORMAT_R8G8B8A8_UNORM
       VkDeviceMemory memory = nullptr;
+      VkDeviceSize memorySize = 0;
       VkImage value = nullptr;
 
       Image(
@@ -26,6 +27,7 @@ namespace exqudens::vulkan {
           uint32_t height,
           VkFormat format,
           VkDeviceMemory memory,
+          VkDeviceSize memorySize,
           VkImage value
       );
       Image();
