@@ -8,6 +8,7 @@
 #include <thread>
 #include <chrono>
 #include <format>
+#include <fstream>
 #include <iostream>
 
 #include <gtest/gtest.h>
@@ -296,27 +297,31 @@ namespace exqudens::vulkan {
 
       vkGetImageSubresourceLayout(device, imageOut.value, &subResource, &subResourceLayout);
 
-      const char* imageData;
+      unsigned char* imageData;
       vkMapMemory(device, imageOut.memory, 0, imageOut.memorySize, 0, (void**) &imageData);
       imageData += subResourceLayout.offset;
 
       //////
-      std::vector<std::string> imageDataVector;
+      const char* filename = "headless.ppm";
+      std::ofstream file(filename, std::ios::out | std::ios::binary);
+      file << "P6\n" << imageOut.width << "\n" << imageOut.height << "\n" << 255 << "\n";
       std::vector<VkFormat> formatsBGR = { VK_FORMAT_B8G8R8A8_SRGB, VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_B8G8R8A8_SNORM };
       const bool colorSwizzle = (std::find(formatsBGR.begin(), formatsBGR.end(), VK_FORMAT_R8G8B8A8_UNORM) != formatsBGR.end());
       for (int32_t y = 0; y < imageOut.height; y++) {
-        auto row = (unsigned int*) imageData;
+        auto *row = (unsigned int*) imageData;
         for (int32_t x = 0; x < imageOut.width; x++) {
-          //file.write((char*) row + 2, 1);
-          //file.write((char*) row + 1, 1);
-          //file.write((char*) row, 1);
-          imageDataVector.emplace_back((char*) row + 2);
-          imageDataVector.emplace_back((char*) row + 1);
-          imageDataVector.emplace_back((char*) row);
+          if (colorSwizzle) {
+            file.write((char*)row + 2, 1);
+            file.write((char*)row + 1, 1);
+            file.write((char*)row, 1);
+          } else {
+            file.write((char*)row, 3);
+          }
           row++;
         }
         imageData += subResourceLayout.rowPitch;
       }
+      file.close();
       //////
 
       vkUnmapMemory(device, imageOut.memory);
@@ -341,11 +346,6 @@ namespace exqudens::vulkan {
       factory.destroyInstance(instance);
 
       std::cout << stream.str();
-
-      std::cout << (imageOut.height * imageOut.width * 3) << "/" << imageDataVector.size() << std::endl;
-      std::cout << "r: '" << imageDataVector[0] << "'" << std::endl;
-      std::cout << "g: '" << imageDataVector[1] << "'" << std::endl;
-      std::cout << "b: '" << imageDataVector[2] << "'" << std::endl;
     } catch (const std::exception& e) {
       FAIL() << TestUtils::toString(e);
     }
