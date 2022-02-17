@@ -302,26 +302,31 @@ namespace exqudens::vulkan {
       imageData += subResourceLayout.offset;
 
       //////
-      const char* filename = "headless.ppm";
-      std::ofstream file(filename, std::ios::out | std::ios::binary);
-      file << "P6\n" << imageOut.width << "\n" << imageOut.height << "\n" << 255 << "\n";
-      std::vector<VkFormat> formatsBGR = { VK_FORMAT_B8G8R8A8_SRGB, VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_B8G8R8A8_SNORM };
-      const bool colorSwizzle = (std::find(formatsBGR.begin(), formatsBGR.end(), VK_FORMAT_R8G8B8A8_UNORM) != formatsBGR.end());
-      for (int32_t y = 0; y < imageOut.height; y++) {
-        auto *row = (unsigned int*) imageData;
-        for (int32_t x = 0; x < imageOut.width; x++) {
-          if (colorSwizzle) {
-            file.write((char*)row + 2, 1);
-            file.write((char*)row + 1, 1);
-            file.write((char*)row, 1);
-          } else {
-            file.write((char*)row, 3);
+      std::vector<std::vector<std::vector<unsigned char>>> imageDataVector;
+      std::size_t depth = 4;
+      imageDataVector.resize(imageOut.height);
+      for (uint32_t y = 0; y < imageOut.height; y++) {
+        imageDataVector[y].resize(imageOut.width);
+        for (uint32_t x = 0; x < imageOut.width; x++) {
+          imageDataVector[y][x].resize(depth);
+          for (uint32_t z = 0; z < depth; z++) {
+            std::size_t yOffset = y * subResourceLayout.rowPitch;
+            std::size_t xOffset = x * depth;
+            std::size_t zOffset = z;
+            std::size_t offset = yOffset + xOffset + zOffset;
+            imageDataVector[y][x][z] = imageData[offset];
           }
-          row++;
         }
-        imageData += subResourceLayout.rowPitch;
       }
-      file.close();
+      TestUtils::writePng(
+          imageDataVector,
+          std::filesystem::path(TestConfiguration::getExecutableDir())
+            .append("resources")
+            .append("png")
+            .append("core-tests-test3-result.png")
+            .make_preferred()
+            .string()
+      );
       //////
 
       vkUnmapMemory(device, imageOut.memory);
@@ -346,54 +351,27 @@ namespace exqudens::vulkan {
       factory.destroyInstance(instance);
 
       std::cout << stream.str();
-    } catch (const std::exception& e) {
-      FAIL() << TestUtils::toString(e);
-    }
-  }
 
-  TEST_F(CoreTests, test4) {
-    try {
-      Factory factory;
-
-      std::map<std::string, std::string> environmentVariables = factory.createEnvironmentVariables(TestConfiguration::getExecutableDir());
-
-      for (auto const& [name, value] : environmentVariables) {
-        factory.setEnvironmentVariable(name, value);
-      }
-
-      Configuration configuration = factory.createConfiguration();
-      configuration.presentQueueFamilyRequired = false;
-      configuration.deviceExtensions = {};
-      std::ostringstream stream;
-      Logger logger = factory.createLogger(stream);
-
-      VkInstance instance = factory.createInstance(configuration, logger);
-      VkDebugUtilsMessengerEXT debugUtilsMessenger = factory.createDebugUtilsMessenger(instance, logger);
-      PhysicalDevice physicalDevice = factory.createPhysicalDevice(instance, configuration);
-      VkDevice device = factory.createDevice(physicalDevice.value, configuration, physicalDevice.queueFamilyIndexInfo);
-      Queue computeQueue = factory.createQueue(device, physicalDevice.queueFamilyIndexInfo.computeFamily.value(), 0);
-      Queue transferQueue = factory.createQueue(device, physicalDevice.queueFamilyIndexInfo.transferFamily.value(), 0);
-      Queue graphicsQueue = factory.createQueue(device, physicalDevice.queueFamilyIndexInfo.graphicsFamily.value(), 0);
-      Queue presentQueue;//functions.createPresentQueue(physicalDevice, configuration, surface, device, 0);
-      VkSwapchainKHR swapChain = nullptr;//functions.createSwapChain(physicalDevice, configuration, surface, device, 800, 600);
-
-      //std::this_thread::sleep_for(std::chrono::seconds(5));
-
-      ASSERT_TRUE(instance != nullptr);
-      ASSERT_TRUE(debugUtilsMessenger != nullptr);
-      ASSERT_TRUE(physicalDevice.value != nullptr);
-      ASSERT_TRUE(device != nullptr);
-      ASSERT_TRUE(computeQueue.value != nullptr);
-      ASSERT_TRUE(transferQueue.value != nullptr);
-      ASSERT_TRUE(graphicsQueue.value != nullptr);
-      ASSERT_TRUE(presentQueue.value == nullptr);
-      ASSERT_TRUE(swapChain == nullptr);
-
-      factory.destroyDevice(device);
-      factory.destroyPhysicalDevice(physicalDevice);
-      factory.destroyDebugUtilsMessenger(debugUtilsMessenger, instance);
-      factory.destroyInstance(instance);
-      std::cout << stream.str();
+      std::vector<std::vector<std::vector<unsigned char>>> image1 = TestUtils::readPng(
+          std::filesystem::path(TestConfiguration::getExecutableDir())
+              .append("resources")
+              .append("png")
+              .append("core-tests-test3-expected.png")
+              .make_preferred()
+              .string()
+      );
+      std::vector<std::vector<std::vector<unsigned char>>> image2 = TestUtils::readPng(
+          std::filesystem::path(TestConfiguration::getExecutableDir())
+              .append("resources")
+              .append("png")
+              .append("core-tests-test3-result.png")
+              .make_preferred()
+              .string()
+      );
+      ASSERT_EQ(image1.size(), image2.size());
+      ASSERT_EQ(image1[0].size(), image2[0].size());
+      ASSERT_EQ(image1[0][0].size(), image2[0][0].size());
+      ASSERT_EQ(image1, image2);
     } catch (const std::exception& e) {
       FAIL() << TestUtils::toString(e);
     }
