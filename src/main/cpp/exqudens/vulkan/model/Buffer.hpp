@@ -2,31 +2,12 @@
 
 #include <vulkan/vulkan.h>
 
-#include "exqudens/vulkan/Export.hpp"
-
 namespace exqudens::vulkan {
 
-  class EXQUDENS_VULKAN_EXPORT Buffer {
+  struct Buffer {
 
-    public:
-
-      VkBuffer value = nullptr;
-      VkDeviceMemory memory = nullptr;
-
-      Buffer(
-          VkBuffer value,
-          VkDeviceMemory memory
-      );
-      Buffer();
-      Buffer(const Buffer& object);
-      Buffer(Buffer&& object) noexcept;
-
-      Buffer& operator=(const Buffer& object);
-      Buffer& operator=(Buffer&& object) noexcept;
-
-      friend void swap(Buffer& first, Buffer& second);
-
-      virtual ~Buffer();
+    VkBuffer value;
+    VkDeviceMemory memory;
 
   };
 

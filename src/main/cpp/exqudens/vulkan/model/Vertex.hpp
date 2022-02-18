@@ -1,41 +1,53 @@
 #pragma once
 
 #include <vector>
+#include <cstddef>
 
 #include <glm/glm.hpp>
 #include <vulkan/vulkan.h>
 
-#include "exqudens/vulkan/Export.hpp"
-
 namespace exqudens::vulkan {
 
-  class EXQUDENS_VULKAN_EXPORT Vertex {
+  struct Vertex {
 
-    public:
+    static VkVertexInputBindingDescription getBindingDescription() {
+      return {
+        .binding = 0,
+        .stride = sizeof(Vertex),
+        .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
+      };
+    }
 
-      static VkVertexInputBindingDescription getBindingDescription();
+    static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions() {
+      uint32_t posOffset = offsetof(Vertex, pos);
+      uint32_t colorOffset = offsetof(Vertex, color);
+      uint32_t texCoordOffset = offsetof(Vertex, texCoord);
 
-      static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+      return {
+          VkVertexInputAttributeDescription {
+              .location = 0,
+              .binding = 0,
+              .format = VK_FORMAT_R32G32_SFLOAT,
+              .offset = posOffset
+          },
+          VkVertexInputAttributeDescription {
+              .location = 1,
+              .binding = 0,
+              .format = VK_FORMAT_R32G32B32_SFLOAT,
+              .offset = colorOffset
+          },
+          VkVertexInputAttributeDescription {
+              .location = 2,
+              .binding = 0,
+              .format = VK_FORMAT_R32G32_SFLOAT,
+              .offset = colorOffset
+          }
+      };
+    }
 
-      glm::vec2 pos = {};
-      glm::vec3 color = {};
-      glm::vec2 texCoord = {};
-
-      Vertex(
-          glm::vec2 pos,
-          glm::vec3 color,
-          glm::vec2 texCoord
-      );
-      Vertex();
-      Vertex(const Vertex& object);
-      Vertex(Vertex&& object) noexcept;
-
-      Vertex& operator=(const Vertex& object);
-      Vertex& operator=(Vertex&& object) noexcept;
-
-      friend void swap(Vertex& first, Vertex& second);
-
-      virtual ~Vertex();
+    glm::vec2 pos;
+    glm::vec3 color;
+    glm::vec2 texCoord;
 
   };
 

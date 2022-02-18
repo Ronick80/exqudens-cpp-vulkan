@@ -349,12 +349,4 @@ namespace exqudens::vulkan {
     }
   }
 
-  TEST_F(UiTestsA, test2) {
-    try {
-      ASSERT_EQ(1, 2);
-    } catch (const std::exception& e) {
-      FAIL() << TestUtils::toString(e);
-    }
-  }
-
 }

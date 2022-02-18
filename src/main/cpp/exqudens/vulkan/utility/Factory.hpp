@@ -12,7 +12,7 @@
 #include <vulkan/vulkan.h>
 
 #include "exqudens/vulkan/Export.hpp"
-#include "exqudens/vulkan/utility/Logger.hpp"
+#include "exqudens/vulkan/model/Logger.hpp"
 #include "exqudens/vulkan/model/Configuration.hpp"
 #include "exqudens/vulkan/model/QueueFamilyIndexInfo.hpp"
 #include "exqudens/vulkan/model/SwapChainSupportDetails.hpp"

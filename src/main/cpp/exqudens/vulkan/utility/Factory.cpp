@@ -361,41 +361,24 @@ namespace exqudens::vulkan {
 
   Configuration Factory::createConfiguration() {
     try {
-      std::string applicationName = "Exqudens Application";
-      unsigned int applicationVersionMajor = 1;
-      unsigned int applicationVersionMinor = 0;
-      unsigned int applicationVersionPatch = 0;
-      std::string engineName = "Engine Application";
-      unsigned int engineVersionMajor = 1;
-      unsigned int engineVersionMinor = 0;
-      unsigned int engineVersionPatch = 0;
-      bool validationLayersEnabled = true;
-      std::vector<const char*> validationLayers = {"VK_LAYER_KHRONOS_validation"};
-      std::vector<const char*> extensions = {VK_EXT_DEBUG_UTILS_EXTENSION_NAME};
-      std::vector<const char*> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-      bool computeQueueFamilyRequired = true;
-      bool transferQueueFamilyRequired = true;
-      bool graphicsQueueFamilyRequired = true;
-      bool presentQueueFamilyRequired = true;
-      bool anisotropyRequired = true;
       return {
-          applicationName,
-          applicationVersionMajor,
-          applicationVersionMinor,
-          applicationVersionPatch,
-          engineName,
-          engineVersionMajor,
-          engineVersionMinor,
-          engineVersionPatch,
-          validationLayersEnabled,
-          validationLayers,
-          extensions,
-          deviceExtensions,
-          computeQueueFamilyRequired,
-          transferQueueFamilyRequired,
-          graphicsQueueFamilyRequired,
-          presentQueueFamilyRequired,
-          anisotropyRequired
+          .applicationName = "Exqudens Application",
+          .applicationVersionMajor = 1,
+          .applicationVersionMinor = 0,
+          .applicationVersionPatch = 0,
+          .engineName = "Exqudens Engine",
+          .engineVersionMajor = 1,
+          .engineVersionMinor = 0,
+          .engineVersionPatch = 0,
+          .validationLayersEnabled = true,
+          .validationLayers = {"VK_LAYER_KHRONOS_validation"},
+          .extensions = {VK_EXT_DEBUG_UTILS_EXTENSION_NAME},
+          .deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME},
+          .computeQueueFamilyRequired = true,
+          .transferQueueFamilyRequired = true,
+          .graphicsQueueFamilyRequired = true,
+          .presentQueueFamilyRequired = true,
+          .anisotropyRequired = true
       };
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
@@ -462,7 +445,9 @@ namespace exqudens::vulkan {
         stream << line << std::endl;
       };
 
-      return Logger(function);
+      return {
+        .function = function
+      };
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -476,7 +461,9 @@ namespace exqudens::vulkan {
       )>& function
   ) {
     try {
-      return Logger(function);
+      return {
+        .function = function
+      };
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -1029,7 +1016,7 @@ namespace exqudens::vulkan {
       colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
       colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
       colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-      colorAttachment.finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;//VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+      colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
 
       VkAttachmentReference colorAttachmentRef = {};
       colorAttachmentRef.attachment = 0;
