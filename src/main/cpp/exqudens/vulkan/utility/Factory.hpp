@@ -85,12 +85,14 @@ namespace exqudens::vulkan {
 
       virtual Logger createLogger();
       virtual Logger createLogger(std::ostream& stream);
+      virtual Logger createLogger(VkDebugUtilsMessageSeverityFlagBitsEXT exceptionSeverity);
       virtual Logger createLogger(
-          const std::function<void(
+          const std::function<std::string(
               VkDebugUtilsMessageSeverityFlagBitsEXT,
               VkDebugUtilsMessageTypeFlagsEXT,
               const std::string&
-          )>& function
+          )>& function,
+          VkDebugUtilsMessageSeverityFlagBitsEXT exceptionSeverity
       );
 
       virtual VkInstance createInstance(Configuration& configuration, Logger& logger);
