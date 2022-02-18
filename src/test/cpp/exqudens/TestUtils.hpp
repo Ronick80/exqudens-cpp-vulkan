@@ -10,12 +10,21 @@
 #include <lodepng.h>
 
 #include "exqudens/TestMacros.hpp"
+#include "exqudens/TestConfiguration.hpp"
 
 namespace exqudens::vulkan {
 
   class TestUtils {
 
     public:
+
+      static std::string getExecutableFile() {
+        return TestConfiguration::getExecutableFile();
+      }
+
+      static std::string getExecutableDir() {
+        return TestConfiguration::getExecutableDir();
+      }
 
       static std::vector<std::string> toStringVector(
           const std::exception& exception,

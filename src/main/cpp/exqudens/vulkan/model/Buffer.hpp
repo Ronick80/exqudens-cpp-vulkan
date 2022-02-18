@@ -6,8 +6,8 @@ namespace exqudens::vulkan {
 
   struct Buffer {
 
-    VkBuffer value;
     VkDeviceMemory memory;
+    VkBuffer value;
 
   };
 

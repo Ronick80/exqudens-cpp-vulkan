@@ -407,26 +407,26 @@ namespace exqudens::vulkan {
         //std::string function = std::string("(") + __FUNCTION__ + ")";
 
         std::string level;
-        if (VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT == messageSeverity) {
+        if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT == messageSeverity) {
           level = "[VERBOSE]";
-        } else if (VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT == messageSeverity) {
+        } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT == messageSeverity) {
           level = "[INFO]";
-        } else if (VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT == messageSeverity) {
+        } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT == messageSeverity) {
           level = "[WARNING]";
-        } else if (VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT == messageSeverity) {
+        } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT == messageSeverity) {
           level = "[ERROR]";
-        } else if (VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT == messageSeverity) {
+        } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT == messageSeverity) {
           level = "[MAX]";
         }
 
         std::string type;
-        if (VkDebugUtilsMessageTypeFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT == messageType) {
+        if (VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT == messageType) {
           type = "(GENERAL)";
-        } else if (VkDebugUtilsMessageTypeFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT == messageType) {
+        } else if (VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT == messageType) {
           type = "(VALIDATION)";
-        } else if (VkDebugUtilsMessageTypeFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT == messageType) {
+        } else if (VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT == messageType) {
           type = "(PERFORMANCE)";
-        } else if (VkDebugUtilsMessageTypeFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_TYPE_FLAG_BITS_MAX_ENUM_EXT == messageType) {
+        } else if (VK_DEBUG_UTILS_MESSAGE_TYPE_FLAG_BITS_MAX_ENUM_EXT == messageType) {
           type = "(MAX)";
         }
 
@@ -720,10 +720,10 @@ namespace exqudens::vulkan {
         throw std::runtime_error(CALL_INFO() + ": failed to create compute queue!");
       }
 
-      Queue result;
-      result.familyIndex = queueFamilyIndex;
-      result.value = queue;
-      return result;
+      return {
+        .familyIndex = queueFamilyIndex,
+        .value = queue
+      };
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -772,7 +772,7 @@ namespace exqudens::vulkan {
 
       if (queueFamilyIndices[0] != queueFamilyIndices[1]) {
         createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-        createInfo.queueFamilyIndexCount = static_cast<uint32_t>(queueFamilyIndices.size());;
+        createInfo.queueFamilyIndexCount = static_cast<uint32_t>(queueFamilyIndices.size());
         createInfo.pQueueFamilyIndices = queueFamilyIndices.data();
       } else {
         createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -789,14 +789,14 @@ namespace exqudens::vulkan {
         throw std::runtime_error(CALL_INFO() + ": failed to create swap chain!");
       }
 
-      SwapChain result;
-      result.format = surfaceFormat.format;
-      result.extent = extent;
-      result.imageCount = imageCount;
-      result.width = width;
-      result.height = height;
-      result.value = swapChain;
-      return result;
+      return {
+        .format = surfaceFormat.format,
+        .extent = extent,
+        .imageCount = imageCount,
+        .width = width,
+        .height = height,
+        .value = swapChain
+      };
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -844,10 +844,10 @@ namespace exqudens::vulkan {
 
       vkBindBufferMemory(device, buffer, bufferMemory, 0);
 
-      Buffer result;
-      result.value = buffer;
-      result.memory = bufferMemory;
-      return result;
+      return {
+        .memory = bufferMemory,
+        .value = buffer
+      };
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -904,14 +904,14 @@ namespace exqudens::vulkan {
 
       vkBindImageMemory(device, image, imageMemory, 0);
 
-      Image result;
-      result.width = width;
-      result.height = height;
-      result.format = format;
-      result.value = image;
-      result.memory = imageMemory;
-      result.memorySize = memRequirements.size;
-      return result;
+      return {
+        .width = width,
+        .height = height,
+        .format = format,
+        .memory = imageMemory,
+        .memorySize = memRequirements.size,
+        .value = image
+      };
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -1006,45 +1006,85 @@ namespace exqudens::vulkan {
 
   VkRenderPass Factory::createRenderPass(VkDevice& device, VkFormat& format) {
     try {
+      return createRenderPass(
+          device,
+          RenderPassCreateInfo {
+            .attachments = {
+                VkAttachmentDescription {
+                  .format = format,
+                  .samples = VK_SAMPLE_COUNT_1_BIT,
+                  .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                  .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+                  .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                  .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                  .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+                  .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+                }
+            },
+            .subPasses = {
+                SubPassDescription {
+                  .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+                  .colorAttachments = {
+                      VkAttachmentReference {
+                        .attachment = 0,
+                        .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+                      }
+                  }
+                }
+            },
+            .dependencies = {
+                VkSubpassDependency {
+                  .srcSubpass = VK_SUBPASS_EXTERNAL,
+                  .dstSubpass = 0,
+                  .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                  .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                  .srcAccessMask = 0,
+                  .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
+                }
+            }
+          }
+      );
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  VkRenderPass Factory::createRenderPass(VkDevice& device, const RenderPassCreateInfo& createInfo) {
+    try {
       VkRenderPass renderPass = nullptr;
 
-      VkAttachmentDescription colorAttachment = {};
-      colorAttachment.format = format;
-      colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-      colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-      colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-      colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-      colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-      colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-      colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+      std::vector<VkSubpassDescription> subPasses;
 
-      VkAttachmentReference colorAttachmentRef = {};
-      colorAttachmentRef.attachment = 0;
-      colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+      for (const SubPassDescription& subPassDescription : createInfo.subPasses) {
+        VkSubpassDescription subPass = {
+            .flags = subPassDescription.flags,
+            .pipelineBindPoint = subPassDescription.pipelineBindPoint,
+            .inputAttachmentCount = static_cast<uint32_t>(subPassDescription.inputAttachments.size()),
+            .pInputAttachments = subPassDescription.inputAttachments.data(),
+            .colorAttachmentCount = static_cast<uint32_t>(subPassDescription.colorAttachments.size()),
+            .pColorAttachments = subPassDescription.colorAttachments.data(),
+            .pResolveAttachments = subPassDescription.resolveAttachments.data(),
+            .pDepthStencilAttachment = subPassDescription.depthStencilAttachment.has_value() ? &subPassDescription.depthStencilAttachment.value() : nullptr,
+            .preserveAttachmentCount = static_cast<uint32_t>(subPassDescription.preserveAttachments.size()),
+            .pPreserveAttachments = subPassDescription.preserveAttachments.data()
+        };
 
-      VkSubpassDescription subPass = {};
-      subPass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-      subPass.colorAttachmentCount = 1;
-      subPass.pColorAttachments = &colorAttachmentRef;
+        subPasses.emplace_back(subPass);
+      }
 
-      VkSubpassDependency dependency = {};
-      dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-      dependency.dstSubpass = 0;
-      dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-      dependency.srcAccessMask = 0;
-      dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-      dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+      VkRenderPassCreateInfo info = {
+          .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+          .pNext = nullptr,
+          .flags = createInfo.flags,
+          .attachmentCount = static_cast<uint32_t>(createInfo.attachments.size()),
+          .pAttachments = createInfo.attachments.data(),
+          .subpassCount = static_cast<uint32_t>(subPasses.size()),
+          .pSubpasses = subPasses.data(),
+          .dependencyCount = static_cast<uint32_t>(createInfo.dependencies.size()),
+          .pDependencies = createInfo.dependencies.data()
+      };
 
-      VkRenderPassCreateInfo renderPassInfo = {};
-      renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-      renderPassInfo.attachmentCount = 1;
-      renderPassInfo.pAttachments = &colorAttachment;
-      renderPassInfo.subpassCount = 1;
-      renderPassInfo.pSubpasses = &subPass;
-      renderPassInfo.dependencyCount = 1;
-      renderPassInfo.pDependencies = &dependency;
-
-      if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS || renderPass == nullptr) {
+      if (vkCreateRenderPass(device, &info, nullptr, &renderPass) != VK_SUCCESS || renderPass == nullptr) {
         throw std::runtime_error(CALL_INFO() + ": failed to create render pass!");
       }
 
@@ -1125,12 +1165,10 @@ namespace exqudens::vulkan {
       pipelineShaderStageCreateInfo.module = shaderModule;
       pipelineShaderStageCreateInfo.pName = "main";
 
-      Shader shader;
-
-      shader.shaderModule = shaderModule;
-      shader.pipelineShaderStageCreateInfo = pipelineShaderStageCreateInfo;
-
-      return shader;
+      return {
+        .shaderModule = shaderModule,
+        .pipelineShaderStageCreateInfo = pipelineShaderStageCreateInfo
+      };
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -1304,10 +1342,10 @@ namespace exqudens::vulkan {
         destroyShader(shader, device);
       }
 
-      Pipeline result;
-      result.layout = pipelineLayout;
-      result.value = pipeline;
-      return result;
+      return {
+        .layout = pipelineLayout,
+        .value = pipeline
+      };
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }

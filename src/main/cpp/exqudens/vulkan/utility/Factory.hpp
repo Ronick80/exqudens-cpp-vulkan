@@ -21,6 +21,7 @@
 #include "exqudens/vulkan/model/SwapChain.hpp"
 #include "exqudens/vulkan/model/Buffer.hpp"
 #include "exqudens/vulkan/model/Image.hpp"
+#include "exqudens/vulkan/model/RenderPassCreateInfo.hpp"
 #include "exqudens/vulkan/model/Shader.hpp"
 #include "exqudens/vulkan/model/Pipeline.hpp"
 
@@ -168,6 +169,7 @@ namespace exqudens::vulkan {
       virtual std::vector<VkImageView> createImageViews(VkDevice& device, std::vector<VkImage>& images, VkFormat& format);
 
       virtual VkRenderPass createRenderPass(VkDevice& device, VkFormat& format);
+      virtual VkRenderPass createRenderPass(VkDevice& device, const RenderPassCreateInfo& createInfo);
 
       virtual VkDescriptorSetLayout createDescriptorSetLayout(VkDevice& device);
 

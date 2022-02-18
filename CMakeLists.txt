@@ -121,10 +121,6 @@ if(NOT "" STREQUAL "${NOT_FOUND_PACKAGE_NAMES}")
 endif()
 
 add_library("${PROJECT_NAME}"
-    "src/main/cpp/exqudens/vulkan/utility/Macros.hpp"
-    "src/main/cpp/exqudens/vulkan/utility/Factory.hpp"
-    "src/main/cpp/exqudens/vulkan/utility/Factory.cpp"
-
     "src/main/cpp/exqudens/vulkan/model/Configuration.hpp"
     "src/main/cpp/exqudens/vulkan/model/Logger.hpp"
     "src/main/cpp/exqudens/vulkan/model/QueueFamilyIndexInfo.hpp"
@@ -134,9 +130,14 @@ add_library("${PROJECT_NAME}"
     "src/main/cpp/exqudens/vulkan/model/Queue.hpp"
     "src/main/cpp/exqudens/vulkan/model/Buffer.hpp"
     "src/main/cpp/exqudens/vulkan/model/Image.hpp"
+    "src/main/cpp/exqudens/vulkan/model/RenderPassCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/model/Shader.hpp"
     "src/main/cpp/exqudens/vulkan/model/Vertex.hpp"
     "src/main/cpp/exqudens/vulkan/model/Pipeline.hpp"
+
+    "src/main/cpp/exqudens/vulkan/utility/Macros.hpp"
+    "src/main/cpp/exqudens/vulkan/utility/Factory.hpp"
+    "src/main/cpp/exqudens/vulkan/utility/Factory.cpp"
 )
 generate_export_header("${PROJECT_NAME}" BASE_NAME "EXQUDENS_VULKAN" EXPORT_FILE_NAME
     "generated/main/exqudens/vulkan/Export.hpp"
@@ -222,7 +223,8 @@ add_library("test-lib" INTERFACE
     "src/test/cpp/exqudens/TestUtils.hpp"
     "src/test/cpp/exqudens/test/TestUtilsTests.hpp"
     "src/test/cpp/exqudens/test/ConfigurationTests.hpp"
-    "src/test/cpp/exqudens/test/CoreTests.hpp"
+    "src/test/cpp/exqudens/test/ShaderTests.hpp"
+    "src/test/cpp/exqudens/test/FactoryTests.hpp"
     "src/test/cpp/exqudens/test/UiTestsA.hpp"
 )
 target_include_directories("test-lib" INTERFACE

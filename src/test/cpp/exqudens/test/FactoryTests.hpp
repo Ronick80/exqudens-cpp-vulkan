@@ -1,27 +1,15 @@
 #pragma once
 
-#include <string>
-#include <vector>
-#include <map>
-#include <exception>
-#include <sstream>
-#include <thread>
-#include <chrono>
-#include <format>
-#include <fstream>
-#include <iostream>
+#include <stdexcept>
 
 #include <gtest/gtest.h>
 
-#include <vulkan/vulkan.h>
-
-#include "exqudens/TestConfiguration.hpp"
 #include "exqudens/TestUtils.hpp"
 #include "exqudens/vulkan/utility/Factory.hpp"
 
 namespace exqudens::vulkan {
 
-  class CoreTests : public testing::Test {
+  class FactoryTests : public testing::Test, protected Factory {
 
     protected:
 
@@ -54,88 +42,34 @@ namespace exqudens::vulkan {
 
   };
 
-  TEST_F(CoreTests, test1) {
+  TEST_F(FactoryTests, test1) {
     try {
-      Factory factory;
-
-      std::map<std::string, std::string> environmentVariables = factory.createEnvironmentVariables(TestConfiguration::getExecutableDir());
+      std::map<std::string, std::string> environmentVariables = createEnvironmentVariables(TestUtils::getExecutableDir());
 
       for (auto const& [name, value] : environmentVariables) {
-        factory.setEnvironmentVariable(name, value);
+        setEnvironmentVariable(name, value);
       }
 
-      Configuration configuration = factory.createConfiguration();
+      Configuration configuration = createConfiguration();
       configuration.presentQueueFamilyRequired = false;
       configuration.deviceExtensions = {};
       std::ostringstream stream;
-      Logger logger = factory.createLogger(stream);
+      Logger logger = createLogger(stream);
 
-      VkInstance instance = factory.createInstance(configuration, logger);
-      VkDebugUtilsMessengerEXT debugUtilsMessenger = factory.createDebugUtilsMessenger(instance, logger);
-      PhysicalDevice physicalDevice = factory.createPhysicalDevice(instance, configuration);
-      VkDevice device = factory.createDevice(physicalDevice.value, configuration, physicalDevice.queueFamilyIndexInfo);
-
-      Shader vertexShader1 = factory.createShader(device, "resources/shader/shader.vert.spv");
-      Shader fragmentShader1 = factory.createShader(device, "resources/shader/shader.frag.spv");
-
-      ASSERT_TRUE(vertexShader1.shaderModule != nullptr);
-      ASSERT_EQ(vertexShader1.pipelineShaderStageCreateInfo.stage, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT);
-      ASSERT_TRUE(fragmentShader1.shaderModule != nullptr);
-      ASSERT_EQ(fragmentShader1.pipelineShaderStageCreateInfo.stage, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
-
-      Shader vertexShader2 = vertexShader1;
-      Shader fragmentShader2 = fragmentShader1;
-
-      ASSERT_TRUE(vertexShader2.shaderModule != nullptr);
-      ASSERT_EQ(vertexShader2.pipelineShaderStageCreateInfo.stage, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT);
-      ASSERT_TRUE(fragmentShader2.shaderModule != nullptr);
-      ASSERT_EQ(fragmentShader2.pipelineShaderStageCreateInfo.stage, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
-
-      factory.destroyShader(vertexShader1, device);
-      factory.destroyShader(fragmentShader1, device);
-
-      ASSERT_TRUE(vertexShader2.shaderModule != nullptr);
-      ASSERT_TRUE(fragmentShader2.shaderModule != nullptr);
-
-      factory.destroyDevice(device);
-      factory.destroyPhysicalDevice(physicalDevice);
-      factory.destroyDebugUtilsMessenger(debugUtilsMessenger, instance);
-      factory.destroyInstance(instance);
-    } catch (const std::exception& e) {
-      FAIL() << TestUtils::toString(e);
-    }
-  }
-
-  TEST_F(CoreTests, test2) {
-    try {
-      Factory factory;
-
-      std::map<std::string, std::string> environmentVariables = factory.createEnvironmentVariables(TestConfiguration::getExecutableDir());
-
-      for (auto const& [name, value] : environmentVariables) {
-        factory.setEnvironmentVariable(name, value);
-      }
-
-      Configuration configuration = factory.createConfiguration();
-      configuration.presentQueueFamilyRequired = false;
-      configuration.deviceExtensions = {};
-      std::ostringstream stream;
-      Logger logger = factory.createLogger(stream);
-
-      VkInstance instance = factory.createInstance(configuration, logger);
-      VkDebugUtilsMessengerEXT debugUtilsMessenger = factory.createDebugUtilsMessenger(instance, logger);
-      PhysicalDevice physicalDevice = factory.createPhysicalDevice(instance, configuration);
-      VkDevice device = factory.createDevice(physicalDevice.value, configuration, physicalDevice.queueFamilyIndexInfo);
-      Queue graphicsQueue = factory.createQueue(device, physicalDevice.queueFamilyIndexInfo.graphicsFamily.value(), 0);
-      VkCommandPool graphicsCommandPool = factory.createCommandPool(device, graphicsQueue.familyIndex);
-      Image image = factory.createImage(physicalDevice.value, device, 800, 600, VkFormat::VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-      VkImageView imageView = factory.createImageView(device, image.value, image.format);
-      VkRenderPass renderPass = factory.createRenderPass(device, image.format);
-      VkFramebuffer frameBuffer = factory.createFrameBuffer(device, imageView, renderPass, image.width, image.height);
-      Pipeline graphicsPipeline = factory.createGraphicsPipeline(device, {.width = image.width, .height = image.height}, {"resources/shader/shader.vert.spv", "resources/shader/shader.frag.spv"}, renderPass);
-      VkCommandBuffer graphicsCommandBuffer = factory.createCommandBuffer(device, graphicsCommandPool);
-      Image imageOut = factory.createImage(physicalDevice.value, device, 800, 600, image.format, VK_IMAGE_TILING_LINEAR, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-      VkCommandBuffer copyCommandBuffer = factory.createCommandBuffer(device, graphicsCommandPool);
+      VkInstance instance = createInstance(configuration, logger);
+      VkDebugUtilsMessengerEXT debugUtilsMessenger = createDebugUtilsMessenger(instance, logger);
+      PhysicalDevice physicalDevice = createPhysicalDevice(instance, configuration);
+      VkDevice device = createDevice(physicalDevice.value, configuration, physicalDevice.queueFamilyIndexInfo);
+      Queue graphicsQueue = createQueue(device, physicalDevice.queueFamilyIndexInfo.graphicsFamily.value(), 0);
+      VkCommandPool graphicsCommandPool = createCommandPool(device, graphicsQueue.familyIndex);
+      Image image = createImage(physicalDevice.value, device, 800, 600, VkFormat::VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+      VkImageView imageView = createImageView(device, image.value, image.format);
+      VkRenderPass renderPass = createRenderPass(device, image.format);
+      VkFramebuffer frameBuffer = createFrameBuffer(device, imageView, renderPass, image.width, image.height);
+      Pipeline graphicsPipeline = createGraphicsPipeline(device, {.width = image.width, .height = image.height}, {"resources/shader/shader.vert.spv", "resources/shader/shader.frag.spv"}, renderPass);
+      VkCommandBuffer graphicsCommandBuffer = createCommandBuffer(device, graphicsCommandPool);
+      Image imageOut = createImage(physicalDevice.value, device, 800, 600, image.format, VK_IMAGE_TILING_LINEAR, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+      VkCommandBuffer copyCommandBuffer = createCommandBuffer(device, graphicsCommandPool);
 
       VkCommandBufferBeginInfo beginInfo = {};
       beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -305,12 +239,12 @@ namespace exqudens::vulkan {
       }
       TestUtils::writePng(
           imageDataVector,
-          std::filesystem::path(TestConfiguration::getExecutableDir())
-            .append("resources")
-            .append("png")
-            .append("core-tests-test3-result.png")
-            .make_preferred()
-            .string()
+          std::filesystem::path(TestUtils::getExecutableDir())
+              .append("resources")
+              .append("png")
+              .append("core-tests-test3-result.png")
+              .make_preferred()
+              .string()
       );
       //////
 
@@ -320,25 +254,25 @@ namespace exqudens::vulkan {
 
       vkQueueWaitIdle(graphicsQueue.value);
 
-      factory.destroyCommandBuffer(copyCommandBuffer, graphicsCommandPool, device);
-      factory.destroyImage(imageOut, device);
-      factory.destroyCommandBuffer(graphicsCommandBuffer, graphicsCommandPool, device);
-      factory.destroyPipeline(graphicsPipeline, device);
-      factory.destroyFrameBuffer(frameBuffer, device);
-      factory.destroyRenderPass(renderPass, device);
-      factory.destroyImageView(imageView, device);
-      factory.destroyImage(image, device);
-      factory.destroyCommandPool(graphicsCommandPool, device);
-      factory.destroyQueue(graphicsQueue);
-      factory.destroyDevice(device);
-      factory.destroyPhysicalDevice(physicalDevice);
-      factory.destroyDebugUtilsMessenger(debugUtilsMessenger, instance);
-      factory.destroyInstance(instance);
+      destroyCommandBuffer(copyCommandBuffer, graphicsCommandPool, device);
+      destroyImage(imageOut, device);
+      destroyCommandBuffer(graphicsCommandBuffer, graphicsCommandPool, device);
+      destroyPipeline(graphicsPipeline, device);
+      destroyFrameBuffer(frameBuffer, device);
+      destroyRenderPass(renderPass, device);
+      destroyImageView(imageView, device);
+      destroyImage(image, device);
+      destroyCommandPool(graphicsCommandPool, device);
+      destroyQueue(graphicsQueue);
+      destroyDevice(device);
+      destroyPhysicalDevice(physicalDevice);
+      destroyDebugUtilsMessenger(debugUtilsMessenger, instance);
+      destroyInstance(instance);
 
       std::cout << stream.str();
 
       std::vector<std::vector<std::vector<unsigned char>>> image1 = TestUtils::readPng(
-          std::filesystem::path(TestConfiguration::getExecutableDir())
+          std::filesystem::path(TestUtils::getExecutableDir())
               .append("resources")
               .append("png")
               .append("core-tests-test3-expected.png")
@@ -346,7 +280,7 @@ namespace exqudens::vulkan {
               .string()
       );
       std::vector<std::vector<std::vector<unsigned char>>> image2 = TestUtils::readPng(
-          std::filesystem::path(TestConfiguration::getExecutableDir())
+          std::filesystem::path(TestUtils::getExecutableDir())
               .append("resources")
               .append("png")
               .append("core-tests-test3-result.png")
