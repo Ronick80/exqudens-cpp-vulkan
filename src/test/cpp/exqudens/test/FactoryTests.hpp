@@ -54,7 +54,7 @@ namespace exqudens::vulkan {
       configuration.presentQueueFamilyRequired = false;
       configuration.deviceExtensions = {};
       std::ostringstream stream;
-      Logger logger = createLogger(stream);
+      Logger logger = createLogger(VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT, stream);
 
       VkInstance instance = createInstance(configuration, logger);
       VkDebugUtilsMessengerEXT debugUtilsMessenger = createDebugUtilsMessenger(instance, logger);

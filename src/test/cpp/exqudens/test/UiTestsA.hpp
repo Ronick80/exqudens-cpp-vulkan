@@ -262,8 +262,6 @@ namespace exqudens::vulkan {
             }
           }
 
-          ~Environment() override = default;
-
       };
 
       class TestUiApplication {

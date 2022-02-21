@@ -12,37 +12,6 @@
 
 namespace exqudens::vulkan {
 
-  Factory::Factory(
-      std::function<VkSurfaceKHR(VkInstance&)> createSurfaceFunction
-  ):
-      createSurfaceFunction(std::move(createSurfaceFunction))
-  {
-  }
-
-  Factory::Factory() = default;
-
-  Factory::Factory(const Factory& object): Factory(
-      object.createSurfaceFunction
-  ) {
-  }
-
-  Factory::Factory(Factory&& object) noexcept: Factory() {
-    swap(*this, object);
-  }
-
-  Factory& Factory::operator=(const Factory& object) {
-    return *this = Factory(object);
-  }
-
-  Factory& Factory::operator=(Factory&& object) noexcept {
-    swap(*this, object);
-    return *this;
-  }
-
-  void swap(Factory& first, Factory& second) {
-    std::swap(first.createSurfaceFunction, second.createSurfaceFunction);
-  }
-
   // utility
 
   void Factory::setEnvironmentVariable(const std::string& name, const std::string& value) {
@@ -82,6 +51,62 @@ namespace exqudens::vulkan {
     }
 #endif
       return value;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  std::function<std::string(
+      VkDebugUtilsMessageSeverityFlagBitsEXT,
+      VkDebugUtilsMessageTypeFlagsEXT,
+      const std::string&
+  )> Factory::createLoggerFunction() {
+    try {
+      return [](
+          VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+          VkDebugUtilsMessageTypeFlagsEXT messageType,
+          const std::string& message
+      ) {
+        //std::string function = std::string("(") + __FUNCTION__ + ")";
+
+        std::string level;
+        if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT == messageSeverity) {
+          level = "[VERBOSE]";
+        } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT == messageSeverity) {
+          level = "[INFO]";
+        } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT == messageSeverity) {
+          level = "[WARNING]";
+        } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT == messageSeverity) {
+          level = "[ERROR]";
+        } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT == messageSeverity) {
+          level = "[MAX]";
+        }
+
+        std::string type;
+        if (VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT == messageType) {
+          type = "(GENERAL)";
+        } else if (VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT == messageType) {
+          type = "(VALIDATION)";
+        } else if (VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT == messageType) {
+          type = "(PERFORMANCE)";
+        } else if (VK_DEBUG_UTILS_MESSAGE_TYPE_FLAG_BITS_MAX_ENUM_EXT == messageType) {
+          type = "(MAX)";
+        }
+
+        std::string line;
+
+        //line += function;
+        //line += " ";
+        line += level;
+        line += " ";
+        line += type;
+        line += " ";
+        line += "validation layer:";
+        line += " ";
+        line += message;
+
+        return line;
+      };
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -387,7 +412,7 @@ namespace exqudens::vulkan {
 
   Logger Factory::createLogger() {
     try {
-      return createLogger(std::cout);
+      return createLogger(VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT, std::cout);
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -395,61 +420,7 @@ namespace exqudens::vulkan {
 
   Logger Factory::createLogger(std::ostream& stream) {
     try {
-      std::function<std::string(
-          VkDebugUtilsMessageSeverityFlagBitsEXT,
-          VkDebugUtilsMessageTypeFlagsEXT,
-          std::string
-      )> function = [&stream](
-          VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-          VkDebugUtilsMessageTypeFlagsEXT messageType,
-          const std::string& message
-      ) {
-        //std::string function = std::string("(") + __FUNCTION__ + ")";
-
-        std::string level;
-        if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT == messageSeverity) {
-          level = "[VERBOSE]";
-        } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT == messageSeverity) {
-          level = "[INFO]";
-        } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT == messageSeverity) {
-          level = "[WARNING]";
-        } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT == messageSeverity) {
-          level = "[ERROR]";
-        } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT == messageSeverity) {
-          level = "[MAX]";
-        }
-
-        std::string type;
-        if (VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT == messageType) {
-          type = "(GENERAL)";
-        } else if (VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT == messageType) {
-          type = "(VALIDATION)";
-        } else if (VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT == messageType) {
-          type = "(PERFORMANCE)";
-        } else if (VK_DEBUG_UTILS_MESSAGE_TYPE_FLAG_BITS_MAX_ENUM_EXT == messageType) {
-          type = "(MAX)";
-        }
-
-        std::string line;
-
-        //line += function;
-        //line += " ";
-        line += level;
-        line += " ";
-        line += type;
-        line += " ";
-        line += "validation layer:";
-        line += " ";
-        line += message;
-
-        stream << line << std::endl;
-
-        return line;
-      };
-      return {
-          .function = function,
-          .exceptionSeverity = {}
-      };
+      return createLogger(VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT, stream);
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -461,55 +432,39 @@ namespace exqudens::vulkan {
           VkDebugUtilsMessageSeverityFlagBitsEXT,
           VkDebugUtilsMessageTypeFlagsEXT,
           std::string
-      )> function = [](
-          VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-          VkDebugUtilsMessageTypeFlagsEXT messageType,
-          const std::string& message
-      ) {
-        //std::string function = std::string("(") + __FUNCTION__ + ")";
+      )> function = loggerFunction;
+      try {
+        loggerFunction(
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT,
+            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT,
+            "Test 'loggerFunction'."
+        );
+      } catch (const std::bad_function_call& e) {
+        function = createLoggerFunction();
+      }
+      return createLogger(function, exceptionSeverity, std::cout);
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
 
-        std::string level;
-        if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT == messageSeverity) {
-          level = "[VERBOSE]";
-        } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT == messageSeverity) {
-          level = "[INFO]";
-        } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT == messageSeverity) {
-          level = "[WARNING]";
-        } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT == messageSeverity) {
-          level = "[ERROR]";
-        } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT == messageSeverity) {
-          level = "[MAX]";
-        }
-
-        std::string type;
-        if (VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT == messageType) {
-          type = "(GENERAL)";
-        } else if (VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT == messageType) {
-          type = "(VALIDATION)";
-        } else if (VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT == messageType) {
-          type = "(PERFORMANCE)";
-        } else if (VK_DEBUG_UTILS_MESSAGE_TYPE_FLAG_BITS_MAX_ENUM_EXT == messageType) {
-          type = "(MAX)";
-        }
-
-        std::string line;
-
-        //line += function;
-        //line += " ";
-        line += level;
-        line += " ";
-        line += type;
-        line += " ";
-        line += "validation layer:";
-        line += " ";
-        line += message;
-
-        return line;
-      };
-      return {
-          .function = function,
-          .exceptionSeverity = exceptionSeverity
-      };
+  Logger Factory::createLogger(VkDebugUtilsMessageSeverityFlagBitsEXT exceptionSeverity, std::ostream& stream) {
+    try {
+      std::function<std::string(
+          VkDebugUtilsMessageSeverityFlagBitsEXT,
+          VkDebugUtilsMessageTypeFlagsEXT,
+          std::string
+      )> function = loggerFunction;
+      try {
+        loggerFunction(
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT,
+            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT,
+            "Test 'loggerFunction'."
+        );
+      } catch (const std::bad_function_call& e) {
+        function = createLoggerFunction();
+      }
+      return createLogger(function, exceptionSeverity, stream);
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -524,9 +479,26 @@ namespace exqudens::vulkan {
       VkDebugUtilsMessageSeverityFlagBitsEXT exceptionSeverity
   ) {
     try {
+      return createLogger(function, exceptionSeverity, std::cout);
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  Logger Factory::createLogger(
+      const std::function<std::string(
+          VkDebugUtilsMessageSeverityFlagBitsEXT,
+          VkDebugUtilsMessageTypeFlagsEXT,
+          const std::string&
+      )>& function,
+      VkDebugUtilsMessageSeverityFlagBitsEXT exceptionSeverity,
+      std::ostream& stream
+  ) {
+    try {
       return {
         .function = function,
-        .exceptionSeverity = exceptionSeverity
+        .exceptionSeverity = exceptionSeverity,
+        .stream = &stream
       };
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
@@ -1853,7 +1825,5 @@ namespace exqudens::vulkan {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
   }
-
-  Factory::~Factory() = default;
 
 }

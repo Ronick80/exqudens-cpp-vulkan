@@ -31,25 +31,20 @@ namespace exqudens::vulkan {
 
     public:
 
+      std::function<std::string(VkDebugUtilsMessageSeverityFlagBitsEXT, VkDebugUtilsMessageTypeFlagsEXT, const std::string&)> loggerFunction;
       std::function<VkSurfaceKHR(VkInstance&)> createSurfaceFunction;
-
-      explicit Factory(
-          std::function<VkSurfaceKHR(VkInstance&)> createSurfaceFunction
-      );
-      Factory();
-      Factory(const Factory& object);
-      Factory(Factory&& object) noexcept;
-
-      Factory& operator=(const Factory& object);
-      Factory& operator=(Factory&& object) noexcept;
-
-      friend void swap(Factory& first, Factory& second);
 
       // utility
 
       virtual void setEnvironmentVariable(const std::string& name, const std::string& value);
 
       virtual std::optional<std::string> getEnvironmentVariable(const std::string& name);
+
+      virtual std::function<std::string(
+          VkDebugUtilsMessageSeverityFlagBitsEXT,
+          VkDebugUtilsMessageTypeFlagsEXT,
+          const std::string&
+      )> createLoggerFunction();
 
       virtual std::vector<char> readFile(const std::string& path);
 
@@ -86,6 +81,7 @@ namespace exqudens::vulkan {
       virtual Logger createLogger();
       virtual Logger createLogger(std::ostream& stream);
       virtual Logger createLogger(VkDebugUtilsMessageSeverityFlagBitsEXT exceptionSeverity);
+      virtual Logger createLogger(VkDebugUtilsMessageSeverityFlagBitsEXT exceptionSeverity, std::ostream& stream);
       virtual Logger createLogger(
           const std::function<std::string(
               VkDebugUtilsMessageSeverityFlagBitsEXT,
@@ -93,6 +89,15 @@ namespace exqudens::vulkan {
               const std::string&
           )>& function,
           VkDebugUtilsMessageSeverityFlagBitsEXT exceptionSeverity
+      );
+      virtual Logger createLogger(
+          const std::function<std::string(
+              VkDebugUtilsMessageSeverityFlagBitsEXT,
+              VkDebugUtilsMessageTypeFlagsEXT,
+              const std::string&
+          )>& function,
+          VkDebugUtilsMessageSeverityFlagBitsEXT exceptionSeverity,
+          std::ostream& stream
       );
 
       virtual VkInstance createInstance(Configuration& configuration, Logger& logger);
@@ -264,8 +269,6 @@ namespace exqudens::vulkan {
       virtual void destroyDebugUtilsMessenger(VkDebugUtilsMessengerEXT& debugUtilsMessenger, VkInstance& instance);
 
       virtual void destroyInstance(VkInstance& instance);
-
-      virtual ~Factory();
 
   };
 
