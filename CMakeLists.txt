@@ -122,7 +122,6 @@ endif()
 
 add_library("${PROJECT_NAME}"
     "src/main/cpp/exqudens/vulkan/model/Configuration.hpp"
-    "src/main/cpp/exqudens/vulkan/model/Logger.hpp"
     "src/main/cpp/exqudens/vulkan/model/QueueFamilyIndexInfo.hpp"
     "src/main/cpp/exqudens/vulkan/model/SwapChainSupportDetails.hpp"
     "src/main/cpp/exqudens/vulkan/model/PhysicalDevice.hpp"
@@ -135,9 +134,10 @@ add_library("${PROJECT_NAME}"
     "src/main/cpp/exqudens/vulkan/model/Vertex.hpp"
     "src/main/cpp/exqudens/vulkan/model/Pipeline.hpp"
 
-    "src/main/cpp/exqudens/vulkan/utility/Macros.hpp"
-    "src/main/cpp/exqudens/vulkan/utility/Factory.hpp"
-    "src/main/cpp/exqudens/vulkan/utility/Factory.cpp"
+    "src/main/cpp/exqudens/vulkan/Macros.hpp"
+    "src/main/cpp/exqudens/vulkan/Logger.hpp"
+    "src/main/cpp/exqudens/vulkan/Factory.hpp"
+    "src/main/cpp/exqudens/vulkan/Factory.cpp"
 )
 generate_export_header("${PROJECT_NAME}" BASE_NAME "EXQUDENS_VULKAN" EXPORT_FILE_NAME
     "generated/main/exqudens/vulkan/Export.hpp"

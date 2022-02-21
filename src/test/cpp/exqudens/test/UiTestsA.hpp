@@ -12,7 +12,7 @@
 #include "exqudens/TestMacros.hpp"
 #include "exqudens/TestConfiguration.hpp"
 #include "exqudens/TestUtils.hpp"
-#include "exqudens/vulkan/utility/Factory.hpp"
+#include "exqudens/vulkan/Factory.hpp"
 
 namespace exqudens::vulkan {
 

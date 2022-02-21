@@ -1,5 +1,5 @@
-#include "exqudens/vulkan/utility/Factory.hpp"
-#include "exqudens/vulkan/utility/Macros.hpp"
+#include "exqudens/vulkan/Factory.hpp"
+#include "exqudens/vulkan/Macros.hpp"
 
 #include <array>
 #include <set>

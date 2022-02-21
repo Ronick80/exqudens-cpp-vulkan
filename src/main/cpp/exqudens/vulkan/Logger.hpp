@@ -7,7 +7,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include "exqudens/vulkan/utility/Macros.hpp"
+#include "exqudens/vulkan/Macros.hpp"
 
 namespace exqudens::vulkan {
 
