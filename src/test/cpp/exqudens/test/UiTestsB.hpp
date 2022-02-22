@@ -26,6 +26,7 @@ namespace exqudens::vulkan {
         public:
 
           std::vector<Vertex> vertices = {};
+          std::vector<uint16_t> indices = {};
 
           std::map<std::string, std::string> environmentVariables = {};
           Configuration configuration = {};
@@ -51,6 +52,8 @@ namespace exqudens::vulkan {
           VkCommandPool graphicsCommandPool = nullptr;
           Buffer vertexStagingBuffer = {};
           Buffer vertexBuffer = {};
+          Buffer indexStagingBuffer = {};
+          Buffer indexBuffer = {};
           VkCommandBuffer transferCommandBuffer = nullptr;
           std::vector<VkCommandBuffer> graphicsCommandBuffers = {};
 
@@ -67,9 +70,14 @@ namespace exqudens::vulkan {
           void create(GLFWwindow*& window) {
             try {
               vertices = {
-                  {{0.0f, -0.5f}, {1.0f, 1.0f, 1.0f}},
-                  {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-                  {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+                  {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+                  {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+                  {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+                  {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+              };
+
+              indices = {
+                  0, 1, 2, 2, 3, 0
               };
 
               uint32_t glfwExtensionCount = 0;
@@ -130,12 +138,20 @@ namespace exqudens::vulkan {
               swapChainFrameBuffers = createFrameBuffers(device, swapChainImageViews, renderPass, swapChain.width, swapChain.height);
               vertexStagingBuffer = createBuffer(physicalDevice.value, device, sizeof(vertices[0]) * vertices.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-              void* data;
-              vkMapMemory(device, vertexStagingBuffer.memory, 0, vertexStagingBuffer.memorySize, 0, &data);
-              std::memcpy(data, vertices.data(), (size_t) vertexStagingBuffer.memorySize);
+              void* vertexData;
+              vkMapMemory(device, vertexStagingBuffer.memory, 0, vertexStagingBuffer.memorySize, 0, &vertexData);
+              std::memcpy(vertexData, vertices.data(), (size_t) vertexStagingBuffer.memorySize);
               vkUnmapMemory(device, vertexStagingBuffer.memory);
 
               vertexBuffer = createBuffer(physicalDevice.value, device, sizeof(vertices[0]) * vertices.size(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+              indexStagingBuffer = createBuffer(physicalDevice.value, device, sizeof(indices[0]) * indices.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+              void* indexData;
+              vkMapMemory(device, indexStagingBuffer.memory, 0, indexStagingBuffer.memorySize, 0, &indexData);
+              std::memcpy(indexData, indices.data(), (size_t) indexStagingBuffer.memorySize);
+              vkUnmapMemory(device, indexStagingBuffer.memory);
+
+              indexBuffer = createBuffer(physicalDevice.value, device, sizeof(vertices[0]) * vertices.size(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
               transferCommandBuffer = createCommandBuffer(device, transferCommandPool);
               graphicsCommandBuffers = createCommandBuffers(device, graphicsCommandPool, swapChainImageViews.size());
 
@@ -144,6 +160,14 @@ namespace exqudens::vulkan {
                   vertexStagingBuffer.memorySize,
                   vertexStagingBuffer.value,
                   vertexBuffer.value,
+                  transferQueue.value
+              );
+
+              copyBuffer(
+                  transferCommandPool,
+                  indexStagingBuffer.memorySize,
+                  indexStagingBuffer.value,
+                  indexBuffer.value,
                   transferQueue.value
               );
 
@@ -267,6 +291,8 @@ namespace exqudens::vulkan {
 
               destroyCommandBuffers(graphicsCommandBuffers, graphicsCommandPool, device);
               destroyCommandBuffer(transferCommandBuffer, transferCommandPool, device);
+              destroyBuffer(indexBuffer, device);
+              destroyBuffer(indexStagingBuffer, device);
               destroyBuffer(vertexBuffer, device);
               destroyBuffer(vertexStagingBuffer, device);
               destroyFrameBuffers(swapChainFrameBuffers, device);
@@ -358,16 +384,12 @@ namespace exqudens::vulkan {
 
               vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-              //vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-              //vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
-
               vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.value);
-
               VkBuffer vertexBuffers[] = {vertexBuffer.value};
               VkDeviceSize offsets[] = {0};
               vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
-
-              vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+              vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer.value, 0, VK_INDEX_TYPE_UINT16);
+              vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
               vkCmdEndRenderPass(commandBuffers[i]);
 
