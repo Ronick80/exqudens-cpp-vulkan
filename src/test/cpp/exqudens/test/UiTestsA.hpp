@@ -107,7 +107,7 @@ namespace exqudens::vulkan {
               swapChainImages = createSwapChainImages(device, swapChain.value);
               swapChainImageViews = createImageViews(device, swapChainImages, swapChain.format);
               renderPass = createRenderPass(device, swapChain.format);
-              graphicsPipeline = createGraphicsPipeline(device, swapChain.extent, {"resources/shader/shader.vert.spv", "resources/shader/shader.frag.spv"}, renderPass);
+              graphicsPipeline = createGraphicsPipeline(device, swapChain.extent, {"resources/shader/shader-1.vert.spv", "resources/shader/shader-1.frag.spv"}, renderPass);
               swapChainFrameBuffers = createFrameBuffers(device, swapChainImageViews, renderPass, swapChain.width, swapChain.height);
               graphicsCommandBuffers = createCommandBuffers(device, graphicsCommandPool, swapChainImageViews.size());
 

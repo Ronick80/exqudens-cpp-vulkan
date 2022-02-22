@@ -31,8 +31,8 @@ namespace exqudens::vulkan {
       PhysicalDevice physicalDevice = createPhysicalDevice(instance, configuration);
       VkDevice device = createDevice(physicalDevice.value, configuration, physicalDevice.queueFamilyIndexInfo);
 
-      Shader vertexShader1 = createShader(device, "resources/shader/shader.vert.spv");
-      Shader fragmentShader1 = createShader(device, "resources/shader/shader.frag.spv");
+      Shader vertexShader1 = createShader(device, "resources/shader/shader-1.vert.spv");
+      Shader fragmentShader1 = createShader(device, "resources/shader/shader-1.frag.spv");
 
       ASSERT_TRUE(vertexShader1.shaderModule != nullptr);
       ASSERT_EQ(vertexShader1.pipelineShaderStageCreateInfo.stage, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT);
