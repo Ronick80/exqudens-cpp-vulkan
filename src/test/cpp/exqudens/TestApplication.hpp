@@ -10,6 +10,7 @@
 #include "exqudens/test/ShaderTests.hpp"
 #include "exqudens/test/FactoryTests.hpp"
 #include "exqudens/test/UiTestsA.hpp"
+#include "exqudens/test/UiTestsB.hpp"
 
 namespace exqudens::vulkan {
 
