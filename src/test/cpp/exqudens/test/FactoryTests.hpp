@@ -54,7 +54,7 @@ namespace exqudens::vulkan {
       configuration.presentQueueFamilyRequired = false;
       configuration.deviceExtensions = {};
       std::ostringstream stream;
-      Logger logger = createLogger(VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT, stream);
+      Logger logger = createLogger(stream);
 
       VkInstance instance = createInstance(configuration, logger);
       VkDebugUtilsMessengerEXT debugUtilsMessenger = createDebugUtilsMessenger(instance, logger);
@@ -64,7 +64,44 @@ namespace exqudens::vulkan {
       VkCommandPool graphicsCommandPool = createCommandPool(device, graphicsQueue.familyIndex);
       Image image = createImage(physicalDevice.value, device, 800, 600, VkFormat::VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
       VkImageView imageView = createImageView(device, image.value, image.format);
-      VkRenderPass renderPass = createRenderPass(device, image.format);
+      VkRenderPass renderPass = createRenderPass(
+          device,
+          RenderPassCreateInfo {
+              .attachments = {
+                  VkAttachmentDescription {
+                      .format = image.format,
+                      .samples = VK_SAMPLE_COUNT_1_BIT,
+                      .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                      .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+                      .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                      .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                      .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+                      .finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+                  }
+              },
+              .subPasses = {
+                  SubPassDescription {
+                      .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+                      .colorAttachments = {
+                          VkAttachmentReference {
+                              .attachment = 0,
+                              .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+                          }
+                      }
+                  }
+              },
+              .dependencies = {
+                  VkSubpassDependency {
+                      .srcSubpass = VK_SUBPASS_EXTERNAL,
+                      .dstSubpass = 0,
+                      .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                      .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                      .srcAccessMask = 0,
+                      .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
+                  }
+              }
+          }
+      );
       VkFramebuffer frameBuffer = createFrameBuffer(device, imageView, renderPass, image.width, image.height);
       Pipeline graphicsPipeline = createGraphicsPipeline(device, {.width = image.width, .height = image.height}, {"resources/shader/shader.vert.spv", "resources/shader/shader.frag.spv"}, renderPass);
       VkCommandBuffer graphicsCommandBuffer = createCommandBuffer(device, graphicsCommandPool);

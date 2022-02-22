@@ -57,6 +57,8 @@ namespace exqudens::vulkan {
           size_t currentFrame = 0;
           int MAX_FRAMES_IN_FLIGHT = 2;
 
+          bool resized = false;
+
           Environment() = default;
 
           void create(GLFWwindow*& window) {
@@ -100,50 +102,22 @@ namespace exqudens::vulkan {
               //transferQueue = createTransferQueue(physicalDevice, configuration, surface, device, 0);
               graphicsQueue = createQueue(device, physicalDevice.queueFamilyIndexInfo.graphicsFamily.value(), 0);
               presentQueue = createQueue(device, physicalDevice.queueFamilyIndexInfo.presentFamily.value(), 0);
+              graphicsCommandPool = createCommandPool(device, graphicsQueue.familyIndex);
               swapChain = createSwapChain(physicalDevice.swapChainSupportDetails.value(), physicalDevice.queueFamilyIndexInfo, surface, device, 800, 600);
               swapChainImages = createSwapChainImages(device, swapChain.value);
               swapChainImageViews = createImageViews(device, swapChainImages, swapChain.format);
               renderPass = createRenderPass(device, swapChain.format);
-              //descriptorSetLayout = createDescriptorSetLayout(device);
               graphicsPipeline = createGraphicsPipeline(device, swapChain.extent, {"resources/shader/shader.vert.spv", "resources/shader/shader.frag.spv"}, renderPass);
               swapChainFrameBuffers = createFrameBuffers(device, swapChainImageViews, renderPass, swapChain.width, swapChain.height);
-              //descriptorPool = createDescriptorPool(device, swapChainImageViews.size());
-              //transferCommandPool = createTransferCommandPool(physicalDevice, configuration, surface, device);
-              graphicsCommandPool = createCommandPool(device, graphicsQueue.familyIndex);
-              //transferCommandBuffers = createCommandBuffers(device, transferCommandPool, swapChainImageViews.size());
               graphicsCommandBuffers = createCommandBuffers(device, graphicsCommandPool, swapChainImageViews.size());
 
-              for (size_t i = 0; i < graphicsCommandBuffers.size(); i++) {
-                VkCommandBufferBeginInfo beginInfo{};
-                beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-                if (vkBeginCommandBuffer(graphicsCommandBuffers[i], &beginInfo) != VK_SUCCESS) {
-                  throw std::runtime_error(CALL_INFO() + ": failed to begin recording command buffer!");
-                }
-
-                VkRenderPassBeginInfo renderPassInfo{};
-                renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-                renderPassInfo.renderPass = renderPass;
-                renderPassInfo.framebuffer = swapChainFrameBuffers[i];
-                renderPassInfo.renderArea.offset = {0, 0};
-                renderPassInfo.renderArea.extent = swapChain.extent;
-
-                VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-                renderPassInfo.clearValueCount = 1;
-                renderPassInfo.pClearValues = &clearColor;
-
-                vkCmdBeginRenderPass(graphicsCommandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-                vkCmdBindPipeline(graphicsCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.value);
-
-                vkCmdDraw(graphicsCommandBuffers[i], 3, 1, 0, 0);
-
-                vkCmdEndRenderPass(graphicsCommandBuffers[i]);
-
-                if (vkEndCommandBuffer(graphicsCommandBuffers[i]) != VK_SUCCESS) {
-                  throw std::runtime_error(CALL_INFO() + ": failed to record command buffer!");
-                }
-              }
+              fillCommandBuffers(
+                  graphicsCommandBuffers,
+                  renderPass,
+                  swapChainFrameBuffers,
+                  swapChain.extent,
+                  graphicsPipeline.value
+              );
 
               imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
               renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
@@ -171,12 +145,90 @@ namespace exqudens::vulkan {
             }
           }
 
+          void fillCommandBuffers(
+              std::vector<VkCommandBuffer>& commandBuffers,
+              VkRenderPass& renderPass,
+              std::vector<VkFramebuffer> frameBuffers,
+              VkExtent2D& extent,
+              VkPipeline& pipeline
+          ) {
+            for (size_t i = 0; i < commandBuffers.size(); i++) {
+              VkCommandBufferBeginInfo beginInfo{};
+              beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+              if (vkBeginCommandBuffer(commandBuffers[i], &beginInfo) != VK_SUCCESS) {
+                throw std::runtime_error(CALL_INFO() + ": failed to begin recording command buffer!");
+              }
+
+              VkRenderPassBeginInfo renderPassInfo{};
+              renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+              renderPassInfo.renderPass = renderPass;
+              renderPassInfo.framebuffer = frameBuffers[i];
+              renderPassInfo.renderArea.offset = {0, 0};
+              renderPassInfo.renderArea.extent = extent;
+
+              VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+              renderPassInfo.clearValueCount = 1;
+              renderPassInfo.pClearValues = &clearColor;
+
+              vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+              vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+
+              vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
+
+              vkCmdEndRenderPass(commandBuffers[i]);
+
+              if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
+                throw std::runtime_error(CALL_INFO() + ": failed to record command buffer!");
+              }
+            }
+          }
+
+          void reCreateSwapChain(int width, int height) {
+            std::cout << __FUNCTION__ << " width: " << width << " height: " << height << std::endl;
+
+            vkDeviceWaitIdle(device);
+
+            destroyCommandBuffers(graphicsCommandBuffers, graphicsCommandPool, device);
+            destroyFrameBuffers(swapChainFrameBuffers, device);
+            destroyPipeline(graphicsPipeline, device);
+            destroyRenderPass(renderPass, device);
+            destroyImageViews(swapChainImageViews, device);
+            destroySwapChain(swapChain, device);
+
+            physicalDevice.swapChainSupportDetails = querySwapChainSupport(physicalDevice.value, surface);
+
+            swapChain = createSwapChain(physicalDevice.swapChainSupportDetails.value(), physicalDevice.queueFamilyIndexInfo, surface, device, width, height);
+            swapChainImages = createSwapChainImages(device, swapChain.value);
+            swapChainImageViews = createImageViews(device, swapChainImages, swapChain.format);
+            renderPass = createRenderPass(device, swapChain.format);
+            graphicsPipeline = createGraphicsPipeline(device, swapChain.extent, {"resources/shader/shader.vert.spv", "resources/shader/shader.frag.spv"}, renderPass);
+            swapChainFrameBuffers = createFrameBuffers(device, swapChainImageViews, renderPass, swapChain.width, swapChain.height);
+            graphicsCommandBuffers = createCommandBuffers(device, graphicsCommandPool, swapChainImageViews.size());
+
+            fillCommandBuffers(
+                graphicsCommandBuffers,
+                renderPass,
+                swapChainFrameBuffers,
+                swapChain.extent,
+                graphicsPipeline.value
+            );
+          }
+
           void drawFrame(int width, int height) {
             try {
               vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
               uint32_t imageIndex;
-              vkAcquireNextImageKHR(device, swapChain.value, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+              VkResult result = vkAcquireNextImageKHR(device, swapChain.value, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+
+              if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+                reCreateSwapChain(width, height);
+                return;
+              } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+                throw std::runtime_error("failed to acquire swap chain image!");
+              }
 
               if (imagesInFlight[imageIndex] != VK_NULL_HANDLE) {
                 vkWaitForFences(device, 1, &imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
@@ -217,7 +269,14 @@ namespace exqudens::vulkan {
 
               presentInfo.pImageIndices = &imageIndex;
 
-              vkQueuePresentKHR(presentQueue.value, &presentInfo);
+              result = vkQueuePresentKHR(presentQueue.value, &presentInfo);
+
+              if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || resized) {
+                resized = false;
+                reCreateSwapChain(width, height);
+              } else if (result != VK_SUCCESS) {
+                throw std::runtime_error("failed to present swap chain image!");
+              }
 
               currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
             } catch (...) {
@@ -242,16 +301,14 @@ namespace exqudens::vulkan {
               }
 
               destroyCommandBuffers(graphicsCommandBuffers, graphicsCommandPool, device);
-              //destroyCommandBuffers(transferCommandBuffers, transferCommandPool, device);
-              destroyCommandPool(graphicsCommandPool, device);
-              //destroyCommandPool(transferCommandPool, device);
-              //destroyDescriptorPool(descriptorPool, device);
               destroyFrameBuffers(swapChainFrameBuffers, device);
               destroyPipeline(graphicsPipeline, device);
-              //destroyDescriptorSetLayout(descriptorSetLayout, device);
               destroyRenderPass(renderPass, device);
               destroyImageViews(swapChainImageViews, device);
               destroySwapChain(swapChain, device);
+              destroyCommandPool(graphicsCommandPool, device);
+              destroyQueue(presentQueue);
+              destroyQueue(graphicsQueue);
               destroyDevice(device);
               destroyPhysicalDevice(physicalDevice);
               destroySurface(surface, instance);
@@ -290,23 +347,23 @@ namespace exqudens::vulkan {
 
               glfwInit();
               glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-              glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+              //glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
               window = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
 
-              //glfwSetWindowUserPointer(window, this);
-              //glfwSetFramebufferSizeCallback(window, frameBufferResizeCallback);
+              glfwSetWindowUserPointer(window, this);
+              glfwSetFramebufferSizeCallback(window, frameBufferResizeCallback);
 
               environment = new Environment();
               environment->create(window);
 
               while (!glfwWindowShouldClose(window)) {
                 glfwPollEvents();
-                /*glfwGetFramebufferSize(window, &width, &height);
+                glfwGetFramebufferSize(window, &width, &height);
                 while (width == 0 || height == 0) {
                   glfwGetFramebufferSize(window, &width, &height);
                   glfwWaitEvents();
-                }*/
+                }
                 environment->drawFrame(width, height);
               }
               environment->waitIdle();
@@ -326,7 +383,8 @@ namespace exqudens::vulkan {
 
           static void frameBufferResizeCallback(GLFWwindow* window, int width, int height) {
             try {
-              //TestUiApplication* app = reinterpret_cast<TestUiApplication*>(glfwGetWindowUserPointer(window));
+              auto* app = reinterpret_cast<TestUiApplication*>(glfwGetWindowUserPointer(window));
+              app->environment->resized = true;
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
             }

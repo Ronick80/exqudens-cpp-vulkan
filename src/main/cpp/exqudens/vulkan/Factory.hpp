@@ -128,6 +128,11 @@ namespace exqudens::vulkan {
           uint32_t queueIndex
       );
 
+      virtual VkCommandPool createCommandPool(
+          VkDevice& device,
+          uint32_t queueFamilyIndex
+      );
+
       virtual SwapChain createSwapChain(
           SwapChainSupportDetails& swapChainSupport,
           QueueFamilyIndexInfo& queueFamilyIndexInfo,
@@ -194,8 +199,8 @@ namespace exqudens::vulkan {
           const std::vector<std::string>& shaderPaths,
           VkRenderPass& renderPass,
           VkFrontFace frontFace,
-          VkDescriptorSetLayout& descriptorSetLayout,
-          std::optional<VkVertexInputBindingDescription> bindingDescription,
+          std::vector<VkDescriptorSetLayout> descriptorSetLayouts,
+          std::vector<VkVertexInputBindingDescription> vertexBindingDescriptions,
           std::vector<VkVertexInputAttributeDescription> attributeDescriptions
       );
 
@@ -216,11 +221,6 @@ namespace exqudens::vulkan {
 
       virtual VkDescriptorPool createDescriptorPool(VkDevice& device, std::size_t size);
 
-      virtual VkCommandPool createCommandPool(
-          VkDevice& device,
-          uint32_t queueFamilyIndex
-      );
-
       virtual VkCommandBuffer createCommandBuffer(VkDevice& device, VkCommandPool& commandPool);
       virtual std::vector<VkCommandBuffer> createCommandBuffers(VkDevice& device, VkCommandPool& commandPool, std::size_t size);
 
@@ -228,8 +228,6 @@ namespace exqudens::vulkan {
 
       virtual void destroyCommandBuffer(VkCommandBuffer& commandBuffer, VkCommandPool& commandPool, VkDevice& device);
       virtual void destroyCommandBuffers(std::vector<VkCommandBuffer>& commandBuffers, VkCommandPool& commandPool, VkDevice& device);
-
-      virtual void destroyCommandPool(VkCommandPool& commandPool, VkDevice& device);
 
       virtual void destroyDescriptorPool(VkDescriptorPool& descriptorPool, VkDevice& device);
 
@@ -257,6 +255,8 @@ namespace exqudens::vulkan {
 
       virtual void destroySwapChain(SwapChain& swapChain, VkDevice& device);
       virtual void destroySwapChain(VkSwapchainKHR& swapChain, VkDevice& device);
+
+      virtual void destroyCommandPool(VkCommandPool& commandPool, VkDevice& device);
 
       virtual void destroyQueue(Queue& queue);
 

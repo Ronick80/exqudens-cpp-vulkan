@@ -765,6 +765,31 @@ namespace exqudens::vulkan {
     }
   }
 
+  VkCommandPool Factory::createCommandPool(
+      VkDevice& device,
+      uint32_t queueFamilyIndex
+  ) {
+    try {
+      VkCommandPool commandPool = nullptr;
+
+      VkCommandPoolCreateInfo createInfo = {};
+      createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+      createInfo.queueFamilyIndex = queueFamilyIndex;
+      createInfo.flags = 0; // Optional
+
+      if (
+          vkCreateCommandPool(device, &createInfo, nullptr, &commandPool) != VK_SUCCESS
+          || commandPool == nullptr
+          ) {
+        throw std::runtime_error(CALL_INFO() + ": failed to create compute command pool!");
+      }
+
+      return commandPool;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
   SwapChain Factory::createSwapChain(
       SwapChainSupportDetails& swapChainSupport,
       QueueFamilyIndexInfo& queueFamilyIndexInfo,
@@ -1218,18 +1243,18 @@ namespace exqudens::vulkan {
   ) {
     try {
       VkFrontFace frontFace = VkFrontFace::VK_FRONT_FACE_CLOCKWISE;
-      VkDescriptorSetLayout descriptorSetLayout = nullptr;
-      std::optional<VkVertexInputBindingDescription> bindingDescription = {}; //Vertex::getBindingDescription();
-      std::vector<VkVertexInputAttributeDescription> attributeDescriptions = {}; //Vertex::getAttributeDescriptions();
+      std::vector<VkDescriptorSetLayout> descriptorSetLayouts = {};
+      std::vector<VkVertexInputBindingDescription> vertexBindingDescriptions = {}; //{Vertex::getBindingDescription()};
+      std::vector<VkVertexInputAttributeDescription> vertexAttributeDescriptions = {}; //Vertex::getAttributeDescriptions();
       return createGraphicsPipeline(
           device,
           extent,
           shaderPaths,
           renderPass,
           frontFace,
-          descriptorSetLayout,
-          bindingDescription,
-          attributeDescriptions
+          descriptorSetLayouts,
+          vertexBindingDescriptions,
+          vertexAttributeDescriptions
       );
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
@@ -1242,9 +1267,9 @@ namespace exqudens::vulkan {
       const std::vector<std::string>& shaderPaths,
       VkRenderPass& renderPass,
       VkFrontFace frontFace,
-      VkDescriptorSetLayout& descriptorSetLayout,
-      std::optional<VkVertexInputBindingDescription> bindingDescription,
-      std::vector<VkVertexInputAttributeDescription> attributeDescriptions
+      std::vector<VkDescriptorSetLayout> descriptorSetLayouts,
+      std::vector<VkVertexInputBindingDescription> vertexBindingDescriptions,
+      std::vector<VkVertexInputAttributeDescription> vertexAttributeDescriptions
   ) {
     try {
       VkPipelineLayout pipelineLayout = nullptr;
@@ -1252,10 +1277,10 @@ namespace exqudens::vulkan {
       VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
       vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-      vertexInputInfo.vertexBindingDescriptionCount = bindingDescription.has_value() ? 1 : 0;
-      vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-      vertexInputInfo.pVertexBindingDescriptions = bindingDescription.has_value() ? &bindingDescription.value() : nullptr;
-      vertexInputInfo.pVertexAttributeDescriptions = !attributeDescriptions.empty() ? attributeDescriptions.data() : nullptr;
+      vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(vertexBindingDescriptions.size());
+      vertexInputInfo.pVertexBindingDescriptions = vertexBindingDescriptions.empty() ? nullptr : vertexBindingDescriptions.data();
+      vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexAttributeDescriptions.size());
+      vertexInputInfo.pVertexAttributeDescriptions = vertexAttributeDescriptions.empty() ? nullptr : vertexAttributeDescriptions.data();
 
       VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
       inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -1326,8 +1351,8 @@ namespace exqudens::vulkan {
 
       VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
       pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-      pipelineLayoutInfo.setLayoutCount = descriptorSetLayout != nullptr ? 1 : 0;
-      pipelineLayoutInfo.pSetLayouts = descriptorSetLayout != nullptr ? &descriptorSetLayout : nullptr;
+      pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(descriptorSetLayouts.size());
+      pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.empty() ? nullptr : descriptorSetLayouts.data();
       pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
       pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
@@ -1471,31 +1496,6 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkCommandPool Factory::createCommandPool(
-      VkDevice& device,
-      uint32_t queueFamilyIndex
-  ) {
-    try {
-      VkCommandPool commandPool = nullptr;
-
-      VkCommandPoolCreateInfo createInfo = {};
-      createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-      createInfo.queueFamilyIndex = queueFamilyIndex;
-      createInfo.flags = 0; // Optional
-
-      if (
-          vkCreateCommandPool(device, &createInfo, nullptr, &commandPool) != VK_SUCCESS
-          || commandPool == nullptr
-      ) {
-        throw std::runtime_error(CALL_INFO() + ": failed to create compute command pool!");
-      }
-
-      return commandPool;
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
-
   VkCommandBuffer Factory::createCommandBuffer(VkDevice& device, VkCommandPool& commandPool) {
     try {
       VkCommandBuffer commandBuffer = nullptr;
@@ -1567,17 +1567,6 @@ namespace exqudens::vulkan {
   void Factory::destroyCommandBuffers(std::vector<VkCommandBuffer>& commandBuffers, VkCommandPool& commandPool, VkDevice& device) {
     try {
       vkFreeCommandBuffers(device, commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
-
-  void Factory::destroyCommandPool(VkCommandPool& commandPool, VkDevice& device) {
-    try {
-      if (commandPool != nullptr) {
-        vkDestroyCommandPool(device, commandPool, nullptr);
-        commandPool = nullptr;
-      }
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -1756,6 +1745,17 @@ namespace exqudens::vulkan {
       if (swapChain != nullptr) {
         vkDestroySwapchainKHR(device, swapChain, nullptr);
         swapChain = nullptr;
+      }
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  void Factory::destroyCommandPool(VkCommandPool& commandPool, VkDevice& device) {
+    try {
+      if (commandPool != nullptr) {
+        vkDestroyCommandPool(device, commandPool, nullptr);
+        commandPool = nullptr;
       }
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
