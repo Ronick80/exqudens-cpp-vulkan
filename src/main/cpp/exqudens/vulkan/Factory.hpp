@@ -132,6 +132,11 @@ namespace exqudens::vulkan {
           VkDevice& device,
           uint32_t queueFamilyIndex
       );
+      virtual VkCommandPool createCommandPool(
+          VkDevice& device,
+          uint32_t queueFamilyIndex,
+          VkCommandPoolCreateFlags flags
+      );
 
       virtual SwapChain createSwapChain(
           SwapChainSupportDetails& swapChainSupport,

@@ -49,6 +49,7 @@ namespace exqudens::vulkan {
           //VkDescriptorPool descriptorPool = nullptr;
           VkCommandPool transferCommandPool = nullptr;
           VkCommandPool graphicsCommandPool = nullptr;
+          Buffer vertexStagingBuffer = {};
           Buffer vertexBuffer = {};
           VkCommandBuffer transferCommandBuffer = nullptr;
           std::vector<VkCommandBuffer> graphicsCommandBuffers = {};
@@ -62,8 +63,6 @@ namespace exqudens::vulkan {
           int MAX_FRAMES_IN_FLIGHT = 2;
 
           bool resized = false;
-
-          Environment() = default;
 
           void create(GLFWwindow*& window) {
             try {
@@ -112,7 +111,7 @@ namespace exqudens::vulkan {
               transferQueue = createQueue(device, physicalDevice.queueFamilyIndexInfo.transferFamily.value(), 0);
               graphicsQueue = createQueue(device, physicalDevice.queueFamilyIndexInfo.graphicsFamily.value(), 0);
               presentQueue = createQueue(device, physicalDevice.queueFamilyIndexInfo.presentFamily.value(), 0);
-              transferCommandPool = createCommandPool(device, transferQueue.familyIndex);
+              transferCommandPool = createCommandPool(device, transferQueue.familyIndex, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
               graphicsCommandPool = createCommandPool(device, graphicsQueue.familyIndex);
               swapChain = createSwapChain(physicalDevice.swapChainSupportDetails.value(), physicalDevice.queueFamilyIndexInfo, surface, device, 800, 600);
               swapChainImages = createSwapChainImages(device, swapChain.value);
@@ -129,15 +128,24 @@ namespace exqudens::vulkan {
                   Vertex::getAttributeDescriptions()
               );
               swapChainFrameBuffers = createFrameBuffers(device, swapChainImageViews, renderPass, swapChain.width, swapChain.height);
-              vertexBuffer = createBuffer(physicalDevice.value, device, sizeof(vertices[0]) * vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+              vertexStagingBuffer = createBuffer(physicalDevice.value, device, sizeof(vertices[0]) * vertices.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
               void* data;
-              vkMapMemory(device, vertexBuffer.memory, 0, vertexBuffer.memorySize, 0, &data);
-              std::memcpy(data, vertices.data(), (size_t) vertexBuffer.memorySize);
-              vkUnmapMemory(device, vertexBuffer.memory);
+              vkMapMemory(device, vertexStagingBuffer.memory, 0, vertexStagingBuffer.memorySize, 0, &data);
+              std::memcpy(data, vertices.data(), (size_t) vertexStagingBuffer.memorySize);
+              vkUnmapMemory(device, vertexStagingBuffer.memory);
 
+              vertexBuffer = createBuffer(physicalDevice.value, device, sizeof(vertices[0]) * vertices.size(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
               transferCommandBuffer = createCommandBuffer(device, transferCommandPool);
               graphicsCommandBuffers = createCommandBuffers(device, graphicsCommandPool, swapChainImageViews.size());
+
+              copyBuffer(
+                  transferCommandPool,
+                  vertexStagingBuffer.memorySize,
+                  vertexStagingBuffer.value,
+                  vertexBuffer.value,
+                  transferQueue.value
+              );
 
               fillGraphicsCommandBuffers(
                   graphicsCommandBuffers,
@@ -171,93 +179,6 @@ namespace exqudens::vulkan {
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
             }
-          }
-
-          void fillGraphicsCommandBuffers(
-              std::vector<VkCommandBuffer>& commandBuffers,
-              VkRenderPass& renderPass,
-              std::vector<VkFramebuffer> frameBuffers,
-              VkExtent2D& extent,
-              VkPipeline& pipeline
-          ) {
-            for (size_t i = 0; i < commandBuffers.size(); i++) {
-              VkCommandBufferBeginInfo beginInfo{};
-              beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-              if (vkBeginCommandBuffer(commandBuffers[i], &beginInfo) != VK_SUCCESS) {
-                throw std::runtime_error(CALL_INFO() + ": failed to begin recording command buffer!");
-              }
-
-              VkRenderPassBeginInfo renderPassInfo{};
-              renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-              renderPassInfo.renderPass = renderPass;
-              renderPassInfo.framebuffer = frameBuffers[i];
-              renderPassInfo.renderArea.offset = {0, 0};
-              renderPassInfo.renderArea.extent = extent;
-
-              VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-              renderPassInfo.clearValueCount = 1;
-              renderPassInfo.pClearValues = &clearColor;
-
-              vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-              //vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-              //vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
-
-              vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.value);
-
-              VkBuffer vertexBuffers[] = {vertexBuffer.value};
-              VkDeviceSize offsets[] = {0};
-              vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
-
-              vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
-
-              vkCmdEndRenderPass(commandBuffers[i]);
-
-              if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
-                throw std::runtime_error(CALL_INFO() + ": failed to record command buffer!");
-              }
-            }
-          }
-
-          void reCreateSwapChain(int width, int height) {
-            std::cout << __FUNCTION__ << " width: " << width << " height: " << height << std::endl;
-
-            vkDeviceWaitIdle(device);
-
-            destroyCommandBuffers(graphicsCommandBuffers, graphicsCommandPool, device);
-            destroyFrameBuffers(swapChainFrameBuffers, device);
-            destroyPipeline(graphicsPipeline, device);
-            destroyRenderPass(renderPass, device);
-            destroyImageViews(swapChainImageViews, device);
-            destroySwapChain(swapChain, device);
-
-            physicalDevice.swapChainSupportDetails = querySwapChainSupport(physicalDevice.value, surface);
-
-            swapChain = createSwapChain(physicalDevice.swapChainSupportDetails.value(), physicalDevice.queueFamilyIndexInfo, surface, device, width, height);
-            swapChainImages = createSwapChainImages(device, swapChain.value);
-            swapChainImageViews = createImageViews(device, swapChainImages, swapChain.format);
-            renderPass = createRenderPass(device, swapChain.format);
-            graphicsPipeline = createGraphicsPipeline(
-                device,
-                swapChain.extent,
-                {"resources/shader/shader-2.vert.spv", "resources/shader/shader-2.frag.spv"},
-                renderPass,
-                VK_FRONT_FACE_CLOCKWISE,
-                {},
-                {Vertex::getBindingDescription()},
-                Vertex::getAttributeDescriptions()
-            );
-            swapChainFrameBuffers = createFrameBuffers(device, swapChainImageViews, renderPass, swapChain.width, swapChain.height);
-            graphicsCommandBuffers = createCommandBuffers(device, graphicsCommandPool, swapChainImageViews.size());
-
-            fillGraphicsCommandBuffers(
-                graphicsCommandBuffers,
-                renderPass,
-                swapChainFrameBuffers,
-                swapChain.extent,
-                graphicsPipeline.value
-            );
           }
 
           void drawFrame(int width, int height) {
@@ -347,6 +268,7 @@ namespace exqudens::vulkan {
               destroyCommandBuffers(graphicsCommandBuffers, graphicsCommandPool, device);
               destroyCommandBuffer(transferCommandBuffer, transferCommandPool, device);
               destroyBuffer(vertexBuffer, device);
+              destroyBuffer(vertexStagingBuffer, device);
               destroyFrameBuffers(swapChainFrameBuffers, device);
               destroyPipeline(graphicsPipeline, device);
               destroyRenderPass(renderPass, device);
@@ -365,6 +287,134 @@ namespace exqudens::vulkan {
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
             }
+          }
+
+        private:
+
+          void copyBuffer(
+              VkCommandPool& commandPool,
+              VkDeviceSize size,
+              VkBuffer& srcBuffer,
+              VkBuffer& dstBuffer,
+              VkQueue& queue
+          ) {
+            VkCommandBufferAllocateInfo allocInfo{};
+            allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+            allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+            allocInfo.commandPool = commandPool;
+            allocInfo.commandBufferCount = 1;
+
+            VkCommandBuffer commandBuffer;
+            vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
+
+            VkCommandBufferBeginInfo beginInfo{};
+            beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+            beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+            vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+            VkBufferCopy copyRegion{};
+            copyRegion.size = size;
+            vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+
+            vkEndCommandBuffer(commandBuffer);
+
+            VkSubmitInfo submitInfo{};
+            submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+            submitInfo.commandBufferCount = 1;
+            submitInfo.pCommandBuffers = &commandBuffer;
+
+            vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
+            vkQueueWaitIdle(queue);
+
+            vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
+          }
+
+          void fillGraphicsCommandBuffers(
+              std::vector<VkCommandBuffer>& commandBuffers,
+              VkRenderPass& renderPass,
+              std::vector<VkFramebuffer> frameBuffers,
+              VkExtent2D& extent,
+              VkPipeline& pipeline
+          ) {
+            for (size_t i = 0; i < commandBuffers.size(); i++) {
+              VkCommandBufferBeginInfo beginInfo{};
+              beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+              if (vkBeginCommandBuffer(commandBuffers[i], &beginInfo) != VK_SUCCESS) {
+                throw std::runtime_error(CALL_INFO() + ": failed to begin recording command buffer!");
+              }
+
+              VkRenderPassBeginInfo renderPassInfo{};
+              renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+              renderPassInfo.renderPass = renderPass;
+              renderPassInfo.framebuffer = frameBuffers[i];
+              renderPassInfo.renderArea.offset = {0, 0};
+              renderPassInfo.renderArea.extent = extent;
+
+              VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+              renderPassInfo.clearValueCount = 1;
+              renderPassInfo.pClearValues = &clearColor;
+
+              vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+              //vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+              //vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
+
+              vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.value);
+
+              VkBuffer vertexBuffers[] = {vertexBuffer.value};
+              VkDeviceSize offsets[] = {0};
+              vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+
+              vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+
+              vkCmdEndRenderPass(commandBuffers[i]);
+
+              if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
+                throw std::runtime_error(CALL_INFO() + ": failed to record command buffer!");
+              }
+            }
+          }
+
+          void reCreateSwapChain(int width, int height) {
+            std::cout << __FUNCTION__ << " width: " << width << " height: " << height << std::endl;
+
+            vkDeviceWaitIdle(device);
+
+            destroyCommandBuffers(graphicsCommandBuffers, graphicsCommandPool, device);
+            destroyFrameBuffers(swapChainFrameBuffers, device);
+            destroyPipeline(graphicsPipeline, device);
+            destroyRenderPass(renderPass, device);
+            destroyImageViews(swapChainImageViews, device);
+            destroySwapChain(swapChain, device);
+
+            physicalDevice.swapChainSupportDetails = querySwapChainSupport(physicalDevice.value, surface);
+
+            swapChain = createSwapChain(physicalDevice.swapChainSupportDetails.value(), physicalDevice.queueFamilyIndexInfo, surface, device, width, height);
+            swapChainImages = createSwapChainImages(device, swapChain.value);
+            swapChainImageViews = createImageViews(device, swapChainImages, swapChain.format);
+            renderPass = createRenderPass(device, swapChain.format);
+            graphicsPipeline = createGraphicsPipeline(
+                device,
+                swapChain.extent,
+                {"resources/shader/shader-2.vert.spv", "resources/shader/shader-2.frag.spv"},
+                renderPass,
+                VK_FRONT_FACE_CLOCKWISE,
+                {},
+                {Vertex::getBindingDescription()},
+                Vertex::getAttributeDescriptions()
+            );
+            swapChainFrameBuffers = createFrameBuffers(device, swapChainImageViews, renderPass, swapChain.width, swapChain.height);
+            graphicsCommandBuffers = createCommandBuffers(device, graphicsCommandPool, swapChainImageViews.size());
+
+            fillGraphicsCommandBuffers(
+                graphicsCommandBuffers,
+                renderPass,
+                swapChainFrameBuffers,
+                swapChain.extent,
+                graphicsPipeline.value
+            );
           }
 
       };

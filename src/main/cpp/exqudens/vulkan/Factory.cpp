@@ -770,12 +770,24 @@ namespace exqudens::vulkan {
       uint32_t queueFamilyIndex
   ) {
     try {
+      return createCommandPool(device, queueFamilyIndex, 0);
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  VkCommandPool Factory::createCommandPool(
+      VkDevice& device,
+      uint32_t queueFamilyIndex,
+      VkCommandPoolCreateFlags flags
+  ) {
+    try {
       VkCommandPool commandPool = nullptr;
 
       VkCommandPoolCreateInfo createInfo = {};
       createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
       createInfo.queueFamilyIndex = queueFamilyIndex;
-      createInfo.flags = 0; // Optional
+      createInfo.flags = flags;
 
       if (
           vkCreateCommandPool(device, &createInfo, nullptr, &commandPool) != VK_SUCCESS
