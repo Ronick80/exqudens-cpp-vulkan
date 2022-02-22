@@ -235,9 +235,6 @@ namespace exqudens::vulkan {
       virtual void destroyFrameBuffers(std::vector<VkFramebuffer>& frameBuffers, VkDevice& device);
 
       virtual void destroyPipeline(Pipeline& pipeline, VkDevice& device);
-      virtual void destroyPipeline(VkPipeline& pipeline, VkDevice& device);
-
-      virtual void destroyPipelineLayout(VkPipelineLayout& pipelineLayout, VkDevice& device);
 
       virtual void destroyShader(Shader& shader, VkDevice& device);
 
@@ -249,9 +246,12 @@ namespace exqudens::vulkan {
       virtual void destroyImageViews(std::vector<VkImageView>& imageViews, VkDevice& device);
 
       virtual void destroyImage(Image& image, VkDevice& device);
+      virtual void destroyImage(Image& image, VkDevice& device, bool unmapMemory);
       virtual void destroyImages(std::vector<Image>& images, VkDevice& device);
+      virtual void destroyImages(std::vector<Image>& images, VkDevice& device, bool unmapMemory);
 
       virtual void destroyBuffer(Buffer& buffer, VkDevice& device);
+      virtual void destroyBuffer(Buffer& buffer, VkDevice& device, bool unmapMemory);
 
       virtual void destroySwapChain(SwapChain& swapChain, VkDevice& device);
       virtual void destroySwapChain(VkSwapchainKHR& swapChain, VkDevice& device);

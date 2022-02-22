@@ -222,6 +222,7 @@ add_library("test-lib" INTERFACE
     "src/test/cpp/exqudens/TestMacros.hpp"
     "src/test/cpp/exqudens/TestUtils.hpp"
     "src/test/cpp/exqudens/test/TestUtilsTests.hpp"
+    "src/test/cpp/exqudens/test/OtherTests.hpp"
     "src/test/cpp/exqudens/test/ConfigurationTests.hpp"
     "src/test/cpp/exqudens/test/ShaderTests.hpp"
     "src/test/cpp/exqudens/test/FactoryTests.hpp"

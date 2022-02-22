@@ -5,6 +5,7 @@
 
 #include "exqudens/TestConfiguration.hpp"
 #include "exqudens/test/TestUtilsTests.hpp"
+#include "exqudens/test/OtherTests.hpp"
 #include "exqudens/test/ConfigurationTests.hpp"
 #include "exqudens/test/ShaderTests.hpp"
 #include "exqudens/test/FactoryTests.hpp"

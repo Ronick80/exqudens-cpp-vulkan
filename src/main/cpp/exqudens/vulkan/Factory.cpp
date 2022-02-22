@@ -907,6 +907,8 @@ namespace exqudens::vulkan {
 
       return {
         .memory = bufferMemory,
+        .memorySize = size,
+        .memoryProperties = properties,
         .value = buffer
       };
     } catch (...) {
@@ -971,6 +973,7 @@ namespace exqudens::vulkan {
         .format = format,
         .memory = imageMemory,
         .memorySize = memRequirements.size,
+        .memoryProperties = properties,
         .value = image
       };
     } catch (...) {
@@ -1606,29 +1609,13 @@ namespace exqudens::vulkan {
 
   void Factory::destroyPipeline(Pipeline& pipeline, VkDevice& device) {
     try {
-      destroyPipeline(pipeline.value, device);
-      destroyPipelineLayout(pipeline.layout, device);
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
-
-  void Factory::destroyPipeline(VkPipeline& pipeline, VkDevice& device) {
-    try {
-      if (pipeline != nullptr) {
-        vkDestroyPipeline(device, pipeline, nullptr);
-        pipeline = nullptr;
+      if (pipeline.value != nullptr) {
+        vkDestroyPipeline(device, pipeline.value, nullptr);
+        pipeline.value = nullptr;
       }
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
-
-  void Factory::destroyPipelineLayout(VkPipelineLayout& pipelineLayout, VkDevice& device) {
-    try {
-      if (pipelineLayout != nullptr) {
-        vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
-        pipelineLayout = nullptr;
+      if (pipeline.layout != nullptr) {
+        vkDestroyPipelineLayout(device, pipeline.layout, nullptr);
+        pipeline.layout = nullptr;
       }
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
@@ -1691,8 +1678,21 @@ namespace exqudens::vulkan {
 
   void Factory::destroyImage(Image& image, VkDevice& device) {
     try {
+      destroyImage(image, device, false);
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  void Factory::destroyImage(Image& image, VkDevice& device, bool unmapMemory) {
+    try {
       if (image.memory != nullptr) {
-        //vkUnmapMemory(device, image.memory);
+        if (
+            unmapMemory
+            && (image.memoryProperties & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+        ) {
+          vkUnmapMemory(device, image.memory);
+        }
         vkFreeMemory(device, image.memory, nullptr);
         image.memory = nullptr;
       }
@@ -1715,10 +1715,33 @@ namespace exqudens::vulkan {
     }
   }
 
+  void Factory::destroyImages(std::vector<Image>& images, VkDevice& device, bool unmapMemory) {
+    try {
+      for (std::size_t i = 0; i < images.size(); i++) {
+        destroyImage(images[i], device, unmapMemory);
+      }
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
   void Factory::destroyBuffer(Buffer& buffer, VkDevice& device) {
     try {
+      destroyBuffer(buffer, device, false);
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  void Factory::destroyBuffer(Buffer& buffer, VkDevice& device, bool unmapMemory) {
+    try {
       if (buffer.memory != nullptr) {
-        //vkUnmapMemory(device, buffer.memory);
+        if (
+            unmapMemory
+            && (buffer.memoryProperties & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+            ) {
+          vkUnmapMemory(device, buffer.memory);
+        }
         vkFreeMemory(device, buffer.memory, nullptr);
         buffer.memory = nullptr;
       }
