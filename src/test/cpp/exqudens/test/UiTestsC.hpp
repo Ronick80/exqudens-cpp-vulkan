@@ -20,8 +20,8 @@
 #include "exqudens/TestConfiguration.hpp"
 #include "exqudens/TestUtils.hpp"
 #include "exqudens/vulkan/Factory.hpp"
-#include "exqudens/vulkan/model/Vertex.hpp"
-#include "exqudens/vulkan/model/UniformBufferObject.hpp"
+#include "exqudens/test/model/Vertex.hpp"
+#include "exqudens/test/model/UniformBufferObject.hpp"
 
 namespace exqudens::vulkan {
 

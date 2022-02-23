@@ -13,7 +13,7 @@
 #include "exqudens/TestConfiguration.hpp"
 #include "exqudens/TestUtils.hpp"
 #include "exqudens/vulkan/Factory.hpp"
-#include "exqudens/vulkan/model/Vertex.hpp"
+#include "exqudens/test/model/Vertex.hpp"
 
 namespace exqudens::vulkan {
 

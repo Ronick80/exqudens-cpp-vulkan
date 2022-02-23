@@ -132,8 +132,6 @@ add_library("${PROJECT_NAME}"
     "src/main/cpp/exqudens/vulkan/model/RenderPassCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/model/DescriptorSetLayoutCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/model/Shader.hpp"
-    "src/main/cpp/exqudens/vulkan/model/Vertex.hpp"
-    "src/main/cpp/exqudens/vulkan/model/UniformBufferObject.hpp"
     "src/main/cpp/exqudens/vulkan/model/DescriptorPoolCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/model/WriteDescriptorSet.hpp"
     "src/main/cpp/exqudens/vulkan/model/Pipeline.hpp"
@@ -156,7 +154,6 @@ target_include_directories("${PROJECT_NAME}" PUBLIC
 )
 target_link_libraries("${PROJECT_NAME}" PUBLIC
     "Vulkan::Vulkan"
-    "glm::glm"
 )
 set_target_properties("${PROJECT_NAME}" PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY                "${PROJECT_BINARY_DIR}/main/bin"
@@ -225,6 +222,8 @@ add_library("test-lib" INTERFACE
     "src/test/cpp/exqudens/TestConfiguration.hpp"
     "src/test/cpp/exqudens/TestMacros.hpp"
     "src/test/cpp/exqudens/TestUtils.hpp"
+    "src/test/cpp/exqudens/test/model/Vertex.hpp"
+    "src/test/cpp/exqudens/test/model/UniformBufferObject.hpp"
     "src/test/cpp/exqudens/test/TestUtilsTests.hpp"
     "src/test/cpp/exqudens/test/OtherTests.hpp"
     "src/test/cpp/exqudens/test/ConfigurationTests.hpp"
@@ -244,6 +243,7 @@ target_link_libraries("test-lib" INTERFACE
     "GTest::gtest"
     "GTest::gmock_main"
     "GTest::gtest_main"
+    "glm::glm"
     "lodepng::lodepng"
     "glfw::glfw"
 )
