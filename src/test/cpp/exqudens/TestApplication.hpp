@@ -11,6 +11,7 @@
 #include "exqudens/test/FactoryTests.hpp"
 #include "exqudens/test/UiTestsA.hpp"
 #include "exqudens/test/UiTestsB.hpp"
+#include "exqudens/test/UiTestsC.hpp"
 
 namespace exqudens::vulkan {
 

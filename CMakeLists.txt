@@ -130,8 +130,12 @@ add_library("${PROJECT_NAME}"
     "src/main/cpp/exqudens/vulkan/model/Buffer.hpp"
     "src/main/cpp/exqudens/vulkan/model/Image.hpp"
     "src/main/cpp/exqudens/vulkan/model/RenderPassCreateInfo.hpp"
+    "src/main/cpp/exqudens/vulkan/model/DescriptorSetLayoutCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/model/Shader.hpp"
     "src/main/cpp/exqudens/vulkan/model/Vertex.hpp"
+    "src/main/cpp/exqudens/vulkan/model/UniformBufferObject.hpp"
+    "src/main/cpp/exqudens/vulkan/model/DescriptorPoolCreateInfo.hpp"
+    "src/main/cpp/exqudens/vulkan/model/WriteDescriptorSet.hpp"
     "src/main/cpp/exqudens/vulkan/model/Pipeline.hpp"
 
     "src/main/cpp/exqudens/vulkan/Macros.hpp"
@@ -228,6 +232,7 @@ add_library("test-lib" INTERFACE
     "src/test/cpp/exqudens/test/FactoryTests.hpp"
     "src/test/cpp/exqudens/test/UiTestsA.hpp"
     "src/test/cpp/exqudens/test/UiTestsB.hpp"
+    "src/test/cpp/exqudens/test/UiTestsC.hpp"
 )
 target_include_directories("test-lib" INTERFACE
     "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/test/cpp>"
@@ -251,12 +256,16 @@ add_custom_command(
            "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-1.frag.spv"
            "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-2.vert.spv"
            "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-2.frag.spv"
+           "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-3.vert.spv"
+           "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-3.frag.spv"
     COMMAND "${CMAKE_COMMAND}" "-E" "rm" "-rf" "${PROJECT_BINARY_DIR}/test/bin/resources/shader"
     COMMAND "${CMAKE_COMMAND}" "-E" "make_directory" "${PROJECT_BINARY_DIR}/test/bin/resources/shader"
     COMMAND "${GLSLC_COMMAND}" "${PROJECT_SOURCE_DIR}/src/test/resources/shader/shader-1.vert" -o "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-1.vert.spv"
     COMMAND "${GLSLC_COMMAND}" "${PROJECT_SOURCE_DIR}/src/test/resources/shader/shader-1.frag" -o "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-1.frag.spv"
     COMMAND "${GLSLC_COMMAND}" "${PROJECT_SOURCE_DIR}/src/test/resources/shader/shader-2.vert" -o "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-2.vert.spv"
     COMMAND "${GLSLC_COMMAND}" "${PROJECT_SOURCE_DIR}/src/test/resources/shader/shader-2.frag" -o "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-2.frag.spv"
+    COMMAND "${GLSLC_COMMAND}" "${PROJECT_SOURCE_DIR}/src/test/resources/shader/shader-3.vert" -o "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-3.vert.spv"
+    COMMAND "${GLSLC_COMMAND}" "${PROJECT_SOURCE_DIR}/src/test/resources/shader/shader-3.frag" -o "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-3.frag.spv"
     VERBATIM
 )
 add_executable("test-app"
@@ -264,6 +273,8 @@ add_executable("test-app"
     "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-1.frag.spv"
     "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-2.vert.spv"
     "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-2.frag.spv"
+    "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-3.vert.spv"
+    "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-3.frag.spv"
     "src/test/cpp/main.cpp"
 )
 target_link_libraries("test-app" PRIVATE

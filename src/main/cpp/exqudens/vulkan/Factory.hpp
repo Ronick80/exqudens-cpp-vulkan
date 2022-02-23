@@ -22,6 +22,9 @@
 #include "exqudens/vulkan/model/Buffer.hpp"
 #include "exqudens/vulkan/model/Image.hpp"
 #include "exqudens/vulkan/model/RenderPassCreateInfo.hpp"
+#include "exqudens/vulkan/model/DescriptorSetLayoutCreateInfo.hpp"
+#include "exqudens/vulkan/model/DescriptorPoolCreateInfo.hpp"
+#include "exqudens/vulkan/model/WriteDescriptorSet.hpp"
 #include "exqudens/vulkan/model/Shader.hpp"
 #include "exqudens/vulkan/model/Pipeline.hpp"
 
@@ -150,9 +153,17 @@ namespace exqudens::vulkan {
       virtual Buffer createBuffer(
           VkPhysicalDevice& physicalDevice,
           VkDevice& device,
-          VkDeviceSize size,
+          VkDeviceSize memorySize,
           VkBufferUsageFlags usage,
           VkMemoryPropertyFlags properties
+      );
+      virtual std::vector<Buffer> createBuffers(
+          VkPhysicalDevice& physicalDevice,
+          VkDevice& device,
+          VkDeviceSize memorySize,
+          VkBufferUsageFlags usage,
+          VkMemoryPropertyFlags properties,
+          std::size_t size
       );
 
       virtual Image createImage(
@@ -189,6 +200,7 @@ namespace exqudens::vulkan {
       virtual VkRenderPass createRenderPass(VkDevice& device, const RenderPassCreateInfo& createInfo);
 
       virtual VkDescriptorSetLayout createDescriptorSetLayout(VkDevice& device);
+      virtual VkDescriptorSetLayout createDescriptorSetLayout(VkDevice& device, const DescriptorSetLayoutCreateInfo& createInfo);
 
       virtual Shader createShader(VkDevice& device, const std::string& path);
 
@@ -224,7 +236,15 @@ namespace exqudens::vulkan {
           uint32_t& height
       );
 
-      virtual VkDescriptorPool createDescriptorPool(VkDevice& device, std::size_t size);
+      virtual VkDescriptorPool createDescriptorPool(VkDevice& device, uint32_t maxSets);
+      virtual VkDescriptorPool createDescriptorPool(VkDevice& device, const DescriptorPoolCreateInfo& createInfo);
+
+      virtual VkDescriptorSet createDescriptorSet(
+          VkDevice& device,
+          VkDescriptorPool& descriptorPool,
+          VkDescriptorSetLayout& descriptorSetLayout,
+          const WriteDescriptorSet& writeDescriptorSet
+      );
 
       virtual VkCommandBuffer createCommandBuffer(VkDevice& device, VkCommandPool& commandPool);
       virtual std::vector<VkCommandBuffer> createCommandBuffers(VkDevice& device, VkCommandPool& commandPool, std::size_t size);
@@ -233,6 +253,9 @@ namespace exqudens::vulkan {
 
       virtual void destroyCommandBuffer(VkCommandBuffer& commandBuffer, VkCommandPool& commandPool, VkDevice& device);
       virtual void destroyCommandBuffers(std::vector<VkCommandBuffer>& commandBuffers, VkCommandPool& commandPool, VkDevice& device);
+
+      virtual void destroyDescriptorSet(VkDescriptorSet& descriptorSet);
+      virtual void destroyDescriptorSets(std::vector<VkDescriptorSet>& descriptorSets);
 
       virtual void destroyDescriptorPool(VkDescriptorPool& descriptorPool, VkDevice& device);
 
@@ -257,9 +280,10 @@ namespace exqudens::vulkan {
 
       virtual void destroyBuffer(Buffer& buffer, VkDevice& device);
       virtual void destroyBuffer(Buffer& buffer, VkDevice& device, bool unmapMemory);
+      virtual void destroyBuffers(std::vector<Buffer>& buffers, VkDevice& device);
+      virtual void destroyBuffers(std::vector<Buffer>& buffers, VkDevice& device, bool unmapMemory);
 
       virtual void destroySwapChain(SwapChain& swapChain, VkDevice& device);
-      virtual void destroySwapChain(VkSwapchainKHR& swapChain, VkDevice& device);
 
       virtual void destroyCommandPool(VkCommandPool& commandPool, VkDevice& device);
 

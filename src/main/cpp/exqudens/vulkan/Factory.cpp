@@ -878,7 +878,7 @@ namespace exqudens::vulkan {
   Buffer Factory::createBuffer(
       VkPhysicalDevice& physicalDevice,
       VkDevice& device,
-      VkDeviceSize size,
+      VkDeviceSize memorySize,
       VkBufferUsageFlags usage,
       VkMemoryPropertyFlags properties
   ) {
@@ -887,7 +887,7 @@ namespace exqudens::vulkan {
 
       VkBufferCreateInfo bufferInfo{};
       bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-      bufferInfo.size = size;
+      bufferInfo.size = memorySize;
       bufferInfo.usage = usage;
       bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
@@ -919,10 +919,30 @@ namespace exqudens::vulkan {
 
       return {
         .memory = bufferMemory,
-        .memorySize = size,
+        .memorySize = memorySize,
         .memoryProperties = properties,
         .value = buffer
       };
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  std::vector<Buffer> Factory::createBuffers(
+      VkPhysicalDevice& physicalDevice,
+      VkDevice& device,
+      VkDeviceSize memorySize,
+      VkBufferUsageFlags usage,
+      VkMemoryPropertyFlags properties,
+      std::size_t size
+  ) {
+    try {
+      std::vector<Buffer> buffers;
+      buffers.resize(size);
+      for (std::size_t i = 0; i < size; i++) {
+        buffers[i] = createBuffer(physicalDevice, device, memorySize, usage, properties);
+      }
+      return buffers;
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -1172,28 +1192,45 @@ namespace exqudens::vulkan {
 
   VkDescriptorSetLayout Factory::createDescriptorSetLayout(VkDevice& device) {
     try {
+      return createDescriptorSetLayout(
+          device,
+          DescriptorSetLayoutCreateInfo {
+            .flags = 0,
+            .bindings = {
+                VkDescriptorSetLayoutBinding {
+                  .binding = 0,
+                  .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                  .descriptorCount = 1,
+                  .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+                  .pImmutableSamplers = nullptr
+                },
+                VkDescriptorSetLayoutBinding {
+                  .binding = 1,
+                  .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                  .descriptorCount = 1,
+                  .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                  .pImmutableSamplers = nullptr
+                }
+            }
+          }
+      );
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  VkDescriptorSetLayout Factory::createDescriptorSetLayout(
+      VkDevice& device,
+      const DescriptorSetLayoutCreateInfo& createInfo
+  ) {
+    try {
       VkDescriptorSetLayout descriptorSetLayout = nullptr;
 
-      VkDescriptorSetLayoutBinding uboLayoutBinding{};
-      uboLayoutBinding.binding = 0;
-      uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-      uboLayoutBinding.descriptorCount = 1;
-      uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-      uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
-
-      VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-      samplerLayoutBinding.binding = 1;
-      samplerLayoutBinding.descriptorCount = 1;
-      samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-      samplerLayoutBinding.pImmutableSamplers = nullptr;
-      samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-      std::array<VkDescriptorSetLayoutBinding, 2> bindings = {uboLayoutBinding, samplerLayoutBinding};
-
-      VkDescriptorSetLayoutCreateInfo layoutInfo{};
+      VkDescriptorSetLayoutCreateInfo layoutInfo = {};
       layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-      layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-      layoutInfo.pBindings = bindings.data();
+      layoutInfo.flags = createInfo.flags;
+      layoutInfo.bindingCount = static_cast<uint32_t>(createInfo.bindings.size());
+      layoutInfo.pBindings = createInfo.bindings.data();
 
       if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
         throw std::runtime_error(CALL_INFO() + ": failed to create descriptor set layout!");
@@ -1482,30 +1519,88 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkDescriptorPool Factory::createDescriptorPool(VkDevice& device, std::size_t size) {
+  VkDescriptorPool Factory::createDescriptorPool(VkDevice& device, uint32_t maxSets) {
+    try {
+      return createDescriptorPool(
+          device,
+          DescriptorPoolCreateInfo {
+            .maxSets = maxSets,
+            .poolSizes = {
+                VkDescriptorPoolSize {
+                  .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                  .descriptorCount = maxSets
+                },
+                VkDescriptorPoolSize {
+                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                    .descriptorCount = maxSets
+                }
+            }
+          }
+      );
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  VkDescriptorPool Factory::createDescriptorPool(VkDevice& device, const DescriptorPoolCreateInfo& createInfo) {
     try {
       VkDescriptorPool descriptorPool = nullptr;
 
-      std::array<VkDescriptorPoolSize, 2> poolSizes{};
-
-      poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-      poolSizes[0].descriptorCount = static_cast<uint32_t>(size);
-
-      poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-      poolSizes[1].descriptorCount = static_cast<uint32_t>(size);
-
-      VkDescriptorPoolCreateInfo poolInfo{};
+      VkDescriptorPoolCreateInfo poolInfo = {};
       poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-      poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-      poolInfo.pPoolSizes = poolSizes.data();
-      poolInfo.maxSets = static_cast<uint32_t>(size);
-      poolInfo.flags = 0; // Optional
+      poolInfo.poolSizeCount = static_cast<uint32_t>(createInfo.poolSizes.size());
+      poolInfo.pPoolSizes = createInfo.poolSizes.data();
+      poolInfo.maxSets = createInfo.maxSets;
+      poolInfo.flags = createInfo.flags;
 
       if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
         throw std::runtime_error(CALL_INFO() + ": failed to create descriptor pool!");
       }
 
       return descriptorPool;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  VkDescriptorSet Factory::createDescriptorSet(
+      VkDevice& device,
+      VkDescriptorPool& descriptorPool,
+      VkDescriptorSetLayout& descriptorSetLayout,
+      const WriteDescriptorSet& writeDescriptorSet
+  ) {
+    try {
+      VkDescriptorSet descriptorSet = nullptr;
+
+      VkDescriptorSetAllocateInfo allocInfo = {};
+      allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+      allocInfo.descriptorPool = descriptorPool;
+      allocInfo.descriptorSetCount = descriptorSetLayout == nullptr ? 0 : 1;
+      allocInfo.pSetLayouts = descriptorSetLayout == nullptr ? nullptr : &descriptorSetLayout;
+
+      if (
+          vkAllocateDescriptorSets(device, &allocInfo, &descriptorSet) != VK_SUCCESS
+          || descriptorSet == nullptr
+      ) {
+        throw std::runtime_error(CALL_INFO()+ ": failed to allocate descriptor sets!");
+      }
+
+      VkWriteDescriptorSet writeInfo = {
+          .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+          .pNext = nullptr,
+          .dstSet = descriptorSet,
+          .dstBinding = writeDescriptorSet.dstBinding,
+          .dstArrayElement = writeDescriptorSet.dstArrayElement,
+          .descriptorCount = writeDescriptorSet.descriptorCount,
+          .descriptorType = writeDescriptorSet.descriptorType,
+          .pImageInfo = writeDescriptorSet.imageInfo.empty() ? nullptr : writeDescriptorSet.imageInfo.data(),
+          .pBufferInfo = writeDescriptorSet.bufferInfo.empty() ? nullptr : writeDescriptorSet.bufferInfo.data(),
+          .pTexelBufferView = writeDescriptorSet.texelBufferView.empty() ? nullptr : writeDescriptorSet.texelBufferView.data()
+      };
+
+      vkUpdateDescriptorSets(device, 1, &writeInfo, 0, nullptr);
+
+      return descriptorSet;
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -1582,6 +1677,28 @@ namespace exqudens::vulkan {
   void Factory::destroyCommandBuffers(std::vector<VkCommandBuffer>& commandBuffers, VkCommandPool& commandPool, VkDevice& device) {
     try {
       vkFreeCommandBuffers(device, commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
+      commandBuffers.clear();
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  void Factory::destroyDescriptorSet(VkDescriptorSet& descriptorSet) {
+    try {
+      if (descriptorSet != nullptr) {
+        descriptorSet = nullptr;
+      }
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  void Factory::destroyDescriptorSets(std::vector<VkDescriptorSet>& descriptorSets) {
+    try {
+      for (std::size_t i = 0; i < descriptorSets.size(); i++) {
+        descriptorSets[i] = nullptr;
+      }
+      descriptorSets.clear();
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -1614,6 +1731,7 @@ namespace exqudens::vulkan {
       for (std::size_t i = 0; i < frameBuffers.size(); i++) {
         destroyFrameBuffer(frameBuffers[i], device);
       }
+      frameBuffers.clear();
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -1683,6 +1801,7 @@ namespace exqudens::vulkan {
       for (std::size_t i = 0; i < imageViews.size(); i++) {
         destroyImageView(imageViews[i], device);
       }
+      imageViews.clear();
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -1722,6 +1841,7 @@ namespace exqudens::vulkan {
       for (std::size_t i = 0; i < images.size(); i++) {
         destroyImage(images[i], device);
       }
+      images.clear();
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -1732,6 +1852,7 @@ namespace exqudens::vulkan {
       for (std::size_t i = 0; i < images.size(); i++) {
         destroyImage(images[i], device, unmapMemory);
       }
+      images.clear();
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -1766,21 +1887,35 @@ namespace exqudens::vulkan {
     }
   }
 
-  void Factory::destroySwapChain(SwapChain& swapChain, VkDevice& device) {
+  void Factory::destroyBuffers(std::vector<Buffer>& buffers, VkDevice& device) {
     try {
-      destroySwapChain(swapChain.value, device);
-      swapChain.extent = {};
+      for (std::size_t i = 0; i < buffers.size(); i++) {
+        destroyBuffer(buffers[i], device);
+      }
+      buffers.clear();
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
   }
 
-  void Factory::destroySwapChain(VkSwapchainKHR& swapChain, VkDevice& device) {
+  void Factory::destroyBuffers(std::vector<Buffer>& buffers, VkDevice& device, bool unmapMemory) {
     try {
-      if (swapChain != nullptr) {
-        vkDestroySwapchainKHR(device, swapChain, nullptr);
-        swapChain = nullptr;
+      for (std::size_t i = 0; i < buffers.size(); i++) {
+        destroyBuffer(buffers[i], device, unmapMemory);
       }
+      buffers.clear();
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  void Factory::destroySwapChain(SwapChain& swapChain, VkDevice& device) {
+    try {
+      if (swapChain.value != nullptr) {
+        vkDestroySwapchainKHR(device, swapChain.value, nullptr);
+        swapChain.value = nullptr;
+      }
+      swapChain.extent = {};
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
