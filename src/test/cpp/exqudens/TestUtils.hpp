@@ -72,18 +72,39 @@ namespace exqudens::vulkan {
         }
       }
 
-      static std::vector<std::vector<std::vector<unsigned char>>> readPng(const std::string& path) {
+      static void readPng(
+          const std::string& path,
+          unsigned int& width,
+          unsigned int& height,
+          unsigned int& depth,
+          std::vector<unsigned char>& data
+      ) {
         try {
-          std::vector<std::vector<std::vector<unsigned char>>> image;
-          std::vector<unsigned char> pixels;
-          unsigned int width, height, depth, error;
-          depth = 4;
-          error = lodepng::decode(pixels, width, height, path);
+          unsigned int widthIn = 0;
+          unsigned int heightIn = 0;
+          unsigned int depthIn = 4;
+          std::vector<unsigned char> dataIn;
+          unsigned int error = lodepng::decode(dataIn, widthIn, heightIn, path);
           if (error) {
             throw std::runtime_error(
                 CALL_INFO() + ": failed to read image '" + std::to_string(error) + "': " + lodepng_error_text(error)
             );
           }
+          width = widthIn;
+          height = heightIn;
+          depth = depthIn;
+          data = dataIn;
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      static std::vector<std::vector<std::vector<unsigned char>>> readPng(const std::string& path) {
+        try {
+          std::vector<std::vector<std::vector<unsigned char>>> image;
+          std::vector<unsigned char> pixels;
+          unsigned int width, height, depth;
+          readPng(path, width, height, depth, pixels);
           unsigned int yMultiplier = width * depth;
           image.resize(height);
           for (unsigned int y = 0; y < height; y++) {
@@ -101,6 +122,28 @@ namespace exqudens::vulkan {
             }
           }
           return image;
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      static void writePng(
+          const std::string& path,
+          unsigned int& width,
+          unsigned int& height,
+          unsigned int& depth,
+          std::vector<unsigned char>& data
+      ) {
+        try {
+          unsigned int widthIn = width;
+          unsigned int heightIn = height;
+          unsigned int depthIn = depth;
+          unsigned int error = lodepng::encode(path, data, widthIn, heightIn);
+          if (error) {
+            throw std::runtime_error(
+                CALL_INFO() + ": failed to write image '" + std::to_string(error) + "': " + lodepng_error_text(error)
+            );
+          }
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }
@@ -127,12 +170,7 @@ namespace exqudens::vulkan {
               }
             }
           }
-          unsigned int error = lodepng::encode(path, pixels, width, height);
-          if (error) {
-            throw std::runtime_error(
-                CALL_INFO() + ": failed to write image '" + std::to_string(error) + "': " + lodepng_error_text(error)
-            );
-          }
+          writePng(path, width, height, depth, pixels);
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }
