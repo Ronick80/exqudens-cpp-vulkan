@@ -249,7 +249,23 @@ namespace exqudens::vulkan {
       virtual VkCommandBuffer createCommandBuffer(VkDevice& device, VkCommandPool& commandPool);
       virtual std::vector<VkCommandBuffer> createCommandBuffers(VkDevice& device, VkCommandPool& commandPool, std::size_t size);
 
+      virtual VkSemaphore createSemaphore(VkDevice& device);
+      virtual VkSemaphore createSemaphore(VkDevice& device, VkSemaphoreCreateFlags flags);
+      virtual std::vector<VkSemaphore> createSemaphores(VkDevice& device, std::size_t size);
+      virtual std::vector<VkSemaphore> createSemaphores(VkDevice& device, VkSemaphoreCreateFlags flags, std::size_t size);
+
+      virtual VkFence createFence(VkDevice& device);
+      virtual VkFence createFence(VkDevice& device, VkFenceCreateFlags flags);
+      virtual std::vector<VkFence> createFences(VkDevice& device, std::size_t size);
+      virtual std::vector<VkFence> createFences(VkDevice& device, VkFenceCreateFlags flags, std::size_t size);
+
       // destroy
+
+      virtual void destroyFence(VkFence& fence, VkDevice& device);
+      virtual void destroyFences(std::vector<VkFence>& fences, VkDevice& device);
+
+      virtual void destroySemaphore(VkSemaphore& semaphore, VkDevice& device);
+      virtual void destroySemaphores(std::vector<VkSemaphore>& semaphores, VkDevice& device);
 
       virtual void destroyCommandBuffer(VkCommandBuffer& commandBuffer, VkCommandPool& commandPool, VkDevice& device);
       virtual void destroyCommandBuffers(std::vector<VkCommandBuffer>& commandBuffers, VkCommandPool& commandPool, VkDevice& device);

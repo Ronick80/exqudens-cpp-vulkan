@@ -231,7 +231,7 @@
       },
       "filter": {
         "exclude": {
-          "name": "(UiTestsA.test1)|(UiTestsB.test1)|(UiTestsC.test1)"
+          "name": "(UiTestsA.test1)|(UiTestsB.test1)|(UiTestsC.test1)|(UiTestsD.test1)"
         }
       },
       "execution": {

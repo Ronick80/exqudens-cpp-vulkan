@@ -232,6 +232,7 @@ add_library("test-lib" INTERFACE
     "src/test/cpp/exqudens/test/UiTestsA.hpp"
     "src/test/cpp/exqudens/test/UiTestsB.hpp"
     "src/test/cpp/exqudens/test/UiTestsC.hpp"
+    "src/test/cpp/exqudens/test/UiTestsD.hpp"
 )
 target_include_directories("test-lib" INTERFACE
     "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/test/cpp>"

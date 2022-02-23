@@ -1660,7 +1660,161 @@ namespace exqudens::vulkan {
     }
   }
 
+  VkSemaphore Factory::createSemaphore(VkDevice& device) {
+    try {
+      return createSemaphore(device, 0);
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  VkSemaphore Factory::createSemaphore(VkDevice& device, VkSemaphoreCreateFlags flags) {
+    try {
+      VkSemaphore semaphore = nullptr;
+
+      VkSemaphoreCreateInfo semaphoreInfo = {};
+      semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+      semaphoreInfo.flags = flags;
+
+      if (
+          vkCreateSemaphore(device, &semaphoreInfo, nullptr, &semaphore) != VK_SUCCESS
+          || semaphore == nullptr
+      ) {
+        throw std::runtime_error(CALL_INFO() + ": failed to create semaphore!");
+      }
+
+      return semaphore;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  std::vector<VkSemaphore> Factory::createSemaphores(VkDevice& device, std::size_t size) {
+    try {
+      std::vector<VkSemaphore> semaphores;
+      semaphores.resize(size);
+      for (std::size_t i = 0; i < size; i++) {
+        semaphores[i] = createSemaphore(device);
+      }
+      return semaphores;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  std::vector<VkSemaphore> Factory::createSemaphores(VkDevice& device, VkSemaphoreCreateFlags flags, std::size_t size) {
+    try {
+      std::vector<VkSemaphore> semaphores;
+      semaphores.resize(size);
+      for (std::size_t i = 0; i < size; i++) {
+        semaphores[i] = createSemaphore(device, flags);
+      }
+      return semaphores;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  VkFence Factory::createFence(VkDevice& device) {
+    try {
+      return createFence(device, VK_FENCE_CREATE_SIGNALED_BIT);
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  VkFence Factory::createFence(VkDevice& device, VkFenceCreateFlags flags) {
+    try {
+      VkFence fence = nullptr;
+
+      VkFenceCreateInfo fenceInfo{};
+      fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+      fenceInfo.flags = flags;
+
+      if (
+          vkCreateFence(device, &fenceInfo, nullptr, &fence) != VK_SUCCESS
+          || fence == nullptr
+      ) {
+        throw std::runtime_error(CALL_INFO() + ": failed to create fence!");
+      }
+
+      return fence;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  std::vector<VkFence> Factory::createFences(VkDevice& device, std::size_t size) {
+    try {
+      std::vector<VkFence> fences;
+      fences.resize(size);
+      for (std::size_t i = 0; i < size; i++) {
+        fences[i] = createFence(device);
+      }
+      return fences;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  std::vector<VkFence> Factory::createFences(VkDevice& device, VkFenceCreateFlags flags, std::size_t size) {
+    try {
+      std::vector<VkFence> fences;
+      fences.resize(size);
+      for (std::size_t i = 0; i < size; i++) {
+        fences[i] = createFence(device, flags);
+      }
+      return fences;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
   // destroy
+
+  void Factory::destroyFence(VkFence& fence, VkDevice& device) {
+    try {
+      if (fence != nullptr) {
+        vkDestroyFence(device, fence, nullptr);
+        fence = nullptr;
+      }
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  void Factory::destroyFences(std::vector<VkFence>& fences, VkDevice& device) {
+    try {
+      for (std::size_t i = 0; i < fences.size(); i++) {
+        destroyFence(fences[i], device);
+      }
+      fences.clear();
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  void Factory::destroySemaphore(VkSemaphore& semaphore, VkDevice& device) {
+    try {
+      if (semaphore != nullptr) {
+        vkDestroySemaphore(device, semaphore, nullptr);
+        semaphore = nullptr;
+      }
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  void Factory::destroySemaphores(std::vector<VkSemaphore>& semaphores, VkDevice& device) {
+    try {
+      for (std::size_t i = 0; i < semaphores.size(); i++) {
+        destroySemaphore(semaphores[i], device);
+      }
+      semaphores.clear();
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
 
   void Factory::destroyCommandBuffer(VkCommandBuffer& commandBuffer, VkCommandPool& commandPool, VkDevice& device) {
     try {

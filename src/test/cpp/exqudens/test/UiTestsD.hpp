@@ -25,7 +25,7 @@
 
 namespace exqudens::vulkan {
 
-  class UiTestsC : public testing::Test {
+  class UiTestsD : public testing::Test {
 
     protected:
 
@@ -577,7 +577,7 @@ namespace exqudens::vulkan {
 
   };
 
-  TEST_F(UiTestsC, test1) {
+  TEST_F(UiTestsD, test1) {
     try {
       int argc = 0;
       char** argv = nullptr;
