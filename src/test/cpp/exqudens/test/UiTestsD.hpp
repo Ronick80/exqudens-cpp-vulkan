@@ -59,11 +59,13 @@ namespace exqudens::vulkan {
           VkCommandPool graphicsCommandPool = nullptr;
           Buffer imageStaging = {};
           Image image = {};
+          VkImageView imageView = nullptr;
           Buffer vertexStagingBuffer = {};
           Buffer vertexBuffer = {};
           Buffer indexStagingBuffer = {};
           Buffer indexBuffer = {};
           std::vector<Buffer> uniformBuffers = {};
+          VkSampler sampler = nullptr;
           VkDescriptorPool descriptorPool = nullptr;
           std::vector<VkDescriptorSet> descriptorSets = {};
           VkCommandBuffer transferCommandBuffer = nullptr;
@@ -81,10 +83,10 @@ namespace exqudens::vulkan {
           void create(GLFWwindow*& window) {
             try {
               vertices = {
-                  {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-                  {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-                  {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-                  {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+                  {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+                  {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+                  {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+                  {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
               };
 
               indices = {
@@ -118,7 +120,6 @@ namespace exqudens::vulkan {
               for (const char*& extension : extensions) {
                 configuration.extensions.emplace_back(extension);
               }
-              configuration.anisotropyRequired = false;
               logger = createLogger();
 
               instance = createInstance(configuration, logger);
@@ -146,6 +147,13 @@ namespace exqudens::vulkan {
                           .descriptorCount = 1,
                           .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
                           .pImmutableSamplers = nullptr
+                        },
+                        VkDescriptorSetLayoutBinding {
+                            .binding = 1,
+                            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                            .descriptorCount = 1,
+                            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                            .pImmutableSamplers = nullptr
                         }
                     }
                   }
@@ -153,7 +161,7 @@ namespace exqudens::vulkan {
               graphicsPipeline = createGraphicsPipeline(
                   device,
                   swapChain.extent,
-                  {"resources/shader/shader-3.vert.spv", "resources/shader/shader-3.frag.spv"},
+                  {"resources/shader/shader-4.vert.spv", "resources/shader/shader-4.frag.spv"},
                   renderPass,
                   VK_FRONT_FACE_COUNTER_CLOCKWISE,
                   {descriptorSetLayout},
@@ -180,6 +188,7 @@ namespace exqudens::vulkan {
               vkUnmapMemory(device, imageStaging.memory);
 
               image = createImage(physicalDevice.value, device, imageWidth, imageHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+              imageView = createImageView(device, image.value, VK_FORMAT_R8G8B8A8_SRGB);
               vertexStagingBuffer = createBuffer(physicalDevice.value, device, sizeof(vertices[0]) * vertices.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
               void* vertexData;
@@ -197,6 +206,7 @@ namespace exqudens::vulkan {
 
               indexBuffer = createBuffer(physicalDevice.value, device, sizeof(vertices[0]) * vertices.size(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
               uniformBuffers = createBuffers(physicalDevice.value, device, sizeof(UniformBufferObject), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, MAX_FRAMES_IN_FLIGHT);
+              sampler = createSampler(physicalDevice.value, device);
               descriptorPool = createDescriptorPool(
                   device,
                   DescriptorPoolCreateInfo {
@@ -204,6 +214,10 @@ namespace exqudens::vulkan {
                       .poolSizes = {
                           VkDescriptorPoolSize {
                               .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                              .descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT)
+                          },
+                          VkDescriptorPoolSize {
+                              .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                               .descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT)
                           }
                       }
@@ -215,20 +229,37 @@ namespace exqudens::vulkan {
                     device,
                     descriptorPool,
                     descriptorSetLayout,
-                    WriteDescriptorSet {
-                      .dstBinding = 0,
-                      .dstArrayElement = 0,
-                      .descriptorCount = 1,
-                      .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                      .imageInfo = {},
-                      .bufferInfo = {
-                          VkDescriptorBufferInfo {
-                            .buffer = uniformBuffers[i].value,
-                            .offset = 0,
-                            .range = sizeof(UniformBufferObject)
-                          }
-                      },
-                      .texelBufferView = {}
+                    {
+                        WriteDescriptorSet {
+                            .dstBinding = 0,
+                            .dstArrayElement = 0,
+                            .descriptorCount = 1,
+                            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                            .imageInfo = {},
+                            .bufferInfo = {
+                                VkDescriptorBufferInfo {
+                                    .buffer = uniformBuffers[i].value,
+                                    .offset = 0,
+                                    .range = sizeof(UniformBufferObject)
+                                }
+                            },
+                            .texelBufferView = {}
+                        },
+                        WriteDescriptorSet {
+                            .dstBinding = 1,
+                            .dstArrayElement = 0,
+                            .descriptorCount = 1,
+                            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                            .imageInfo = {
+                                VkDescriptorImageInfo {
+                                    .sampler = sampler,
+                                    .imageView = imageView,
+                                    .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                                }
+                            },
+                            .bufferInfo = {},
+                            .texelBufferView = {}
+                        }
                     }
                 );
               }
@@ -363,11 +394,13 @@ namespace exqudens::vulkan {
               destroyCommandBuffer(transferCommandBuffer, transferCommandPool, device);
               destroyDescriptorSets(descriptorSets);
               destroyDescriptorPool(descriptorPool, device);
+              destroySampler(sampler, device);
               destroyBuffers(uniformBuffers, device);
               destroyBuffer(indexBuffer, device);
               destroyBuffer(indexStagingBuffer, device);
               destroyBuffer(vertexBuffer, device);
               destroyBuffer(vertexStagingBuffer, device);
+              destroyImageView(imageView, device);
               destroyImage(image, device);
               destroyBuffer(imageStaging, device);
               destroyFrameBuffers(swapChainFrameBuffers, device);
@@ -589,7 +622,7 @@ namespace exqudens::vulkan {
             graphicsPipeline = createGraphicsPipeline(
                 device,
                 swapChain.extent,
-                {"resources/shader/shader-3.vert.spv", "resources/shader/shader-3.frag.spv"},
+                {"resources/shader/shader-4.vert.spv", "resources/shader/shader-4.frag.spv"},
                 renderPass,
                 VK_FRONT_FACE_COUNTER_CLOCKWISE,
                 {descriptorSetLayout},

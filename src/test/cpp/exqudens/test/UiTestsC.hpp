@@ -193,20 +193,22 @@ namespace exqudens::vulkan {
                     device,
                     descriptorPool,
                     descriptorSetLayout,
-                    WriteDescriptorSet {
-                      .dstBinding = 0,
-                      .dstArrayElement = 0,
-                      .descriptorCount = 1,
-                      .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                      .imageInfo = {},
-                      .bufferInfo = {
-                          VkDescriptorBufferInfo {
-                            .buffer = uniformBuffers[i].value,
-                            .offset = 0,
-                            .range = sizeof(UniformBufferObject)
-                          }
-                      },
-                      .texelBufferView = {}
+                    {
+                        WriteDescriptorSet {
+                            .dstBinding = 0,
+                            .dstArrayElement = 0,
+                            .descriptorCount = 1,
+                            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                            .imageInfo = {},
+                            .bufferInfo = {
+                                VkDescriptorBufferInfo {
+                                    .buffer = uniformBuffers[i].value,
+                                    .offset = 0,
+                                    .range = sizeof(UniformBufferObject)
+                                }
+                            },
+                            .texelBufferView = {}
+                        }
                     }
                 );
               }

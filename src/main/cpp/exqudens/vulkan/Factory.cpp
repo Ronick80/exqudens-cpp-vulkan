@@ -1052,7 +1052,7 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkImageView Factory::createImageView(VkDevice& device, VkImage& image, VkFormat& format) {
+  VkImageView Factory::createImageView(VkDevice& device, VkImage& image, VkFormat format) {
     try {
       VkImageViewCreateInfo viewInfo = {};
       viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -1084,7 +1084,7 @@ namespace exqudens::vulkan {
   std::vector<VkImageView> Factory::createImageViews(
       VkDevice& device,
       std::vector<VkImage>& images,
-      VkFormat& format
+      VkFormat format
   ) {
     try {
       std::vector<VkImageView> imageViews;
@@ -1519,6 +1519,41 @@ namespace exqudens::vulkan {
     }
   }
 
+  VkSampler Factory::createSampler(VkPhysicalDevice& physicalDevice, VkDevice& device) {
+    try {
+      VkSampler sampler = nullptr;
+
+      VkPhysicalDeviceProperties properties = {};
+      vkGetPhysicalDeviceProperties(physicalDevice, &properties);
+
+      VkSamplerCreateInfo samplerInfo{};
+      samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+      samplerInfo.magFilter = VK_FILTER_LINEAR;
+      samplerInfo.minFilter = VK_FILTER_LINEAR;
+      samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+      samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+      samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+      samplerInfo.anisotropyEnable = VK_TRUE;
+      samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+      samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+      samplerInfo.unnormalizedCoordinates = VK_FALSE;
+      samplerInfo.compareEnable = VK_FALSE;
+      samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+      samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+
+      if (
+          vkCreateSampler(device, &samplerInfo, nullptr, &sampler) != VK_SUCCESS
+          || sampler == nullptr
+      ) {
+        throw std::runtime_error(CALL_INFO() + ": failed to create sampler!");
+      }
+
+      return sampler;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
   VkDescriptorPool Factory::createDescriptorPool(VkDevice& device, uint32_t maxSets) {
     try {
       return createDescriptorPool(
@@ -1567,7 +1602,7 @@ namespace exqudens::vulkan {
       VkDevice& device,
       VkDescriptorPool& descriptorPool,
       VkDescriptorSetLayout& descriptorSetLayout,
-      const WriteDescriptorSet& writeDescriptorSet
+      const std::vector<WriteDescriptorSet>& writeDescriptorSets
   ) {
     try {
       VkDescriptorSet descriptorSet = nullptr;
@@ -1584,8 +1619,7 @@ namespace exqudens::vulkan {
       ) {
         throw std::runtime_error(CALL_INFO()+ ": failed to allocate descriptor sets!");
       }
-
-      VkWriteDescriptorSet writeInfo = {
+      /*VkWriteDescriptorSet writeInfo = {
           .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
           .pNext = nullptr,
           .dstSet = descriptorSet,
@@ -1598,7 +1632,27 @@ namespace exqudens::vulkan {
           .pTexelBufferView = writeDescriptorSet.texelBufferView.empty() ? nullptr : writeDescriptorSet.texelBufferView.data()
       };
 
-      vkUpdateDescriptorSets(device, 1, &writeInfo, 0, nullptr);
+      vkUpdateDescriptorSets(device, 1, &writeInfo, 0, nullptr);*/
+
+      std::vector<VkWriteDescriptorSet> writes;
+      writes.resize(writeDescriptorSets.size());
+
+      for (std::size_t i = 0; i < writes.size(); i++) {
+        writes[i] = {
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .pNext = nullptr,
+            .dstSet = descriptorSet,
+            .dstBinding = writeDescriptorSets[i].dstBinding,
+            .dstArrayElement = writeDescriptorSets[i].dstArrayElement,
+            .descriptorCount = writeDescriptorSets[i].descriptorCount,
+            .descriptorType = writeDescriptorSets[i].descriptorType,
+            .pImageInfo = writeDescriptorSets[i].imageInfo.empty() ? nullptr : writeDescriptorSets[i].imageInfo.data(),
+            .pBufferInfo = writeDescriptorSets[i].bufferInfo.empty() ? nullptr : writeDescriptorSets[i].bufferInfo.data(),
+            .pTexelBufferView = writeDescriptorSets[i].texelBufferView.empty() ? nullptr : writeDescriptorSets[i].texelBufferView.data()
+        };
+      }
+
+      vkUpdateDescriptorSets(device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 
       return descriptorSet;
     } catch (...) {
@@ -1863,6 +1917,17 @@ namespace exqudens::vulkan {
       if (descriptorPool != nullptr) {
         vkDestroyDescriptorPool(device, descriptorPool, nullptr);
         descriptorPool = nullptr;
+      }
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  void Factory::destroySampler(VkSampler& sampler, VkDevice& device) {
+    try {
+      if (sampler != nullptr) {
+        vkDestroySampler(device, sampler, nullptr);
+        sampler = nullptr;
       }
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));

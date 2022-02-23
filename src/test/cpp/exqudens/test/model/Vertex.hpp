@@ -21,7 +21,7 @@ namespace exqudens::vulkan {
     static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions() {
       uint32_t posOffset = offsetof(Vertex, pos);
       uint32_t colorOffset = offsetof(Vertex, color);
-      //uint32_t texCoordOffset = offsetof(Vertex, texCoord);
+      uint32_t texCoordOffset = offsetof(Vertex, texCoord);
 
       return {
           VkVertexInputAttributeDescription {
@@ -35,19 +35,19 @@ namespace exqudens::vulkan {
               .binding = 0,
               .format = VK_FORMAT_R32G32B32_SFLOAT,
               .offset = colorOffset
-          }/*,
+          },
           VkVertexInputAttributeDescription {
               .location = 2,
               .binding = 0,
               .format = VK_FORMAT_R32G32_SFLOAT,
               .offset = texCoordOffset
-          }*/
+          }
       };
     }
 
     glm::vec2 pos;
     glm::vec3 color;
-    //glm::vec2 texCoord;
+    glm::vec2 texCoord;
 
   };
 

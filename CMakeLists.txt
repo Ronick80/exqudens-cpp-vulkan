@@ -259,6 +259,8 @@ add_custom_command(
            "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-2.frag.spv"
            "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-3.vert.spv"
            "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-3.frag.spv"
+           "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-4.vert.spv"
+           "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-4.frag.spv"
     COMMAND "${CMAKE_COMMAND}" "-E" "rm" "-rf" "${PROJECT_BINARY_DIR}/test/bin/resources/shader"
     COMMAND "${CMAKE_COMMAND}" "-E" "make_directory" "${PROJECT_BINARY_DIR}/test/bin/resources/shader"
     COMMAND "${GLSLC_COMMAND}" "${PROJECT_SOURCE_DIR}/src/test/resources/shader/shader-1.vert" -o "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-1.vert.spv"
@@ -267,6 +269,8 @@ add_custom_command(
     COMMAND "${GLSLC_COMMAND}" "${PROJECT_SOURCE_DIR}/src/test/resources/shader/shader-2.frag" -o "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-2.frag.spv"
     COMMAND "${GLSLC_COMMAND}" "${PROJECT_SOURCE_DIR}/src/test/resources/shader/shader-3.vert" -o "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-3.vert.spv"
     COMMAND "${GLSLC_COMMAND}" "${PROJECT_SOURCE_DIR}/src/test/resources/shader/shader-3.frag" -o "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-3.frag.spv"
+    COMMAND "${GLSLC_COMMAND}" "${PROJECT_SOURCE_DIR}/src/test/resources/shader/shader-4.vert" -o "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-4.vert.spv"
+    COMMAND "${GLSLC_COMMAND}" "${PROJECT_SOURCE_DIR}/src/test/resources/shader/shader-4.frag" -o "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-4.frag.spv"
     VERBATIM
 )
 add_executable("test-app"
@@ -276,6 +280,8 @@ add_executable("test-app"
     "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-2.frag.spv"
     "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-3.vert.spv"
     "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-3.frag.spv"
+    "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-4.vert.spv"
+    "${PROJECT_BINARY_DIR}/test/bin/resources/shader/shader-4.frag.spv"
     "src/test/cpp/main.cpp"
 )
 target_link_libraries("test-app" PRIVATE
