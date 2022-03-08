@@ -26,7 +26,11 @@ namespace exqudens::vulkan {
         if (logger->exceptionSeverity.has_value() && messageSeverity >= logger->exceptionSeverity.value()) {
           throw std::runtime_error(messageFormatted);
         }
-        if (logger->stream != nullptr) {
+        if (
+            logger->outSeverity.has_value()
+            && messageSeverity >= logger->outSeverity.value()
+            && logger->stream != nullptr
+        ) {
           *(logger->stream) << messageFormatted << std::endl;
         }
         return VK_FALSE;
@@ -39,6 +43,7 @@ namespace exqudens::vulkan {
 
     std::function<std::string(VkDebugUtilsMessageSeverityFlagBitsEXT, VkDebugUtilsMessageTypeFlagsEXT, const std::string&)> function;
     std::optional<VkDebugUtilsMessageSeverityFlagBitsEXT> exceptionSeverity;
+    std::optional<VkDebugUtilsMessageSeverityFlagBitsEXT> outSeverity;
     std::ostream* stream;
 
   };

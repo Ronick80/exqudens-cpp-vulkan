@@ -83,15 +83,14 @@ namespace exqudens::vulkan {
 
       virtual Logger createLogger();
       virtual Logger createLogger(std::ostream& stream);
-      virtual Logger createLogger(VkDebugUtilsMessageSeverityFlagBitsEXT exceptionSeverity);
-      virtual Logger createLogger(VkDebugUtilsMessageSeverityFlagBitsEXT exceptionSeverity, std::ostream& stream);
       virtual Logger createLogger(
-          const std::function<std::string(
-              VkDebugUtilsMessageSeverityFlagBitsEXT,
-              VkDebugUtilsMessageTypeFlagsEXT,
-              const std::string&
-          )>& function,
-          VkDebugUtilsMessageSeverityFlagBitsEXT exceptionSeverity
+          VkDebugUtilsMessageSeverityFlagBitsEXT exceptionSeverity,
+          VkDebugUtilsMessageSeverityFlagBitsEXT outSeverity
+      );
+      virtual Logger createLogger(
+          VkDebugUtilsMessageSeverityFlagBitsEXT exceptionSeverity,
+          VkDebugUtilsMessageSeverityFlagBitsEXT outSeverity,
+          std::ostream& stream
       );
       virtual Logger createLogger(
           const std::function<std::string(
@@ -100,6 +99,16 @@ namespace exqudens::vulkan {
               const std::string&
           )>& function,
           VkDebugUtilsMessageSeverityFlagBitsEXT exceptionSeverity,
+          VkDebugUtilsMessageSeverityFlagBitsEXT outSeverity
+      );
+      virtual Logger createLogger(
+          const std::function<std::string(
+              VkDebugUtilsMessageSeverityFlagBitsEXT,
+              VkDebugUtilsMessageTypeFlagsEXT,
+              const std::string&
+          )>& function,
+          VkDebugUtilsMessageSeverityFlagBitsEXT exceptionSeverity,
+          VkDebugUtilsMessageSeverityFlagBitsEXT outSeverity,
           std::ostream& stream
       );
 

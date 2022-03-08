@@ -412,7 +412,11 @@ namespace exqudens::vulkan {
 
   Logger Factory::createLogger() {
     try {
-      return createLogger(VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT, std::cout);
+      return createLogger(
+          VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
+          VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT,
+          std::cout
+      );
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -420,66 +424,62 @@ namespace exqudens::vulkan {
 
   Logger Factory::createLogger(std::ostream& stream) {
     try {
-      return createLogger(VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT, stream);
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
-
-  Logger Factory::createLogger(VkDebugUtilsMessageSeverityFlagBitsEXT exceptionSeverity) {
-    try {
-      std::function<std::string(
-          VkDebugUtilsMessageSeverityFlagBitsEXT,
-          VkDebugUtilsMessageTypeFlagsEXT,
-          std::string
-      )> function = loggerFunction;
-      try {
-        loggerFunction(
-            VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT,
-            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT,
-            "Test 'loggerFunction'."
-        );
-      } catch (const std::bad_function_call& e) {
-        function = createLoggerFunction();
-      }
-      return createLogger(function, exceptionSeverity, std::cout);
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
-
-  Logger Factory::createLogger(VkDebugUtilsMessageSeverityFlagBitsEXT exceptionSeverity, std::ostream& stream) {
-    try {
-      std::function<std::string(
-          VkDebugUtilsMessageSeverityFlagBitsEXT,
-          VkDebugUtilsMessageTypeFlagsEXT,
-          std::string
-      )> function = loggerFunction;
-      try {
-        loggerFunction(
-            VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT,
-            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT,
-            "Test 'loggerFunction'."
-        );
-      } catch (const std::bad_function_call& e) {
-        function = createLoggerFunction();
-      }
-      return createLogger(function, exceptionSeverity, stream);
+      return createLogger(
+          VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
+          VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT,
+          stream
+      );
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
   }
 
   Logger Factory::createLogger(
-      const std::function<std::string(
-          VkDebugUtilsMessageSeverityFlagBitsEXT,
-          VkDebugUtilsMessageTypeFlagsEXT,
-          const std::string&
-      )>& function,
-      VkDebugUtilsMessageSeverityFlagBitsEXT exceptionSeverity
+      VkDebugUtilsMessageSeverityFlagBitsEXT exceptionSeverity,
+      VkDebugUtilsMessageSeverityFlagBitsEXT outSeverity
   ) {
     try {
-      return createLogger(function, exceptionSeverity, std::cout);
+      std::function<std::string(
+          VkDebugUtilsMessageSeverityFlagBitsEXT,
+          VkDebugUtilsMessageTypeFlagsEXT,
+          std::string
+      )> function = loggerFunction;
+      try {
+        loggerFunction(
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT,
+            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT,
+            "Test 'loggerFunction'."
+        );
+      } catch (const std::bad_function_call& e) {
+        function = createLoggerFunction();
+      }
+      return createLogger(function, exceptionSeverity, outSeverity, std::cout);
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  Logger Factory::createLogger(
+      VkDebugUtilsMessageSeverityFlagBitsEXT exceptionSeverity,
+      VkDebugUtilsMessageSeverityFlagBitsEXT outSeverity,
+      std::ostream& stream
+  ) {
+    try {
+      std::function<std::string(
+          VkDebugUtilsMessageSeverityFlagBitsEXT,
+          VkDebugUtilsMessageTypeFlagsEXT,
+          std::string
+      )> function = loggerFunction;
+      try {
+        loggerFunction(
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT,
+            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT,
+            "Test 'loggerFunction'."
+        );
+      } catch (const std::bad_function_call& e) {
+        function = createLoggerFunction();
+      }
+      return createLogger(function, exceptionSeverity, outSeverity, stream);
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -492,12 +492,30 @@ namespace exqudens::vulkan {
           const std::string&
       )>& function,
       VkDebugUtilsMessageSeverityFlagBitsEXT exceptionSeverity,
+      VkDebugUtilsMessageSeverityFlagBitsEXT outSeverity
+  ) {
+    try {
+      return createLogger(function, exceptionSeverity, outSeverity, std::cout);
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  Logger Factory::createLogger(
+      const std::function<std::string(
+          VkDebugUtilsMessageSeverityFlagBitsEXT,
+          VkDebugUtilsMessageTypeFlagsEXT,
+          const std::string&
+      )>& function,
+      VkDebugUtilsMessageSeverityFlagBitsEXT exceptionSeverity,
+      VkDebugUtilsMessageSeverityFlagBitsEXT outSeverity,
       std::ostream& stream
   ) {
     try {
       return {
         .function = function,
         .exceptionSeverity = exceptionSeverity,
+        .outSeverity = outSeverity,
         .stream = &stream
       };
     } catch (...) {

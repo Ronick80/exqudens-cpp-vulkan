@@ -120,7 +120,10 @@ namespace exqudens::vulkan {
               for (const char*& extension : extensions) {
                 configuration.extensions.emplace_back(extension);
               }
-              logger = createLogger();
+              logger = createLogger(
+                  VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
+                  VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT
+              );
 
               instance = createInstance(configuration, logger);
               debugUtilsMessenger = createDebugUtilsMessenger(instance, logger);
