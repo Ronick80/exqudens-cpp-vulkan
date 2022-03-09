@@ -1407,6 +1407,31 @@ namespace exqudens::vulkan {
     try {
       VkPipelineLayout pipelineLayout = nullptr;
 
+      VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+      pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+      pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(descriptorSetLayouts.size());
+      pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.empty() ? nullptr : descriptorSetLayouts.data();
+      pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
+      pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+
+      if (
+          vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS
+          || pipelineLayout == nullptr
+      ) {
+        throw std::runtime_error(CALL_INFO() + ": failed to create pipeline layout!");
+      }
+
+      VkPipeline pipeline = nullptr;
+
+      std::vector<Shader> shaders;
+      shaders.resize(shaderPaths.size());
+      std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+      shaderStages.resize(shaders.size());
+      for (std::size_t i = 0; i < shaderPaths.size(); i++) {
+        shaders[i] = createShader(device, shaderPaths[i]);
+        shaderStages[i] = shaders[i].pipelineShaderStageCreateInfo;
+      }
+
       VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
       vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
@@ -1493,31 +1518,6 @@ namespace exqudens::vulkan {
       colorBlending.blendConstants[1] = 0.0f; // Optional
       colorBlending.blendConstants[2] = 0.0f; // Optional
       colorBlending.blendConstants[3] = 0.0f; // Optional
-
-      VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-      pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-      pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(descriptorSetLayouts.size());
-      pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.empty() ? nullptr : descriptorSetLayouts.data();
-      pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-      pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
-
-      if (
-          vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS
-          || pipelineLayout == nullptr
-          ) {
-        throw std::runtime_error(CALL_INFO() + ": failed to create pipeline layout!");
-      }
-
-      VkPipeline pipeline = nullptr;
-
-      std::vector<Shader> shaders;
-      shaders.resize(shaderPaths.size());
-      std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
-      shaderStages.resize(shaders.size());
-      for (std::size_t i = 0; i < shaderPaths.size(); i++) {
-        shaders[i] = createShader(device, shaderPaths[i]);
-        shaderStages[i] = shaders[i].pipelineShaderStageCreateInfo;
-      }
 
       VkGraphicsPipelineCreateInfo pipelineInfo{};
       pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
