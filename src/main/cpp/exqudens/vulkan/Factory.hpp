@@ -27,6 +27,8 @@
 #include "exqudens/vulkan/model/DescriptorPoolCreateInfo.hpp"
 #include "exqudens/vulkan/model/WriteDescriptorSet.hpp"
 #include "exqudens/vulkan/model/Shader.hpp"
+#include "exqudens/vulkan/model/PipelineLayoutCreateInfo.hpp"
+#include "exqudens/vulkan/model/GraphicsPipelineCreateInfo.hpp"
 #include "exqudens/vulkan/model/Pipeline.hpp"
 
 namespace exqudens::vulkan {
@@ -219,6 +221,16 @@ namespace exqudens::vulkan {
       virtual VkDescriptorSetLayout createDescriptorSetLayout(VkDevice& device, const DescriptorSetLayoutCreateInfo& createInfo);
 
       virtual Shader createShader(VkDevice& device, const std::string& path);
+
+      virtual Pipeline createPipeline(
+          VkDevice& device,
+          const std::vector<std::string>& shaderPaths,
+          const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts,
+          const std::vector<VkVertexInputBindingDescription>& vertexBindingDescriptions,
+          const std::vector<VkVertexInputAttributeDescription>& vertexAttributeDescriptions,
+          const PipelineLayoutCreateInfo& layoutCreateInfo,
+          const GraphicsPipelineCreateInfo& createInfo
+      );
 
       virtual Pipeline createGraphicsPipeline(
           VkDevice& device,
