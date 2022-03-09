@@ -78,10 +78,10 @@ namespace exqudens::vulkan {
           void create(GLFWwindow*& window) {
             try {
               vertices = {
-                  {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-                  {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-                  {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-                  {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+                  {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+                  {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+                  {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+                  {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}}
               };
 
               indices = {
@@ -157,7 +157,21 @@ namespace exqudens::vulkan {
                   {Vertex::getBindingDescription()},
                   Vertex::getAttributeDescriptions()
               );
-              swapChainFrameBuffers = createFrameBuffers(device, swapChainImageViews, renderPass, swapChain.width, swapChain.height);
+              std::vector<FrameBufferCreateInfo> frameBufferCreateInfoVector;
+              frameBufferCreateInfoVector.resize(swapChainImageViews.size());
+              for (std::size_t i = 0; i < frameBufferCreateInfoVector.size(); i++) {
+                frameBufferCreateInfoVector[i] = FrameBufferCreateInfo {
+                    .flags = 0,
+                    .renderPass = renderPass,
+                    .attachments = {
+                        swapChainImageViews[i]
+                    },
+                    .width = swapChain.extent.width,
+                    .height = swapChain.extent.height,
+                    .layers = 1
+                };
+              }
+              swapChainFrameBuffers = createFrameBuffers(device, frameBufferCreateInfoVector);
               vertexStagingBuffer = createBuffer(physicalDevice.value, device, sizeof(vertices[0]) * vertices.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
               void* vertexData;
@@ -483,7 +497,21 @@ namespace exqudens::vulkan {
                 {Vertex::getBindingDescription()},
                 Vertex::getAttributeDescriptions()
             );
-            swapChainFrameBuffers = createFrameBuffers(device, swapChainImageViews, renderPass, swapChain.width, swapChain.height);
+            std::vector<FrameBufferCreateInfo> frameBufferCreateInfoVector;
+            frameBufferCreateInfoVector.resize(swapChainImageViews.size());
+            for (std::size_t i = 0; i < frameBufferCreateInfoVector.size(); i++) {
+              frameBufferCreateInfoVector[i] = FrameBufferCreateInfo {
+                  .flags = 0,
+                  .renderPass = renderPass,
+                  .attachments = {
+                      swapChainImageViews[i]
+                  },
+                  .width = swapChain.extent.width,
+                  .height = swapChain.extent.height,
+                  .layers = 1
+              };
+            }
+            swapChainFrameBuffers = createFrameBuffers(device, frameBufferCreateInfoVector);
           }
 
           void updateUniformBuffer(uint32_t currentImage) {

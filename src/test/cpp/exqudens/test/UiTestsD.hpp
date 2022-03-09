@@ -12,6 +12,7 @@
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -51,6 +52,8 @@ namespace exqudens::vulkan {
           SwapChain swapChain = {};
           std::vector<VkImage> swapChainImages = {};
           std::vector<VkImageView> swapChainImageViews = {};
+          Image depthImage = {};
+          VkImageView depthImageView = {};
           VkRenderPass renderPass = nullptr;
           VkDescriptorSetLayout descriptorSetLayout = nullptr;
           Pipeline graphicsPipeline = {};
@@ -83,14 +86,20 @@ namespace exqudens::vulkan {
           void create(GLFWwindow*& window) {
             try {
               vertices = {
-                  {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-                  {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-                  {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-                  {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
+                  {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+                  {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+                  {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+                  {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+
+                  {{-0.5f, -0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+                  {{0.5f, -0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+                  {{0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+                  {{-0.5f, 0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
               };
 
               indices = {
-                  0, 1, 2, 2, 3, 0
+                  0, 1, 2, 2, 3, 0,
+                  4, 5, 6, 6, 7, 4
               };
 
               uint32_t glfwExtensionCount = 0;
@@ -138,7 +147,71 @@ namespace exqudens::vulkan {
               swapChain = createSwapChain(physicalDevice.swapChainSupportDetails.value(), physicalDevice.queueFamilyIndexInfo, surface, device, 800, 600);
               swapChainImages = createSwapChainImages(device, swapChain.value);
               swapChainImageViews = createImageViews(device, swapChainImages, swapChain.format);
-              renderPass = createRenderPass(device, swapChain.format);
+
+              depthImage = createImage(
+                  physicalDevice.value,
+                  device,
+                  swapChain.width,
+                  swapChain.height,
+                  findDepthFormat(physicalDevice.value),
+                  VK_IMAGE_TILING_OPTIMAL,
+                  VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+              );
+              depthImageView = createImageView(device, depthImage.value, depthImage.format, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+              renderPass = createRenderPass(
+                  device,
+                  RenderPassCreateInfo {
+                      .attachments = {
+                          VkAttachmentDescription {
+                              .format = swapChain.format,
+                              .samples = VK_SAMPLE_COUNT_1_BIT,
+                              .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                              .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+                              .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                              .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                              .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+                              .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+                          },
+                          VkAttachmentDescription {
+                              .format = depthImage.format,
+                              .samples = VK_SAMPLE_COUNT_1_BIT,
+                              .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                              .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+                              .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                              .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                              .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+                              .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+                          }
+                      },
+                      .subPasses = {
+                          SubPassDescription {
+                              .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              .colorAttachments = {
+                                  VkAttachmentReference {
+                                      .attachment = 0,
+                                      .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+                                  }
+                              },
+                              .depthStencilAttachment = VkAttachmentReference {
+                                  .attachment = 1,
+                                  .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+                              }
+                          }
+                      },
+                      .dependencies = {
+                          VkSubpassDependency {
+                              .srcSubpass = VK_SUBPASS_EXTERNAL,
+                              .dstSubpass = 0,
+                              .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+                              .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+                              .srcAccessMask = 0,
+                              .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
+                          }
+                      }
+                  }
+              );
               descriptorSetLayout = createDescriptorSetLayout(
                   device,
                   DescriptorSetLayoutCreateInfo {
@@ -171,7 +244,6 @@ namespace exqudens::vulkan {
                   {Vertex::getBindingDescription()},
                   Vertex::getAttributeDescriptions()
               );
-              swapChainFrameBuffers = createFrameBuffers(device, swapChainImageViews, renderPass, swapChain.width, swapChain.height);
 
               unsigned int imageWidth, imageHeight, imageDepth;
               std::vector<unsigned char> pixels;
@@ -189,6 +261,23 @@ namespace exqudens::vulkan {
               vkMapMemory(device, imageStaging.memory, 0, imageStaging.memorySize, 0, &imageData);
               std::memcpy(imageData, pixels.data(), static_cast<size_t>(imageStaging.memorySize));
               vkUnmapMemory(device, imageStaging.memory);
+
+              std::vector<FrameBufferCreateInfo> frameBufferCreateInfoVector;
+              frameBufferCreateInfoVector.resize(swapChainImageViews.size());
+              for (std::size_t i = 0; i < frameBufferCreateInfoVector.size(); i++) {
+                frameBufferCreateInfoVector[i] = FrameBufferCreateInfo {
+                    .flags = 0,
+                    .renderPass = renderPass,
+                    .attachments = {
+                        swapChainImageViews[i],
+                        depthImageView
+                    },
+                    .width = swapChain.extent.width,
+                    .height = swapChain.extent.height,
+                    .layers = 1
+                };
+              }
+              swapChainFrameBuffers = createFrameBuffers(device, frameBufferCreateInfoVector);
 
               image = createImage(physicalDevice.value, device, imageWidth, imageHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
               imageView = createImageView(device, image.value, VK_FORMAT_R8G8B8A8_SRGB);
@@ -410,6 +499,8 @@ namespace exqudens::vulkan {
               destroyPipeline(graphicsPipeline, device);
               destroyDescriptorSetLayout(descriptorSetLayout, device);
               destroyRenderPass(renderPass, device);
+              destroyImageView(depthImageView, device);
+              destroyImage(depthImage, device);
               destroyImageViews(swapChainImageViews, device);
               destroySwapChain(swapChain, device);
               destroyCommandPool(graphicsCommandPool, device);
@@ -538,7 +629,7 @@ namespace exqudens::vulkan {
               sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
               destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
             } else {
-              throw std::invalid_argument("unsupported layout transition!");
+              throw std::invalid_argument(CALL_INFO()+ ": unsupported layout transition!");
             }
 
             vkCmdPipelineBarrier(
@@ -580,9 +671,17 @@ namespace exqudens::vulkan {
             renderPassInfo.renderArea.offset = {0, 0};
             renderPassInfo.renderArea.extent = swapChainExtent;
 
-            VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-            renderPassInfo.clearValueCount = 1;
-            renderPassInfo.pClearValues = &clearColor;
+            std::vector<VkClearValue> clearValues = {
+                VkClearValue {
+                    .color = {0.0f, 0.0f, 0.0f, 1.0f}
+                },
+                VkClearValue {
+                    .depthStencil = {1.0f, 0}
+                }
+            };
+
+            renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+            renderPassInfo.pClearValues = clearValues.data();
 
             vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -613,6 +712,8 @@ namespace exqudens::vulkan {
             destroyFrameBuffers(swapChainFrameBuffers, device);
             destroyPipeline(graphicsPipeline, device);
             destroyRenderPass(renderPass, device);
+            destroyImageView(depthImageView, device);
+            destroyImage(depthImage, device);
             destroyImageViews(swapChainImageViews, device);
             destroySwapChain(swapChain, device);
 
@@ -621,7 +722,71 @@ namespace exqudens::vulkan {
             swapChain = createSwapChain(physicalDevice.swapChainSupportDetails.value(), physicalDevice.queueFamilyIndexInfo, surface, device, width, height);
             swapChainImages = createSwapChainImages(device, swapChain.value);
             swapChainImageViews = createImageViews(device, swapChainImages, swapChain.format);
-            renderPass = createRenderPass(device, swapChain.format);
+
+            depthImage = createImage(
+                physicalDevice.value,
+                device,
+                swapChain.width,
+                swapChain.height,
+                findDepthFormat(physicalDevice.value),
+                VK_IMAGE_TILING_OPTIMAL,
+                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+            );
+            depthImageView = createImageView(device, depthImage.value, depthImage.format, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+            renderPass = createRenderPass(
+                device,
+                RenderPassCreateInfo {
+                    .attachments = {
+                        VkAttachmentDescription {
+                            .format = swapChain.format,
+                            .samples = VK_SAMPLE_COUNT_1_BIT,
+                            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+                            .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                            .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+                            .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+                        },
+                        VkAttachmentDescription {
+                            .format = depthImage.format,
+                            .samples = VK_SAMPLE_COUNT_1_BIT,
+                            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+                            .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                            .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+                            .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+                        }
+                    },
+                    .subPasses = {
+                        SubPassDescription {
+                            .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            .colorAttachments = {
+                                VkAttachmentReference {
+                                    .attachment = 0,
+                                    .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+                                }
+                            },
+                            .depthStencilAttachment = VkAttachmentReference {
+                                .attachment = 1,
+                                .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+                            }
+                        }
+                    },
+                    .dependencies = {
+                        VkSubpassDependency {
+                            .srcSubpass = VK_SUBPASS_EXTERNAL,
+                            .dstSubpass = 0,
+                            .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+                            .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+                            .srcAccessMask = 0,
+                            .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
+                        }
+                    }
+                }
+            );
             graphicsPipeline = createGraphicsPipeline(
                 device,
                 swapChain.extent,
@@ -632,7 +797,23 @@ namespace exqudens::vulkan {
                 {Vertex::getBindingDescription()},
                 Vertex::getAttributeDescriptions()
             );
-            swapChainFrameBuffers = createFrameBuffers(device, swapChainImageViews, renderPass, swapChain.width, swapChain.height);
+
+            std::vector<FrameBufferCreateInfo> frameBufferCreateInfoVector;
+            frameBufferCreateInfoVector.resize(swapChainImageViews.size());
+            for (std::size_t i = 0; i < frameBufferCreateInfoVector.size(); i++) {
+              frameBufferCreateInfoVector[i] = FrameBufferCreateInfo {
+                  .flags = 0,
+                  .renderPass = renderPass,
+                  .attachments = {
+                      swapChainImageViews[i],
+                      depthImageView
+                  },
+                  .width = swapChain.extent.width,
+                  .height = swapChain.extent.height,
+                  .layers = 1
+              };
+            }
+            swapChainFrameBuffers = createFrameBuffers(device, frameBufferCreateInfoVector);
           }
 
           void updateUniformBuffer(uint32_t currentImage) {

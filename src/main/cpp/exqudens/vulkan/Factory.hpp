@@ -21,6 +21,7 @@
 #include "exqudens/vulkan/model/SwapChain.hpp"
 #include "exqudens/vulkan/model/Buffer.hpp"
 #include "exqudens/vulkan/model/Image.hpp"
+#include "exqudens/vulkan/model/FrameBufferCreateInfo.hpp"
 #include "exqudens/vulkan/model/RenderPassCreateInfo.hpp"
 #include "exqudens/vulkan/model/DescriptorSetLayoutCreateInfo.hpp"
 #include "exqudens/vulkan/model/DescriptorPoolCreateInfo.hpp"
@@ -74,6 +75,12 @@ namespace exqudens::vulkan {
       virtual VkExtent2D chooseSwapExtent(VkSurfaceCapabilitiesKHR& capabilities, const uint32_t& width, const uint32_t& height);
 
       virtual uint32_t findMemoryType(VkPhysicalDevice& physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties);
+
+      virtual VkFormat findSupportedFormat(VkPhysicalDevice& physicalDevice, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+
+      virtual VkFormat findDepthFormat(VkPhysicalDevice& physicalDevice);
+
+      virtual bool hasStencilComponent(VkFormat format);
 
       // create
 
@@ -203,7 +210,9 @@ namespace exqudens::vulkan {
       );
 
       virtual VkImageView createImageView(VkDevice& device, VkImage& image, VkFormat format);
+      virtual VkImageView createImageView(VkDevice& device, VkImage& image, VkFormat format, VkImageAspectFlags aspectMask);
       virtual std::vector<VkImageView> createImageViews(VkDevice& device, std::vector<VkImage>& images, VkFormat format);
+      virtual std::vector<VkImageView> createImageViews(VkDevice& device, std::vector<VkImage>& images, VkFormat format, VkImageAspectFlags aspectMask);
 
       virtual VkRenderPass createRenderPass(VkDevice& device, VkFormat& format);
       virtual VkRenderPass createRenderPass(VkDevice& device, const RenderPassCreateInfo& createInfo);
@@ -230,19 +239,10 @@ namespace exqudens::vulkan {
           std::vector<VkVertexInputAttributeDescription> attributeDescriptions
       );
 
-      virtual VkFramebuffer createFrameBuffer(
-          VkDevice& device,
-          VkImageView& imageView,
-          VkRenderPass& renderPass,
-          uint32_t& width,
-          uint32_t& height
-      );
+      virtual VkFramebuffer createFrameBuffer(VkDevice& device, const FrameBufferCreateInfo& createInfo);
       virtual std::vector<VkFramebuffer> createFrameBuffers(
           VkDevice& device,
-          std::vector<VkImageView>& imageViews,
-          VkRenderPass& renderPass,
-          uint32_t& width,
-          uint32_t& height
+          const std::vector<FrameBufferCreateInfo>& createInfo
       );
 
       virtual VkSampler createSampler(VkPhysicalDevice& physicalDevice, VkDevice& device);

@@ -108,7 +108,21 @@ namespace exqudens::vulkan {
               swapChainImageViews = createImageViews(device, swapChainImages, swapChain.format);
               renderPass = createRenderPass(device, swapChain.format);
               graphicsPipeline = createGraphicsPipeline(device, swapChain.extent, {"resources/shader/shader-1.vert.spv", "resources/shader/shader-1.frag.spv"}, renderPass);
-              swapChainFrameBuffers = createFrameBuffers(device, swapChainImageViews, renderPass, swapChain.width, swapChain.height);
+              std::vector<FrameBufferCreateInfo> frameBufferCreateInfoVector;
+              frameBufferCreateInfoVector.resize(swapChainImageViews.size());
+              for (std::size_t i = 0; i < frameBufferCreateInfoVector.size(); i++) {
+                frameBufferCreateInfoVector[i] = FrameBufferCreateInfo {
+                    .flags = 0,
+                    .renderPass = renderPass,
+                    .attachments = {
+                        swapChainImageViews[i]
+                    },
+                    .width = swapChain.extent.width,
+                    .height = swapChain.extent.height,
+                    .layers = 1
+                };
+              }
+              swapChainFrameBuffers = createFrameBuffers(device, frameBufferCreateInfoVector);
               graphicsCommandBuffers = createCommandBuffers(device, graphicsCommandPool, swapChainImageViews.size());
 
               fillCommandBuffers(
@@ -204,7 +218,21 @@ namespace exqudens::vulkan {
             swapChainImageViews = createImageViews(device, swapChainImages, swapChain.format);
             renderPass = createRenderPass(device, swapChain.format);
             graphicsPipeline = createGraphicsPipeline(device, swapChain.extent, {"resources/shader/shader.vert.spv", "resources/shader/shader.frag.spv"}, renderPass);
-            swapChainFrameBuffers = createFrameBuffers(device, swapChainImageViews, renderPass, swapChain.width, swapChain.height);
+            std::vector<FrameBufferCreateInfo> frameBufferCreateInfoVector;
+            frameBufferCreateInfoVector.resize(swapChainImageViews.size());
+            for (std::size_t i = 0; i < frameBufferCreateInfoVector.size(); i++) {
+              frameBufferCreateInfoVector[i] = FrameBufferCreateInfo {
+                  .flags = 0,
+                  .renderPass = renderPass,
+                  .attachments = {
+                      swapChainImageViews[i]
+                  },
+                  .width = swapChain.extent.width,
+                  .height = swapChain.extent.height,
+                  .layers = 1
+              };
+            }
+            swapChainFrameBuffers = createFrameBuffers(device, frameBufferCreateInfoVector);
             graphicsCommandBuffers = createCommandBuffers(device, graphicsCommandPool, swapChainImageViews.size());
 
             fillCommandBuffers(

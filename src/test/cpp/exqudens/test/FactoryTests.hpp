@@ -102,7 +102,17 @@ namespace exqudens::vulkan {
               }
           }
       );
-      VkFramebuffer frameBuffer = createFrameBuffer(device, imageView, renderPass, image.width, image.height);
+      VkFramebuffer frameBuffer = createFrameBuffer(
+          device,
+          FrameBufferCreateInfo {
+            .flags = 0,
+            .renderPass = renderPass,
+            .attachments = {imageView},
+            .width = image.width,
+            .height = image.height,
+            .layers = 1
+          }
+      );
       Pipeline graphicsPipeline = createGraphicsPipeline(device, {.width = image.width, .height = image.height}, {"resources/shader/shader-1.vert.spv", "resources/shader/shader-1.frag.spv"}, renderPass);
       VkCommandBuffer graphicsCommandBuffer = createCommandBuffer(device, graphicsCommandPool);
       Image imageOut = createImage(physicalDevice.value, device, 800, 600, image.format, VK_IMAGE_TILING_LINEAR, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);

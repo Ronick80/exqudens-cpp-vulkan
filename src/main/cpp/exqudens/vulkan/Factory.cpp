@@ -372,6 +372,49 @@ namespace exqudens::vulkan {
     }
   }
 
+  VkFormat Factory::findSupportedFormat(
+      VkPhysicalDevice& physicalDevice,
+      const std::vector<VkFormat>& candidates,
+      VkImageTiling tiling,
+      VkFormatFeatureFlags features
+  ) {
+    try {
+      for (VkFormat format : candidates) {
+        VkFormatProperties props;
+        vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
+        if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
+          return format;
+        } else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
+          return format;
+        }
+      }
+      throw std::runtime_error(CALL_INFO() + ": failed to find supported format!");
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  VkFormat Factory::findDepthFormat(VkPhysicalDevice& physicalDevice) {
+    try {
+      return findSupportedFormat(
+          physicalDevice,
+          {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
+          VK_IMAGE_TILING_OPTIMAL,
+          VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
+      );
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  bool Factory::hasStencilComponent(VkFormat format) {
+    try {
+      return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
   // create
 
   std::map<std::string, std::string> Factory::createEnvironmentVariables(const std::string& executableDirPath) {
@@ -1072,6 +1115,14 @@ namespace exqudens::vulkan {
 
   VkImageView Factory::createImageView(VkDevice& device, VkImage& image, VkFormat format) {
     try {
+      return createImageView(device, image, format, VK_IMAGE_ASPECT_COLOR_BIT);
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  VkImageView Factory::createImageView(VkDevice& device, VkImage& image, VkFormat format, VkImageAspectFlags aspectMask) {
+    try {
       VkImageViewCreateInfo viewInfo = {};
       viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
       viewInfo.image = image;
@@ -1081,7 +1132,7 @@ namespace exqudens::vulkan {
       //viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
       //viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
       //viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-      viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+      viewInfo.subresourceRange.aspectMask = aspectMask;
       viewInfo.subresourceRange.baseMipLevel = 0;
       viewInfo.subresourceRange.levelCount = 1;
       viewInfo.subresourceRange.baseArrayLayer = 0;
@@ -1110,6 +1161,26 @@ namespace exqudens::vulkan {
       imageViews.resize(images.size());
       for (uint32_t i = 0; i < images.size(); i++) {
         imageViews[i] = createImageView(device, images[i], format);
+      }
+
+      return imageViews;
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  std::vector<VkImageView> Factory::createImageViews(
+      VkDevice& device,
+      std::vector<VkImage>& images,
+      VkFormat format,
+      VkImageAspectFlags aspectMask
+  ) {
+    try {
+      std::vector<VkImageView> imageViews;
+
+      imageViews.resize(images.size());
+      for (uint32_t i = 0; i < images.size(); i++) {
+        imageViews[i] = createImageView(device, images[i], format, aspectMask);
       }
 
       return imageViews;
@@ -1398,6 +1469,18 @@ namespace exqudens::vulkan {
       multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
       multisampling.alphaToOneEnable = VK_FALSE; // Optional
 
+      VkPipelineDepthStencilStateCreateInfo depthStencil = {};
+      depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+      depthStencil.depthTestEnable = VK_TRUE;
+      depthStencil.depthWriteEnable = VK_TRUE;
+      depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+      depthStencil.depthBoundsTestEnable = VK_FALSE;
+      depthStencil.minDepthBounds = 0.0f; // Optional
+      depthStencil.maxDepthBounds = 1.0f; // Optional
+      depthStencil.stencilTestEnable = VK_FALSE;
+      depthStencil.front = {}; // Optional
+      depthStencil.back = {}; // Optional
+
       VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
       colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
       colorBlendAttachment.blendEnable = VK_FALSE;
@@ -1453,7 +1536,7 @@ namespace exqudens::vulkan {
       pipelineInfo.pViewportState = &viewportState;
       pipelineInfo.pRasterizationState = &rasterizer;
       pipelineInfo.pMultisampleState = &multisampling;
-      pipelineInfo.pDepthStencilState = nullptr; // Optional
+      pipelineInfo.pDepthStencilState = &depthStencil;
       pipelineInfo.pColorBlendState = &colorBlending;
       pipelineInfo.pDynamicState = nullptr; // Optional
       pipelineInfo.layout = pipelineLayout;
@@ -1482,28 +1565,20 @@ namespace exqudens::vulkan {
     }
   }
 
-  VkFramebuffer Factory::createFrameBuffer(
-      VkDevice& device,
-      VkImageView& imageView,
-      VkRenderPass& renderPass,
-      uint32_t& width,
-      uint32_t& height
-  ) {
+  VkFramebuffer Factory::createFrameBuffer(VkDevice& device, const FrameBufferCreateInfo& createInfo) {
     try {
       VkFramebuffer frameBuffer = nullptr;
 
-      std::vector<VkImageView> attachments = {
-          imageView
+      VkFramebufferCreateInfo frameBufferInfo = {
+          .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+          .flags = createInfo.flags,
+          .renderPass = createInfo.renderPass,
+          .attachmentCount = static_cast<uint32_t>(createInfo.attachments.size()),
+          .pAttachments = createInfo.attachments.data(),
+          .width = createInfo.width,
+          .height = createInfo.height,
+          .layers = createInfo.layers
       };
-
-      VkFramebufferCreateInfo frameBufferInfo{};
-      frameBufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-      frameBufferInfo.renderPass = renderPass;
-      frameBufferInfo.attachmentCount = 1;
-      frameBufferInfo.pAttachments = attachments.data();
-      frameBufferInfo.width = width;
-      frameBufferInfo.height = height;
-      frameBufferInfo.layers = 1;
 
       if (
           vkCreateFramebuffer(device, &frameBufferInfo, nullptr, &frameBuffer) != VK_SUCCESS
@@ -1520,16 +1595,13 @@ namespace exqudens::vulkan {
 
   std::vector<VkFramebuffer> Factory::createFrameBuffers(
       VkDevice& device,
-      std::vector<VkImageView>& imageViews,
-      VkRenderPass& renderPass,
-      uint32_t& width,
-      uint32_t& height
+      const std::vector<FrameBufferCreateInfo>& createInfo
   ) {
     try {
       std::vector<VkFramebuffer> frameBuffers;
-      frameBuffers.resize(imageViews.size());
-      for (std::size_t i = 0; i < imageViews.size(); i++) {
-        frameBuffers[i] = createFrameBuffer(device, imageViews[i], renderPass, width, height);
+      frameBuffers.resize(createInfo.size());
+      for (std::size_t i = 0; i < frameBuffers.size(); i++) {
+        frameBuffers[i] = createFrameBuffer(device, createInfo[i]);
       }
       return frameBuffers;
     } catch (...) {
