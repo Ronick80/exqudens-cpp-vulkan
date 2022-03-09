@@ -407,14 +407,6 @@ namespace exqudens::vulkan {
     }
   }
 
-  bool Factory::hasStencilComponent(VkFormat format) {
-    try {
-      return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
-    } catch (...) {
-      std::throw_with_nested(std::runtime_error(CALL_INFO()));
-    }
-  }
-
   // create
 
   std::map<std::string, std::string> Factory::createEnvironmentVariables(const std::string& executableDirPath) {

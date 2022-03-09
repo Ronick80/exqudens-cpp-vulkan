@@ -80,8 +80,6 @@ namespace exqudens::vulkan {
 
       virtual VkFormat findDepthFormat(VkPhysicalDevice& physicalDevice);
 
-      virtual bool hasStencilComponent(VkFormat format);
-
       // create
 
       virtual std::map<std::string, std::string> createEnvironmentVariables(const std::string& executableDirPath);
