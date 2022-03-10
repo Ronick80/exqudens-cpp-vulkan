@@ -134,6 +134,8 @@ namespace exqudens::vulkan {
                   VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT
               );
 
+              functions = createFunctions();
+
               instance = createInstance(configuration, logger);
               debugUtilsMessenger = createDebugUtilsMessenger(instance, logger);
               surface = createSurface(instance);

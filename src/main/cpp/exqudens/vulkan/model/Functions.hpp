@@ -12,100 +12,100 @@ namespace exqudens::vulkan {
     std::function<void(
         uint32_t*                                   pPropertyCount,
         VkLayerProperties*                          pProperties
-    )> enumerateInstanceLayerProperties = vkEnumerateInstanceLayerProperties;
-
-    std::function<void(
-        VkPhysicalDevice                            physicalDevice,
-        uint32_t*                                   pQueueFamilyPropertyCount,
-        VkQueueFamilyProperties*                    pQueueFamilyProperties
-    )> getPhysicalDeviceQueueFamilyProperties = vkGetPhysicalDeviceQueueFamilyProperties;
-
-    std::function<void(
-        VkPhysicalDevice                            physicalDevice,
-        uint32_t                                    queueFamilyIndex,
-        VkSurfaceKHR                                surface,
-        VkBool32*                                   pSupported
-    )> getPhysicalDeviceSurfaceSupportKHR = vkGetPhysicalDeviceSurfaceSupportKHR;
+    )> enumerateInstanceLayerProperties;
 
     std::function<void(
         VkPhysicalDevice                            physicalDevice,
         const char*                                 pLayerName,
         uint32_t*                                   pPropertyCount,
         VkExtensionProperties*                      pProperties
-    )> enumerateDeviceExtensionProperties = vkEnumerateDeviceExtensionProperties;
+    )> enumerateDeviceExtensionProperties;
 
     std::function<void(
         VkInstance                                  instance,
         uint32_t*                                   pPhysicalDeviceCount,
         VkPhysicalDevice*                           pPhysicalDevices
-    )> enumeratePhysicalDevices = vkEnumeratePhysicalDevices;
+    )> enumeratePhysicalDevices;
+
+    std::function<void(
+        VkPhysicalDevice                            physicalDevice,
+        uint32_t*                                   pQueueFamilyPropertyCount,
+        VkQueueFamilyProperties*                    pQueueFamilyProperties
+    )> getPhysicalDeviceQueueFamilyProperties;
+
+    std::function<void(
+        VkPhysicalDevice                            physicalDevice,
+        uint32_t                                    queueFamilyIndex,
+        VkSurfaceKHR                                surface,
+        VkBool32*                                   pSupported
+    )> getPhysicalDeviceSurfaceSupportKHR;
 
     std::function<void(
         VkPhysicalDevice                            physicalDevice,
         VkPhysicalDeviceFeatures*                   pFeatures
-    )> getPhysicalDeviceFeatures = vkGetPhysicalDeviceFeatures;
+    )> getPhysicalDeviceFeatures;
 
     std::function<void(
         VkPhysicalDevice                            physicalDevice,
         VkSurfaceKHR                                surface,
         VkSurfaceCapabilitiesKHR*                   pSurfaceCapabilities
-    )> getPhysicalDeviceSurfaceCapabilitiesKHR = vkGetPhysicalDeviceSurfaceCapabilitiesKHR;
+    )> getPhysicalDeviceSurfaceCapabilitiesKHR;
 
     std::function<void(
         VkPhysicalDevice                            physicalDevice,
         VkSurfaceKHR                                surface,
         uint32_t*                                   pSurfaceFormatCount,
         VkSurfaceFormatKHR*                         pSurfaceFormats
-    )> getPhysicalDeviceSurfaceFormatsKHR = vkGetPhysicalDeviceSurfaceFormatsKHR;
+    )> getPhysicalDeviceSurfaceFormatsKHR;
 
     std::function<void(
         VkPhysicalDevice                            physicalDevice,
         VkSurfaceKHR                                surface,
         uint32_t*                                   pPresentModeCount,
         VkPresentModeKHR*                           pPresentModes
-    )> getPhysicalDeviceSurfacePresentModesKHR = vkGetPhysicalDeviceSurfacePresentModesKHR;
+    )> getPhysicalDeviceSurfacePresentModesKHR;
 
     std::function<void(
         VkPhysicalDevice                            physicalDevice,
         VkPhysicalDeviceMemoryProperties*           pMemoryProperties
-    )> getPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties;
+    )> getPhysicalDeviceMemoryProperties;
 
     std::function<void(
         VkPhysicalDevice                            physicalDevice,
         VkFormat                                    format,
         VkFormatProperties*                         pFormatProperties
-    )> getPhysicalDeviceFormatProperties = vkGetPhysicalDeviceFormatProperties;
+    )> getPhysicalDeviceFormatProperties;
 
     std::function<PFN_vkVoidFunction(
         VkInstance                                  instance,
         const char*                                 pName
-    )> getInstanceProcAddr = vkGetInstanceProcAddr;
+    )> getInstanceProcAddr;
 
     std::function<void(
         VkDevice                                    device,
         uint32_t                                    queueFamilyIndex,
         uint32_t                                    queueIndex,
         VkQueue*                                    pQueue
-    )> getDeviceQueue = vkGetDeviceQueue;
+    )> getDeviceQueue;
 
     std::function<void(
         VkDevice                                    device,
         VkBuffer                                    buffer,
         VkMemoryRequirements*                       pMemoryRequirements
-    )> getBufferMemoryRequirements = vkGetBufferMemoryRequirements;
+    )> getBufferMemoryRequirements;
 
     std::function<void(
         VkDevice                                    device,
         VkImage                                     image,
         VkMemoryRequirements*                       pMemoryRequirements
-    )> getImageMemoryRequirements = vkGetImageMemoryRequirements;
+    )> getImageMemoryRequirements;
 
     std::function<VkResult(
         VkDevice                                    device,
         VkSwapchainKHR                              swapchain,
         uint32_t*                                   pSwapchainImageCount,
         VkImage*                                    pSwapchainImages
-    )> getSwapchainImagesKHR = vkGetSwapchainImagesKHR;
+    )> getSwapchainImagesKHR;
 
     std::function<void(
         VkDevice                                    device,
@@ -113,83 +113,83 @@ namespace exqudens::vulkan {
         const VkWriteDescriptorSet*                 pDescriptorWrites,
         uint32_t                                    descriptorCopyCount,
         const VkCopyDescriptorSet*                  pDescriptorCopies
-    )> updateDescriptorSets = vkUpdateDescriptorSets;
+    )> updateDescriptorSets;
 
     std::function<VkResult(
         const VkInstanceCreateInfo*                 pCreateInfo,
         const VkAllocationCallbacks*                pAllocator,
         VkInstance*                                 pInstance
-    )> createInstance = vkCreateInstance;
+    )> createInstance;
 
     std::function<VkResult(
         VkPhysicalDevice                            physicalDevice,
         const VkDeviceCreateInfo*                   pCreateInfo,
         const VkAllocationCallbacks*                pAllocator,
         VkDevice*                                   pDevice
-    )> createDevice = vkCreateDevice;
+    )> createDevice;
 
     std::function<VkResult(
         VkDevice                                    device,
         const VkCommandPoolCreateInfo*              pCreateInfo,
         const VkAllocationCallbacks*                pAllocator,
         VkCommandPool*                              pCommandPool
-    )> createCommandPool = vkCreateCommandPool;
+    )> createCommandPool;
 
     std::function<VkResult(
         VkDevice                                    device,
         const VkSwapchainCreateInfoKHR*             pCreateInfo,
         const VkAllocationCallbacks*                pAllocator,
         VkSwapchainKHR*                             pSwapchain
-    )> createSwapchainKHR = vkCreateSwapchainKHR;
+    )> createSwapchainKHR;
 
     std::function<VkResult(
         VkDevice                                    device,
         const VkBufferCreateInfo*                   pCreateInfo,
         const VkAllocationCallbacks*                pAllocator,
         VkBuffer*                                   pBuffer
-    )> createBuffer = vkCreateBuffer;
+    )> createBuffer;
 
     std::function<VkResult(
         VkDevice                                    device,
         const VkImageCreateInfo*                    pCreateInfo,
         const VkAllocationCallbacks*                pAllocator,
         VkImage*                                    pImage
-    )> createImage = vkCreateImage;
+    )> createImage;
 
     std::function<VkResult(
         VkDevice                                    device,
         const VkImageViewCreateInfo*                pCreateInfo,
         const VkAllocationCallbacks*                pAllocator,
         VkImageView*                                pView
-    )> createImageView = vkCreateImageView;
+    )> createImageView;
 
     std::function<VkResult(
         VkDevice                                    device,
         const VkRenderPassCreateInfo*               pCreateInfo,
         const VkAllocationCallbacks*                pAllocator,
         VkRenderPass*                               pRenderPass
-    )> createRenderPass = vkCreateRenderPass;
+    )> createRenderPass;
 
     std::function<VkResult(
         VkDevice                                    device,
         const VkDescriptorSetLayoutCreateInfo*      pCreateInfo,
         const VkAllocationCallbacks*                pAllocator,
         VkDescriptorSetLayout*                      pSetLayout
-    )> createDescriptorSetLayout = vkCreateDescriptorSetLayout;
+    )> createDescriptorSetLayout;
 
     std::function<VkResult(
         VkDevice                                    device,
         const VkShaderModuleCreateInfo*             pCreateInfo,
         const VkAllocationCallbacks*                pAllocator,
         VkShaderModule*                             pShaderModule
-    )> createShaderModule = vkCreateShaderModule;
+    )> createShaderModule;
 
     std::function<VkResult(
         VkDevice                                    device,
         const VkPipelineLayoutCreateInfo*           pCreateInfo,
         const VkAllocationCallbacks*                pAllocator,
         VkPipelineLayout*                           pPipelineLayout
-    )> createPipelineLayout = vkCreatePipelineLayout;
+    )> createPipelineLayout;
 
     std::function<VkResult(
         VkDevice                                    device,
@@ -198,193 +198,193 @@ namespace exqudens::vulkan {
         const VkGraphicsPipelineCreateInfo*         pCreateInfos,
         const VkAllocationCallbacks*                pAllocator,
         VkPipeline*                                 pPipelines
-    )> createGraphicsPipelines = vkCreateGraphicsPipelines;
+    )> createGraphicsPipelines;
 
     std::function<VkResult(
         VkDevice                                    device,
         const VkFramebufferCreateInfo*              pCreateInfo,
         const VkAllocationCallbacks*                pAllocator,
         VkFramebuffer*                              pFramebuffer
-    )> createFramebuffer = vkCreateFramebuffer;
+    )> createFramebuffer;
 
     std::function<VkResult(
         VkDevice                                    device,
         const VkSamplerCreateInfo*                  pCreateInfo,
         const VkAllocationCallbacks*                pAllocator,
         VkSampler*                                  pSampler
-    )> createSampler = vkCreateSampler;
+    )> createSampler;
 
     std::function<VkResult(
         VkDevice                                    device,
         const VkDescriptorPoolCreateInfo*           pCreateInfo,
         const VkAllocationCallbacks*                pAllocator,
         VkDescriptorPool*                           pDescriptorPool
-    )> createDescriptorPool = vkCreateDescriptorPool;
+    )> createDescriptorPool;
 
     std::function<VkResult(
         VkDevice                                    device,
         const VkSemaphoreCreateInfo*                pCreateInfo,
         const VkAllocationCallbacks*                pAllocator,
         VkSemaphore*                                pSemaphore
-    )> createSemaphore = vkCreateSemaphore;
+    )> createSemaphore;
 
     std::function<VkResult(
         VkDevice                                    device,
         const VkFenceCreateInfo*                    pCreateInfo,
         const VkAllocationCallbacks*                pAllocator,
         VkFence*                                    pFence
-    )> createFence = vkCreateFence;
+    )> createFence;
 
     std::function<VkResult(
         VkDevice                                    device,
         const VkMemoryAllocateInfo*                 pAllocateInfo,
         const VkAllocationCallbacks*                pAllocator,
         VkDeviceMemory*                             pMemory
-    )> allocateMemory = vkAllocateMemory;
+    )> allocateMemory;
 
     std::function<VkResult(
         VkDevice                                    device,
         const VkDescriptorSetAllocateInfo*          pAllocateInfo,
         VkDescriptorSet*                            pDescriptorSets
-    )> allocateDescriptorSets = vkAllocateDescriptorSets;
+    )> allocateDescriptorSets;
 
     std::function<VkResult(
         VkDevice                                    device,
         const VkCommandBufferAllocateInfo*          pAllocateInfo,
         VkCommandBuffer*                            pCommandBuffers
-    )> allocateCommandBuffers = vkAllocateCommandBuffers;
+    )> allocateCommandBuffers;
 
     std::function<VkResult(
         VkDevice                                    device,
         VkBuffer                                    buffer,
         VkDeviceMemory                              memory,
         VkDeviceSize                                memoryOffset
-    )> bindBufferMemory = vkBindBufferMemory;
+    )> bindBufferMemory;
 
     std::function<VkResult(
         VkDevice                                    device,
         VkImage                                     image,
         VkDeviceMemory                              memory,
         VkDeviceSize                                memoryOffset
-    )> bindImageMemory = vkBindImageMemory;
+    )> bindImageMemory;
 
     std::function<void(
         VkDevice                                    device,
         VkDeviceMemory                              memory
-    )> unmapMemory = vkUnmapMemory;
+    )> unmapMemory;
 
     std::function<void(
         VkDevice                                    device,
         VkDeviceMemory                              memory,
         const VkAllocationCallbacks*                pAllocator
-    )> freeMemory = vkFreeMemory;
+    )> freeMemory;
 
     std::function<void(
         VkDevice                                    device,
         VkCommandPool                               commandPool,
         uint32_t                                    commandBufferCount,
         const VkCommandBuffer*                      pCommandBuffers
-    )> freeCommandBuffers = vkFreeCommandBuffers;
+    )> freeCommandBuffers;
 
     std::function<void(
         VkDevice                                    device,
         VkFence                                     fence,
         const VkAllocationCallbacks*                pAllocator
-    )> destroyFence = vkDestroyFence;
+    )> destroyFence;
 
     std::function<void(
         VkDevice                                    device,
         VkSemaphore                                 semaphore,
         const VkAllocationCallbacks*                pAllocator
-    )> destroySemaphore = vkDestroySemaphore;
+    )> destroySemaphore;
 
     std::function<void(
         VkDevice                                    device,
         VkDescriptorPool                            descriptorPool,
         const VkAllocationCallbacks*                pAllocator
-    )> destroyDescriptorPool = vkDestroyDescriptorPool;
+    )> destroyDescriptorPool;
 
     std::function<void(
         VkDevice                                    device,
         VkSampler                                   sampler,
         const VkAllocationCallbacks*                pAllocator
-    )> destroySampler = vkDestroySampler;
+    )> destroySampler;
 
     std::function<void(
         VkDevice                                    device,
         VkFramebuffer                               framebuffer,
         const VkAllocationCallbacks*                pAllocator
-    )> destroyFramebuffer = vkDestroyFramebuffer;
+    )> destroyFramebuffer;
 
     std::function<void(
         VkDevice                                    device,
         VkPipeline                                  pipeline,
         const VkAllocationCallbacks*                pAllocator
-    )> destroyPipeline = vkDestroyPipeline;
+    )> destroyPipeline;
 
     std::function<void(
         VkDevice                                    device,
         VkShaderModule                              shaderModule,
         const VkAllocationCallbacks*                pAllocator
-    )> destroyShaderModule = vkDestroyShaderModule;
+    )> destroyShaderModule;
 
     std::function<void(
         VkDevice                                    device,
         VkDescriptorSetLayout                       descriptorSetLayout,
         const VkAllocationCallbacks*                pAllocator
-    )> destroyDescriptorSetLayout = vkDestroyDescriptorSetLayout;
+    )> destroyDescriptorSetLayout;
 
     std::function<void(
         VkDevice                                    device,
         VkRenderPass                                renderPass,
         const VkAllocationCallbacks*                pAllocator
-    )> destroyRenderPass = vkDestroyRenderPass;
+    )> destroyRenderPass;
 
     std::function<void(
         VkDevice                                    device,
         VkImageView                                 imageView,
         const VkAllocationCallbacks*                pAllocator
-    )> destroyImageView = vkDestroyImageView;
+    )> destroyImageView;
 
     std::function<void(
         VkDevice                                    device,
         VkImage                                     image,
         const VkAllocationCallbacks*                pAllocator
-    )> destroyImage = vkDestroyImage;
+    )> destroyImage;
 
     std::function<void(
         VkDevice                                    device,
         VkBuffer                                    buffer,
         const VkAllocationCallbacks*                pAllocator
-    )> destroyBuffer = vkDestroyBuffer;
+    )> destroyBuffer;
 
     std::function<void(
         VkDevice                                    device,
         VkSwapchainKHR                              swapchain,
         const VkAllocationCallbacks*                pAllocator
-    )> destroySwapchainKHR = vkDestroySwapchainKHR;
+    )> destroySwapchainKHR;
 
     std::function<void(
         VkDevice                                    device,
         VkCommandPool                               commandPool,
         const VkAllocationCallbacks*                pAllocator
-    )> destroyCommandPool = vkDestroyCommandPool;
+    )> destroyCommandPool;
 
     std::function<void(
         VkDevice                                    device,
         const VkAllocationCallbacks*                pAllocator
-    )> destroyDevice = vkDestroyDevice;
+    )> destroyDevice;
 
     std::function<void(
         VkInstance                                  instance,
         VkSurfaceKHR                                surface,
         const VkAllocationCallbacks*                pAllocator
-    )> destroySurfaceKHR = vkDestroySurfaceKHR;
+    )> destroySurfaceKHR;
 
     std::function<void(
         VkInstance                                  instance,
         const VkAllocationCallbacks*                pAllocator
-    )> destroyInstance = vkDestroyInstance;
+    )> destroyInstance;
 
   };
 

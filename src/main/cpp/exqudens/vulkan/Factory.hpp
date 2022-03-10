@@ -121,6 +121,8 @@ namespace exqudens::vulkan {
           std::ostream& stream
       );
 
+      virtual Functions createFunctions();
+
       virtual VkInstance createInstance(Configuration& configuration, Logger& logger);
 
       virtual VkDebugUtilsMessengerEXT createDebugUtilsMessenger(VkInstance& instance, Logger& logger);

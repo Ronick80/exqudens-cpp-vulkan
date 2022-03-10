@@ -56,6 +56,8 @@ namespace exqudens::vulkan {
       std::ostringstream stream;
       Logger logger = createLogger(stream);
 
+      functions = createFunctions();
+
       VkInstance instance = createInstance(configuration, logger);
       VkDebugUtilsMessengerEXT debugUtilsMessenger = createDebugUtilsMessenger(instance, logger);
       PhysicalDevice physicalDevice = createPhysicalDevice(instance, configuration);

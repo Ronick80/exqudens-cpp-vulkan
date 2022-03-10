@@ -558,6 +558,74 @@ namespace exqudens::vulkan {
     }
   }
 
+  Functions Factory::createFunctions() {
+    try {
+      return {
+        .enumerateInstanceLayerProperties = vkEnumerateInstanceLayerProperties,
+        .enumerateDeviceExtensionProperties = vkEnumerateDeviceExtensionProperties,
+        .enumeratePhysicalDevices = vkEnumeratePhysicalDevices,
+        .getPhysicalDeviceQueueFamilyProperties = vkGetPhysicalDeviceQueueFamilyProperties,
+        .getPhysicalDeviceSurfaceSupportKHR = vkGetPhysicalDeviceSurfaceSupportKHR,
+        .getPhysicalDeviceFeatures = vkGetPhysicalDeviceFeatures,
+        .getPhysicalDeviceSurfaceCapabilitiesKHR = vkGetPhysicalDeviceSurfaceCapabilitiesKHR,
+        .getPhysicalDeviceSurfaceFormatsKHR = vkGetPhysicalDeviceSurfaceFormatsKHR,
+        .getPhysicalDeviceSurfacePresentModesKHR = vkGetPhysicalDeviceSurfacePresentModesKHR,
+        .getPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties,
+        .getPhysicalDeviceFormatProperties = vkGetPhysicalDeviceFormatProperties,
+        .getInstanceProcAddr = vkGetInstanceProcAddr,
+        .getDeviceQueue = vkGetDeviceQueue,
+        .getBufferMemoryRequirements = vkGetBufferMemoryRequirements,
+        .getImageMemoryRequirements = vkGetImageMemoryRequirements,
+        .getSwapchainImagesKHR = vkGetSwapchainImagesKHR,
+        .updateDescriptorSets = vkUpdateDescriptorSets,
+        .createInstance = vkCreateInstance,
+        .createDevice = vkCreateDevice,
+        .createCommandPool = vkCreateCommandPool,
+        .createSwapchainKHR = vkCreateSwapchainKHR,
+        .createBuffer = vkCreateBuffer,
+        .createImage = vkCreateImage,
+        .createImageView = vkCreateImageView,
+        .createRenderPass = vkCreateRenderPass,
+        .createDescriptorSetLayout = vkCreateDescriptorSetLayout,
+        .createShaderModule = vkCreateShaderModule,
+        .createPipelineLayout = vkCreatePipelineLayout,
+        .createGraphicsPipelines = vkCreateGraphicsPipelines,
+        .createFramebuffer = vkCreateFramebuffer,
+        .createSampler = vkCreateSampler,
+        .createDescriptorPool = vkCreateDescriptorPool,
+        .createSemaphore = vkCreateSemaphore,
+        .createFence = vkCreateFence,
+        .allocateMemory = vkAllocateMemory,
+        .allocateDescriptorSets = vkAllocateDescriptorSets,
+        .allocateCommandBuffers = vkAllocateCommandBuffers,
+        .bindBufferMemory = vkBindBufferMemory,
+        .bindImageMemory = vkBindImageMemory,
+        .unmapMemory = vkUnmapMemory,
+        .freeMemory = vkFreeMemory,
+        .freeCommandBuffers = vkFreeCommandBuffers,
+        .destroyFence = vkDestroyFence,
+        .destroySemaphore = vkDestroySemaphore,
+        .destroyDescriptorPool = vkDestroyDescriptorPool,
+        .destroySampler = vkDestroySampler,
+        .destroyFramebuffer = vkDestroyFramebuffer,
+        .destroyPipeline = vkDestroyPipeline,
+        .destroyShaderModule = vkDestroyShaderModule,
+        .destroyDescriptorSetLayout = vkDestroyDescriptorSetLayout,
+        .destroyRenderPass = vkDestroyRenderPass,
+        .destroyImageView = vkDestroyImageView,
+        .destroyImage = vkDestroyImage,
+        .destroyBuffer = vkDestroyBuffer,
+        .destroySwapchainKHR = vkDestroySwapchainKHR,
+        .destroyCommandPool = vkDestroyCommandPool,
+        .destroyDevice = vkDestroyDevice,
+        .destroySurfaceKHR = vkDestroySurfaceKHR,
+        .destroyInstance = vkDestroyInstance
+      };
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
   VkInstance Factory::createInstance(Configuration& configuration, Logger& logger) {
     try {
       VkInstance instance = nullptr;
