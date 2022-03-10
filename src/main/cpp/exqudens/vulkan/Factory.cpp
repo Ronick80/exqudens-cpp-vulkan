@@ -1003,23 +1003,26 @@ namespace exqudens::vulkan {
   Buffer Factory::createBuffer(
       VkPhysicalDevice& physicalDevice,
       VkDevice& device,
-      VkDeviceSize memorySize,
-      VkBufferUsageFlags usage,
+      const BufferCreateInfo& createInfo,
       VkMemoryPropertyFlags properties
   ) {
     try {
       VkBuffer buffer = nullptr;
 
-      VkBufferCreateInfo bufferInfo{};
-      bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-      bufferInfo.size = memorySize;
-      bufferInfo.usage = usage;
-      bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+      VkBufferCreateInfo bufferInfo = {
+          .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+          .flags = createInfo.flags,
+          .size = createInfo.size,
+          .usage = createInfo.usage,
+          .sharingMode = createInfo.sharingMode,
+          .queueFamilyIndexCount = static_cast<uint32_t>(createInfo.queueFamilyIndices.size()),
+          .pQueueFamilyIndices = createInfo.queueFamilyIndices.empty() ? nullptr : createInfo.queueFamilyIndices.data()
+      };
 
       if (
           functions.createBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS
           || buffer == nullptr
-      ) {
+          ) {
         throw std::runtime_error(CALL_INFO() + ": failed to create buffer!");
       }
 
@@ -1045,11 +1048,36 @@ namespace exqudens::vulkan {
       }
 
       return {
-        .memory = bufferMemory,
-        .memorySize = memorySize,
-        .memoryProperties = properties,
-        .value = buffer
+          .memory = bufferMemory,
+          .memorySize = createInfo.size,
+          .memoryProperties = properties,
+          .value = buffer
       };
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  Buffer Factory::createBuffer(
+      VkPhysicalDevice& physicalDevice,
+      VkDevice& device,
+      VkDeviceSize memorySize,
+      VkBufferUsageFlags usage,
+      VkMemoryPropertyFlags properties
+  ) {
+    try {
+      return createBuffer(
+          physicalDevice,
+          device,
+          BufferCreateInfo {
+              .flags = 0,
+              .size = memorySize,
+              .usage = usage,
+              .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+              .queueFamilyIndices = {}
+          },
+          properties
+      );
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }
@@ -1078,35 +1106,33 @@ namespace exqudens::vulkan {
   Image Factory::createImage(
       VkPhysicalDevice& physicalDevice,
       VkDevice& device,
-      uint32_t width,
-      uint32_t height,
-      VkFormat format,
-      VkImageTiling tiling,
-      VkImageUsageFlags usage,
+      const ImageCreateInfo& createInfo,
       VkMemoryPropertyFlags properties
   ) {
     try {
-      VkImageCreateInfo imageInfo = {};
-      imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-      imageInfo.imageType = VK_IMAGE_TYPE_2D;
-      imageInfo.extent.width = width;
-      imageInfo.extent.height = height;
-      imageInfo.extent.depth = 1;
-      imageInfo.mipLevels = 1;
-      imageInfo.arrayLayers = 1;
-      imageInfo.format = format;
-      imageInfo.tiling = tiling;
-      imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-      imageInfo.usage = usage;
-      imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-      imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+      VkImageCreateInfo imageInfo = {
+          .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+          .flags = createInfo.flags,
+          .imageType = createInfo.imageType,
+          .format = createInfo.format,
+          .extent = createInfo.extent,
+          .mipLevels = createInfo.mipLevels,
+          .arrayLayers = createInfo.arrayLayers,
+          .samples = createInfo.samples,
+          .tiling = createInfo.tiling,
+          .usage = createInfo.usage,
+          .sharingMode = createInfo.sharingMode,
+          .queueFamilyIndexCount = static_cast<uint32_t>(createInfo.queueFamilyIndices.size()),
+          .pQueueFamilyIndices = createInfo.queueFamilyIndices.empty() ? nullptr : createInfo.queueFamilyIndices.data(),
+          .initialLayout = createInfo.initialLayout
+      };
 
       VkImage image = nullptr;
 
       if (
           functions.createImage(device, &imageInfo, nullptr, &image) != VK_SUCCESS
           || image == nullptr
-      ) {
+          ) {
         throw std::runtime_error(CALL_INFO() + ": failed to create image!");
       }
 
@@ -1129,14 +1155,53 @@ namespace exqudens::vulkan {
       }
 
       return {
-        .width = width,
-        .height = height,
-        .format = format,
-        .memory = imageMemory,
-        .memorySize = memRequirements.size,
-        .memoryProperties = properties,
-        .value = image
+          .width = createInfo.extent.width,
+          .height = createInfo.extent.height,
+          .format = createInfo.format,
+          .memory = imageMemory,
+          .memorySize = memRequirements.size,
+          .memoryProperties = properties,
+          .value = image
       };
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error(CALL_INFO()));
+    }
+  }
+
+  Image Factory::createImage(
+      VkPhysicalDevice& physicalDevice,
+      VkDevice& device,
+      uint32_t width,
+      uint32_t height,
+      VkFormat format,
+      VkImageTiling tiling,
+      VkImageUsageFlags usage,
+      VkMemoryPropertyFlags properties
+  ) {
+    try {
+      return createImage(
+          physicalDevice,
+          device,
+          ImageCreateInfo {
+              .flags = 0,
+              .imageType = VK_IMAGE_TYPE_2D,
+              .format = format,
+              .extent = VkExtent3D {
+                  .width = width,
+                  .height = height,
+                  .depth = 1
+              },
+              .mipLevels = 1,
+              .arrayLayers = 1,
+              .samples = VK_SAMPLE_COUNT_1_BIT,
+              .tiling = tiling,
+              .usage = usage,
+              .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+              .queueFamilyIndices = {},
+              .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+          },
+          properties
+      );
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
     }

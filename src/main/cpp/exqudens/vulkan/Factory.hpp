@@ -20,7 +20,9 @@
 #include "exqudens/vulkan/model/PhysicalDevice.hpp"
 #include "exqudens/vulkan/model/Queue.hpp"
 #include "exqudens/vulkan/model/SwapChain.hpp"
+#include "exqudens/vulkan/model/BufferCreateInfo.hpp"
 #include "exqudens/vulkan/model/Buffer.hpp"
+#include "exqudens/vulkan/model/ImageCreateInfo.hpp"
 #include "exqudens/vulkan/model/Image.hpp"
 #include "exqudens/vulkan/model/FrameBufferCreateInfo.hpp"
 #include "exqudens/vulkan/model/RenderPassCreateInfo.hpp"
@@ -173,6 +175,12 @@ namespace exqudens::vulkan {
       virtual Buffer createBuffer(
           VkPhysicalDevice& physicalDevice,
           VkDevice& device,
+          const BufferCreateInfo& createInfo,
+          VkMemoryPropertyFlags properties
+      );
+      virtual Buffer createBuffer(
+          VkPhysicalDevice& physicalDevice,
+          VkDevice& device,
           VkDeviceSize memorySize,
           VkBufferUsageFlags usage,
           VkMemoryPropertyFlags properties
@@ -186,6 +194,12 @@ namespace exqudens::vulkan {
           std::size_t size
       );
 
+      virtual Image createImage(
+          VkPhysicalDevice& physicalDevice,
+          VkDevice& device,
+          const ImageCreateInfo& createInfo,
+          VkMemoryPropertyFlags properties
+      );
       virtual Image createImage(
           VkPhysicalDevice& physicalDevice,
           VkDevice& device,
