@@ -12,6 +12,7 @@
 #include <vulkan/vulkan.h>
 
 #include "exqudens/vulkan/Export.hpp"
+#include "exqudens/vulkan/model/Functions.hpp"
 #include "exqudens/vulkan/Logger.hpp"
 #include "exqudens/vulkan/model/Configuration.hpp"
 #include "exqudens/vulkan/model/QueueFamilyIndexInfo.hpp"
@@ -37,6 +38,7 @@ namespace exqudens::vulkan {
 
     public:
 
+      Functions functions;
       std::function<std::string(VkDebugUtilsMessageSeverityFlagBitsEXT, VkDebugUtilsMessageTypeFlagsEXT, const std::string&)> loggerFunction;
       std::function<VkSurfaceKHR(VkInstance&)> createSurfaceFunction;
 

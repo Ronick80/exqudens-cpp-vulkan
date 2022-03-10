@@ -137,10 +137,10 @@ namespace exqudens::vulkan {
   bool Factory::checkValidationLayerSupport(const std::vector<const char*>& validationLayers) {
     try {
       uint32_t layerCount;
-      vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+      functions.enumerateInstanceLayerProperties(&layerCount, nullptr);
 
       std::vector<VkLayerProperties> availableLayers(layerCount);
-      vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+      functions.enumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
       for (const std::string& layerName: validationLayers) {
         bool layerFound = false;
@@ -191,10 +191,10 @@ namespace exqudens::vulkan {
       result.presentFamilyRequired = surface != nullptr;
 
       uint32_t queueFamilyCount = 0;
-      vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
+      functions.getPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
 
       std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-      vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
+      functions.getPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
 
       int i = 0;
       for (const auto& queueFamily : queueFamilies) {
@@ -218,7 +218,7 @@ namespace exqudens::vulkan {
 
         if (result.presentFamilyRequired) {
           VkBool32 presentSupport = false;
-          vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &presentSupport);
+          functions.getPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &presentSupport);
           if (presentSupport) {
             result.presentFamily = i;
           }
@@ -262,10 +262,10 @@ namespace exqudens::vulkan {
   bool Factory::checkDeviceExtensionSupport(VkPhysicalDevice& physicalDevice, const std::vector<const char*>& deviceExtensions) {
     try {
       uint32_t extensionCount;
-      vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
+      functions.enumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
 
       std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-      vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableExtensions.data());
+      functions.enumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableExtensions.data());
 
       std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
 
@@ -287,22 +287,22 @@ namespace exqudens::vulkan {
 
       SwapChainSupportDetails details;
 
-      vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &details.capabilities);
+      functions.getPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &details.capabilities);
 
       uint32_t formatCount;
-      vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr);
+      functions.getPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr);
 
       if (formatCount != 0) {
         details.formats.resize(formatCount);
-        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, details.formats.data());
+        functions.getPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, details.formats.data());
       }
 
       uint32_t presentModeCount;
-      vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
+      functions.getPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
 
       if (presentModeCount != 0) {
         details.presentModes.resize(presentModeCount);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, details.presentModes.data());
+        functions.getPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, details.presentModes.data());
       }
 
       return details;
@@ -358,7 +358,7 @@ namespace exqudens::vulkan {
   uint32_t Factory::findMemoryType(VkPhysicalDevice& physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties) {
     try {
       VkPhysicalDeviceMemoryProperties memProperties;
-      vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+      functions.getPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
 
       for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
         if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
@@ -381,7 +381,7 @@ namespace exqudens::vulkan {
     try {
       for (VkFormat format : candidates) {
         VkFormatProperties props;
-        vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
+        functions.getPhysicalDeviceFormatProperties(physicalDevice, format, &props);
         if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
           return format;
         } else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
@@ -592,7 +592,7 @@ namespace exqudens::vulkan {
         createInfo.pNext = nullptr;
       }
 
-      if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS || instance == nullptr) {
+      if (functions.createInstance(&createInfo, nullptr, &instance) != VK_SUCCESS || instance == nullptr) {
         throw std::runtime_error(CALL_INFO() + ": failed to create instance!");
       }
 
@@ -608,7 +608,7 @@ namespace exqudens::vulkan {
 
       VkResult result;
 
-      auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+      auto func = (PFN_vkCreateDebugUtilsMessengerEXT) functions.getInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
 
       if (func != nullptr) {
         VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
@@ -632,10 +632,8 @@ namespace exqudens::vulkan {
     try {
       VkSurfaceKHR surface = nullptr;
 
-      try {
+      if (createSurfaceFunction) {
         surface = createSurfaceFunction(instance);
-      } catch (const std::bad_function_call& e) {
-        surface = nullptr;
       }
 
       if (surface == nullptr) {
@@ -677,14 +675,14 @@ namespace exqudens::vulkan {
       }
 
       uint32_t deviceCount = 0;
-      vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+      functions.enumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
       if (deviceCount == 0) {
         throw std::runtime_error(CALL_INFO() + ": failed to find GPUs with Vulkan support!");
       }
 
       std::vector<VkPhysicalDevice> devices(deviceCount);
-      vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+      functions.enumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
       QueueFamilyIndexInfo queueFamilyIndexInfo = {};
       std::optional<SwapChainSupportDetails> swapChainSupportDetails = {};
@@ -710,7 +708,7 @@ namespace exqudens::vulkan {
         }
 
         VkPhysicalDeviceFeatures supportedFeatures;
-        vkGetPhysicalDeviceFeatures(object, &supportedFeatures);
+        functions.getPhysicalDeviceFeatures(object, &supportedFeatures);
 
         bool anisotropyAdequate = true;
         if (configuration.anisotropyRequired) {
@@ -785,7 +783,10 @@ namespace exqudens::vulkan {
         createInfo.enabledLayerCount = 0;
       }
 
-      if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS || device == nullptr) {
+      if (
+          functions.createDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS
+          || device == nullptr
+      ) {
         throw std::runtime_error(CALL_INFO() + ": failed to create logical device!");
       }
 
@@ -803,7 +804,7 @@ namespace exqudens::vulkan {
     try {
       VkQueue queue = nullptr;
 
-      vkGetDeviceQueue(device, queueFamilyIndex, queueIndex, &queue);
+      functions.getDeviceQueue(device, queueFamilyIndex, queueIndex, &queue);
 
       if (queue == nullptr) {
         throw std::runtime_error(CALL_INFO() + ": failed to create compute queue!");
@@ -843,9 +844,9 @@ namespace exqudens::vulkan {
       createInfo.flags = flags;
 
       if (
-          vkCreateCommandPool(device, &createInfo, nullptr, &commandPool) != VK_SUCCESS
+          functions.createCommandPool(device, &createInfo, nullptr, &commandPool) != VK_SUCCESS
           || commandPool == nullptr
-          ) {
+      ) {
         throw std::runtime_error(CALL_INFO() + ": failed to create compute command pool!");
       }
 
@@ -911,7 +912,10 @@ namespace exqudens::vulkan {
 
       createInfo.oldSwapchain = nullptr;
 
-      if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS || swapChain == nullptr) {
+      if (
+          functions.createSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS
+          || swapChain == nullptr
+      ) {
         throw std::runtime_error(CALL_INFO() + ": failed to create swap chain!");
       }
 
@@ -945,7 +949,7 @@ namespace exqudens::vulkan {
       bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
       if (
-          vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS
+          functions.createBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS
           || buffer == nullptr
       ) {
         throw std::runtime_error(CALL_INFO() + ": failed to create buffer!");
@@ -954,7 +958,7 @@ namespace exqudens::vulkan {
       VkDeviceMemory bufferMemory = nullptr;
 
       VkMemoryRequirements memRequirements;
-      vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
+      functions.getBufferMemoryRequirements(device, buffer, &memRequirements);
 
       VkMemoryAllocateInfo allocInfo{};
       allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -962,13 +966,15 @@ namespace exqudens::vulkan {
       allocInfo.memoryTypeIndex = findMemoryType(physicalDevice, memRequirements.memoryTypeBits, properties);
 
       if (
-          vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS
+          functions.allocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS
           || bufferMemory == nullptr
       ) {
         throw std::runtime_error(CALL_INFO() + ": failed to allocate buffer memory!");
       }
 
-      vkBindBufferMemory(device, buffer, bufferMemory, 0);
+      if (functions.bindBufferMemory(device, buffer, bufferMemory, 0) != VK_SUCCESS) {
+        throw std::runtime_error(CALL_INFO() + ": failed to bind buffer memory!");
+      }
 
       return {
         .memory = bufferMemory,
@@ -1030,7 +1036,7 @@ namespace exqudens::vulkan {
       VkImage image = nullptr;
 
       if (
-          vkCreateImage(device, &imageInfo, nullptr, &image) != VK_SUCCESS
+          functions.createImage(device, &imageInfo, nullptr, &image) != VK_SUCCESS
           || image == nullptr
       ) {
         throw std::runtime_error(CALL_INFO() + ": failed to create image!");
@@ -1039,18 +1045,20 @@ namespace exqudens::vulkan {
       VkDeviceMemory imageMemory = nullptr;
 
       VkMemoryRequirements memRequirements;
-      vkGetImageMemoryRequirements(device, image, &memRequirements);
+      functions.getImageMemoryRequirements(device, image, &memRequirements);
 
       VkMemoryAllocateInfo allocInfo = {};
       allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
       allocInfo.allocationSize = memRequirements.size;
       allocInfo.memoryTypeIndex = findMemoryType(physicalDevice, memRequirements.memoryTypeBits, properties);
 
-      if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
+      if (functions.allocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate image memory!");
       }
 
-      vkBindImageMemory(device, image, imageMemory, 0);
+      if (functions.bindImageMemory(device, image, imageMemory, 0) != VK_SUCCESS) {
+        throw std::runtime_error("failed to bind image memory!");
+      }
 
       return {
         .width = width,
@@ -1096,9 +1104,13 @@ namespace exqudens::vulkan {
     try {
       uint32_t imageCount = 0;
       std::vector<VkImage> swapChainImages;
-      vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
+      if (functions.getSwapchainImagesKHR(device, swapChain, &imageCount, nullptr) != VK_SUCCESS) {
+        throw std::runtime_error("failed to get swap chain image count!");
+      }
       swapChainImages.resize(imageCount);
-      vkGetSwapchainImagesKHR(device, swapChain, &imageCount, swapChainImages.data());
+      if (functions.getSwapchainImagesKHR(device, swapChain, &imageCount, swapChainImages.data()) != VK_SUCCESS) {
+        throw std::runtime_error("failed to get swap chain images!");
+      }
       return swapChainImages;
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
@@ -1132,7 +1144,10 @@ namespace exqudens::vulkan {
 
       VkImageView imageView = nullptr;
 
-      if (vkCreateImageView(device, &viewInfo, nullptr, &imageView) != VK_SUCCESS || imageView == nullptr) {
+      if (
+          functions.createImageView(device, &viewInfo, nullptr, &imageView) != VK_SUCCESS
+          || imageView == nullptr
+      ) {
         throw std::runtime_error(CALL_INFO() + ": failed to create texture image view!");
       }
 
@@ -1261,7 +1276,10 @@ namespace exqudens::vulkan {
           .pDependencies = createInfo.dependencies.data()
       };
 
-      if (vkCreateRenderPass(device, &info, nullptr, &renderPass) != VK_SUCCESS || renderPass == nullptr) {
+      if (
+          functions.createRenderPass(device, &info, nullptr, &renderPass) != VK_SUCCESS
+          || renderPass == nullptr
+      ) {
         throw std::runtime_error(CALL_INFO() + ": failed to create render pass!");
       }
 
@@ -1313,7 +1331,10 @@ namespace exqudens::vulkan {
       layoutInfo.bindingCount = static_cast<uint32_t>(createInfo.bindings.size());
       layoutInfo.pBindings = createInfo.bindings.data();
 
-      if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
+      if (
+          functions.createDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS
+          || descriptorSetLayout == nullptr
+      ) {
         throw std::runtime_error(CALL_INFO() + ": failed to create descriptor set layout!");
       }
 
@@ -1341,7 +1362,10 @@ namespace exqudens::vulkan {
       createInfo.codeSize = code.size();
       createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
-      if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS || shaderModule == nullptr) {
+      if (
+          functions.createShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS
+          || shaderModule == nullptr
+      ) {
         throw std::runtime_error(CALL_INFO() + ": failed to create shader module!");
       }
 
@@ -1390,7 +1414,7 @@ namespace exqudens::vulkan {
       };
 
       if (
-          vkCreatePipelineLayout(device, &vkLayoutCreateInfo, nullptr, &pipelineLayout) != VK_SUCCESS
+          functions.createPipelineLayout(device, &vkLayoutCreateInfo, nullptr, &pipelineLayout) != VK_SUCCESS
           || pipelineLayout == nullptr
       ) {
         throw std::runtime_error(CALL_INFO() + ": failed to create pipeline layout!");
@@ -1483,7 +1507,7 @@ namespace exqudens::vulkan {
       iCreateInfo.basePipelineIndex = createInfo.basePipelineIndex;
 
       if (
-          vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &iCreateInfo, nullptr, &pipeline) != VK_SUCCESS
+          functions.createGraphicsPipelines(device, VK_NULL_HANDLE, 1, &iCreateInfo, nullptr, &pipeline) != VK_SUCCESS
           || pipeline == nullptr
       ) {
         throw std::runtime_error(CALL_INFO() + ": failed to create graphics pipeline!");
@@ -1658,7 +1682,7 @@ namespace exqudens::vulkan {
       };
 
       if (
-          vkCreateFramebuffer(device, &frameBufferInfo, nullptr, &frameBuffer) != VK_SUCCESS
+          functions.createFramebuffer(device, &frameBufferInfo, nullptr, &frameBuffer) != VK_SUCCESS
           || frameBuffer == nullptr
       ) {
         throw std::runtime_error(CALL_INFO() + ": failed to create frame buffer!");
@@ -1709,7 +1733,7 @@ namespace exqudens::vulkan {
       samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
       if (
-          vkCreateSampler(device, &samplerInfo, nullptr, &sampler) != VK_SUCCESS
+          functions.createSampler(device, &samplerInfo, nullptr, &sampler) != VK_SUCCESS
           || sampler == nullptr
       ) {
         throw std::runtime_error(CALL_INFO() + ": failed to create sampler!");
@@ -1755,7 +1779,10 @@ namespace exqudens::vulkan {
       poolInfo.maxSets = createInfo.maxSets;
       poolInfo.flags = createInfo.flags;
 
-      if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
+      if (
+          functions.createDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS
+          || descriptorPool == nullptr
+      ) {
         throw std::runtime_error(CALL_INFO() + ": failed to create descriptor pool!");
       }
 
@@ -1781,25 +1808,11 @@ namespace exqudens::vulkan {
       allocInfo.pSetLayouts = descriptorSetLayout == nullptr ? nullptr : &descriptorSetLayout;
 
       if (
-          vkAllocateDescriptorSets(device, &allocInfo, &descriptorSet) != VK_SUCCESS
+          functions.allocateDescriptorSets(device, &allocInfo, &descriptorSet) != VK_SUCCESS
           || descriptorSet == nullptr
       ) {
         throw std::runtime_error(CALL_INFO()+ ": failed to allocate descriptor sets!");
       }
-      /*VkWriteDescriptorSet writeInfo = {
-          .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-          .pNext = nullptr,
-          .dstSet = descriptorSet,
-          .dstBinding = writeDescriptorSet.dstBinding,
-          .dstArrayElement = writeDescriptorSet.dstArrayElement,
-          .descriptorCount = writeDescriptorSet.descriptorCount,
-          .descriptorType = writeDescriptorSet.descriptorType,
-          .pImageInfo = writeDescriptorSet.imageInfo.empty() ? nullptr : writeDescriptorSet.imageInfo.data(),
-          .pBufferInfo = writeDescriptorSet.bufferInfo.empty() ? nullptr : writeDescriptorSet.bufferInfo.data(),
-          .pTexelBufferView = writeDescriptorSet.texelBufferView.empty() ? nullptr : writeDescriptorSet.texelBufferView.data()
-      };
-
-      vkUpdateDescriptorSets(device, 1, &writeInfo, 0, nullptr);*/
 
       std::vector<VkWriteDescriptorSet> writes;
       writes.resize(writeDescriptorSets.size());
@@ -1819,7 +1832,7 @@ namespace exqudens::vulkan {
         };
       }
 
-      vkUpdateDescriptorSets(device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
+      functions.updateDescriptorSets(device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 
       return descriptorSet;
     } catch (...) {
@@ -1840,7 +1853,7 @@ namespace exqudens::vulkan {
       allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
       allocInfo.commandBufferCount = (uint32_t) commandBuffers.size();
 
-      if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
+      if (functions.allocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
         throw std::runtime_error(CALL_INFO() + ": failed to allocate command buffer!");
       }
 
@@ -1871,7 +1884,7 @@ namespace exqudens::vulkan {
       allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
       allocInfo.commandBufferCount = (uint32_t) commandBuffers.size();
 
-      if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
+      if (functions.allocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
         throw std::runtime_error(CALL_INFO() + ": failed to allocate command buffers!");
       }
 
@@ -1898,7 +1911,7 @@ namespace exqudens::vulkan {
       semaphoreInfo.flags = flags;
 
       if (
-          vkCreateSemaphore(device, &semaphoreInfo, nullptr, &semaphore) != VK_SUCCESS
+          functions.createSemaphore(device, &semaphoreInfo, nullptr, &semaphore) != VK_SUCCESS
           || semaphore == nullptr
       ) {
         throw std::runtime_error(CALL_INFO() + ": failed to create semaphore!");
@@ -1953,7 +1966,7 @@ namespace exqudens::vulkan {
       fenceInfo.flags = flags;
 
       if (
-          vkCreateFence(device, &fenceInfo, nullptr, &fence) != VK_SUCCESS
+          functions.createFence(device, &fenceInfo, nullptr, &fence) != VK_SUCCESS
           || fence == nullptr
       ) {
         throw std::runtime_error(CALL_INFO() + ": failed to create fence!");
@@ -1996,7 +2009,7 @@ namespace exqudens::vulkan {
   void Factory::destroyFence(VkFence& fence, VkDevice& device) {
     try {
       if (fence != nullptr) {
-        vkDestroyFence(device, fence, nullptr);
+        functions.destroyFence(device, fence, nullptr);
         fence = nullptr;
       }
     } catch (...) {
@@ -2018,7 +2031,7 @@ namespace exqudens::vulkan {
   void Factory::destroySemaphore(VkSemaphore& semaphore, VkDevice& device) {
     try {
       if (semaphore != nullptr) {
-        vkDestroySemaphore(device, semaphore, nullptr);
+        functions.destroySemaphore(device, semaphore, nullptr);
         semaphore = nullptr;
       }
     } catch (...) {
@@ -2041,7 +2054,7 @@ namespace exqudens::vulkan {
     try {
       if (commandBuffer != nullptr) {
         std::vector<VkCommandBuffer> commandBuffers = {commandBuffer};
-        vkFreeCommandBuffers(device, commandPool, 1, commandBuffers.data());
+        functions.freeCommandBuffers(device, commandPool, 1, commandBuffers.data());
         commandBuffer = nullptr;
       }
     } catch (...) {
@@ -2051,7 +2064,7 @@ namespace exqudens::vulkan {
 
   void Factory::destroyCommandBuffers(std::vector<VkCommandBuffer>& commandBuffers, VkCommandPool& commandPool, VkDevice& device) {
     try {
-      vkFreeCommandBuffers(device, commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
+      functions.freeCommandBuffers(device, commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
       commandBuffers.clear();
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
@@ -2082,7 +2095,7 @@ namespace exqudens::vulkan {
   void Factory::destroyDescriptorPool(VkDescriptorPool& descriptorPool, VkDevice& device) {
     try {
       if (descriptorPool != nullptr) {
-        vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+        functions.destroyDescriptorPool(device, descriptorPool, nullptr);
         descriptorPool = nullptr;
       }
     } catch (...) {
@@ -2093,7 +2106,7 @@ namespace exqudens::vulkan {
   void Factory::destroySampler(VkSampler& sampler, VkDevice& device) {
     try {
       if (sampler != nullptr) {
-        vkDestroySampler(device, sampler, nullptr);
+        functions.destroySampler(device, sampler, nullptr);
         sampler = nullptr;
       }
     } catch (...) {
@@ -2104,7 +2117,7 @@ namespace exqudens::vulkan {
   void Factory::destroyFrameBuffer(VkFramebuffer& frameBuffer, VkDevice& device) {
     try {
       if (frameBuffer != nullptr) {
-        vkDestroyFramebuffer(device, frameBuffer, nullptr);
+        functions.destroyFramebuffer(device, frameBuffer, nullptr);
         frameBuffer = nullptr;
       }
     } catch (...) {
@@ -2126,7 +2139,7 @@ namespace exqudens::vulkan {
   void Factory::destroyPipeline(Pipeline& pipeline, VkDevice& device) {
     try {
       if (pipeline.value != nullptr) {
-        vkDestroyPipeline(device, pipeline.value, nullptr);
+        functions.destroyPipeline(device, pipeline.value, nullptr);
         pipeline.value = nullptr;
       }
       if (pipeline.layout != nullptr) {
@@ -2141,7 +2154,7 @@ namespace exqudens::vulkan {
   void Factory::destroyShader(Shader& shader, VkDevice& device) {
     try {
       if (shader.shaderModule != nullptr) {
-        vkDestroyShaderModule(device, shader.shaderModule, nullptr);
+        functions.destroyShaderModule(device, shader.shaderModule, nullptr);
         shader.shaderModule = nullptr;
       }
       shader.pipelineShaderStageCreateInfo = {};
@@ -2153,7 +2166,7 @@ namespace exqudens::vulkan {
   void Factory::destroyDescriptorSetLayout(VkDescriptorSetLayout& descriptorSetLayout, VkDevice& device) {
     try {
       if (descriptorSetLayout != nullptr) {
-        vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
+        functions.destroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
         descriptorSetLayout = nullptr;
       }
     } catch (...) {
@@ -2164,7 +2177,7 @@ namespace exqudens::vulkan {
   void Factory::destroyRenderPass(VkRenderPass& renderPass, VkDevice& device) {
     try {
       if (renderPass != nullptr) {
-        vkDestroyRenderPass(device, renderPass, nullptr);
+        functions.destroyRenderPass(device, renderPass, nullptr);
         renderPass = nullptr;
       }
     } catch (...) {
@@ -2175,7 +2188,7 @@ namespace exqudens::vulkan {
   void Factory::destroyImageView(VkImageView& imageView, VkDevice& device) {
     try {
       if (imageView != nullptr) {
-        vkDestroyImageView(device, imageView, nullptr);
+        functions.destroyImageView(device, imageView, nullptr);
       }
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
@@ -2208,13 +2221,13 @@ namespace exqudens::vulkan {
             unmapMemory
             && (image.memoryProperties & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
         ) {
-          vkUnmapMemory(device, image.memory);
+          functions.unmapMemory(device, image.memory);
         }
-        vkFreeMemory(device, image.memory, nullptr);
+        functions.freeMemory(device, image.memory, nullptr);
         image.memory = nullptr;
       }
       if (image.value != nullptr) {
-        vkDestroyImage(device, image.value, nullptr);
+        functions.destroyImage(device, image.value, nullptr);
         image.value = nullptr;
       }
     } catch (...) {
@@ -2259,13 +2272,13 @@ namespace exqudens::vulkan {
             unmapMemory
             && (buffer.memoryProperties & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
             ) {
-          vkUnmapMemory(device, buffer.memory);
+          functions.unmapMemory(device, buffer.memory);
         }
-        vkFreeMemory(device, buffer.memory, nullptr);
+        functions.freeMemory(device, buffer.memory, nullptr);
         buffer.memory = nullptr;
       }
       if (buffer.value != nullptr) {
-        vkDestroyBuffer(device, buffer.value, nullptr);
+        functions.destroyBuffer(device, buffer.value, nullptr);
         buffer.value = nullptr;
       }
     } catch (...) {
@@ -2298,7 +2311,7 @@ namespace exqudens::vulkan {
   void Factory::destroySwapChain(SwapChain& swapChain, VkDevice& device) {
     try {
       if (swapChain.value != nullptr) {
-        vkDestroySwapchainKHR(device, swapChain.value, nullptr);
+        functions.destroySwapchainKHR(device, swapChain.value, nullptr);
         swapChain.value = nullptr;
       }
       swapChain.extent = {};
@@ -2310,7 +2323,7 @@ namespace exqudens::vulkan {
   void Factory::destroyCommandPool(VkCommandPool& commandPool, VkDevice& device) {
     try {
       if (commandPool != nullptr) {
-        vkDestroyCommandPool(device, commandPool, nullptr);
+        functions.destroyCommandPool(device, commandPool, nullptr);
         commandPool = nullptr;
       }
     } catch (...) {
@@ -2330,7 +2343,7 @@ namespace exqudens::vulkan {
   void Factory::destroyDevice(VkDevice& device) {
     try {
       if (device != nullptr) {
-        vkDestroyDevice(device, nullptr);
+        functions.destroyDevice(device, nullptr);
         device = nullptr;
       }
     } catch (...) {
@@ -2351,7 +2364,7 @@ namespace exqudens::vulkan {
   void Factory::destroySurface(VkSurfaceKHR& surface, VkInstance& instance) {
     try {
       if (surface != nullptr) {
-        vkDestroySurfaceKHR(instance, surface, nullptr);
+        functions.destroySurfaceKHR(instance, surface, nullptr);
         surface = nullptr;
       }
     } catch (...) {
@@ -2362,7 +2375,7 @@ namespace exqudens::vulkan {
   void Factory::destroyDebugUtilsMessenger(VkDebugUtilsMessengerEXT& debugUtilsMessenger, VkInstance& instance) {
     try {
       if (debugUtilsMessenger != nullptr) {
-        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) functions.getInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
         func(instance, debugUtilsMessenger, nullptr);
         debugUtilsMessenger = nullptr;
       }
@@ -2374,7 +2387,7 @@ namespace exqudens::vulkan {
   void Factory::destroyInstance(VkInstance& instance) {
     try {
       if (instance != nullptr) {
-        vkDestroyInstance(instance, nullptr);
+        functions.destroyInstance(instance, nullptr);
         instance = nullptr;
       }
     } catch (...) {

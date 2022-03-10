@@ -121,6 +121,7 @@ if(NOT "" STREQUAL "${NOT_FOUND_PACKAGE_NAMES}")
 endif()
 
 add_library("${PROJECT_NAME}"
+    "src/main/cpp/exqudens/vulkan/model/Functions.hpp"
     "src/main/cpp/exqudens/vulkan/model/Configuration.hpp"
     "src/main/cpp/exqudens/vulkan/model/QueueFamilyIndexInfo.hpp"
     "src/main/cpp/exqudens/vulkan/model/SwapChainSupportDetails.hpp"
