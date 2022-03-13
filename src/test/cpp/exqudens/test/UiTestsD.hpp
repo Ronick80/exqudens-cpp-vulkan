@@ -111,14 +111,6 @@ namespace exqudens::vulkan {
               int height = 0;
               glfwGetFramebufferSize(window, &width, &height);
 
-              createSurfaceFunction = [&window](VkInstance& i) -> VkSurfaceKHR {
-                VkSurfaceKHR result;
-                if (glfwCreateWindowSurface(i, window, nullptr, &result) != VK_SUCCESS) {
-                  throw std::runtime_error(CALL_INFO() + ": failed to create window surface!");
-                }
-                return result;
-              };
-
               environmentVariables = createEnvironmentVariables(TestConfiguration::getExecutableDir());
 
               for (auto const& [name, value] : environmentVariables) {
@@ -135,6 +127,13 @@ namespace exqudens::vulkan {
               );
 
               functions = createFunctions();
+              functions.createSurfaceKHR = [&window](VkInstance i) -> VkSurfaceKHR {
+                VkSurfaceKHR result;
+                if (glfwCreateWindowSurface(i, window, nullptr, &result) != VK_SUCCESS) {
+                  throw std::runtime_error(CALL_INFO() + ": failed to create window surface!");
+                }
+                return result;
+              };
 
               instance = createInstance(configuration, logger);
               debugUtilsMessenger = createDebugUtilsMessenger(instance, logger);

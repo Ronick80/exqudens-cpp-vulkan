@@ -41,8 +41,6 @@ namespace exqudens::vulkan {
     public:
 
       Functions functions;
-      std::function<std::string(VkDebugUtilsMessageSeverityFlagBitsEXT, VkDebugUtilsMessageTypeFlagsEXT, const std::string&)> loggerFunction;
-      std::function<VkSurfaceKHR(VkInstance&)> createSurfaceFunction;
 
       // utility
 

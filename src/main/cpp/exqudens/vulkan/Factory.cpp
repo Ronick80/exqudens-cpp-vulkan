@@ -478,16 +478,7 @@ namespace exqudens::vulkan {
           VkDebugUtilsMessageSeverityFlagBitsEXT,
           VkDebugUtilsMessageTypeFlagsEXT,
           std::string
-      )> function = loggerFunction;
-      try {
-        loggerFunction(
-            VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT,
-            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT,
-            "Test 'loggerFunction'."
-        );
-      } catch (const std::bad_function_call& e) {
-        function = createLoggerFunction();
-      }
+      )> function = createLoggerFunction();
       return createLogger(function, exceptionSeverity, outSeverity, std::cout);
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
@@ -504,16 +495,7 @@ namespace exqudens::vulkan {
           VkDebugUtilsMessageSeverityFlagBitsEXT,
           VkDebugUtilsMessageTypeFlagsEXT,
           std::string
-      )> function = loggerFunction;
-      try {
-        loggerFunction(
-            VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT,
-            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT,
-            "Test 'loggerFunction'."
-        );
-      } catch (const std::bad_function_call& e) {
-        function = createLoggerFunction();
-      }
+      )> function = createLoggerFunction();
       return createLogger(function, exceptionSeverity, outSeverity, stream);
     } catch (...) {
       std::throw_with_nested(std::runtime_error(CALL_INFO()));
@@ -581,6 +563,7 @@ namespace exqudens::vulkan {
         .createInstance = vkCreateInstance,
         .createDevice = vkCreateDevice,
         .createCommandPool = vkCreateCommandPool,
+        .createSurfaceKHR = {},
         .createSwapchainKHR = vkCreateSwapchainKHR,
         .createBuffer = vkCreateBuffer,
         .createImage = vkCreateImage,
@@ -700,9 +683,7 @@ namespace exqudens::vulkan {
     try {
       VkSurfaceKHR surface = nullptr;
 
-      if (createSurfaceFunction) {
-        surface = createSurfaceFunction(instance);
-      }
+      surface = functions.createSurfaceKHR(instance);
 
       if (surface == nullptr) {
         throw std::runtime_error(CALL_INFO() + ": failed create surface!");

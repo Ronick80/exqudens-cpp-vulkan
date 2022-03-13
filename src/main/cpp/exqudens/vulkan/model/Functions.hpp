@@ -135,6 +135,10 @@ namespace exqudens::vulkan {
         VkCommandPool*                              pCommandPool
     )> createCommandPool;
 
+    std::function<VkSurfaceKHR(
+        VkInstance                                  instance
+    )> createSurfaceKHR = {};
+
     std::function<VkResult(
         VkDevice                                    device,
         const VkSwapchainCreateInfoKHR*             pCreateInfo,
