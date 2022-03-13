@@ -67,7 +67,7 @@ namespace exqudens::vulkan {
           bool computeFamilyRequired,
           bool transferFamilyRequired,
           bool graphicsFamilyRequired,
-          VkSurfaceKHR& surface
+          const VkSurfaceKHR& surface
       );
 
       virtual bool checkDeviceExtensionSupport(VkPhysicalDevice& physicalDevice, const std::vector<const char*>& deviceExtensions);

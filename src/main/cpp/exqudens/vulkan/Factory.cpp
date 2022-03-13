@@ -181,7 +181,7 @@ namespace exqudens::vulkan {
       bool computeFamilyRequired,
       bool transferFamilyRequired,
       bool graphicsFamilyRequired,
-      VkSurfaceKHR& surface
+      const VkSurfaceKHR& surface
   ) {
     try {
       QueueFamilyIndexInfo result;
@@ -1581,11 +1581,23 @@ namespace exqudens::vulkan {
       iCreateInfo.pVertexInputState = &vertexInputInfo;
 
       if (createInfo.inputAssemblyState.has_value()) {
-        iCreateInfo.pInputAssemblyState = &createInfo.inputAssemblyState.value();
+        VkPipelineInputAssemblyStateCreateInfo vkPipelineInputAssemblyStateCreateInfo = {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+            .flags = createInfo.inputAssemblyState.value().flags,
+            .topology = createInfo.inputAssemblyState.value().topology,
+            .primitiveRestartEnable = createInfo.inputAssemblyState.value().primitiveRestartEnable
+        };
+
+        iCreateInfo.pInputAssemblyState = &vkPipelineInputAssemblyStateCreateInfo;
       }
 
       if (createInfo.tessellationState.has_value()) {
-        iCreateInfo.pTessellationState = &createInfo.tessellationState.value();
+        VkPipelineTessellationStateCreateInfo vkPipelineTessellationStateCreateInfo {
+          .sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO,
+          .flags = createInfo.tessellationState.value().flags,
+          .patchControlPoints = createInfo.tessellationState.value().patchControlPoints
+        };
+        iCreateInfo.pTessellationState = &vkPipelineTessellationStateCreateInfo;
       }
 
       if (createInfo.viewportState.has_value()) {
@@ -1601,15 +1613,52 @@ namespace exqudens::vulkan {
       }
 
       if (createInfo.rasterizationState.has_value()) {
-        iCreateInfo.pRasterizationState = &createInfo.rasterizationState.value();
+        VkPipelineRasterizationStateCreateInfo vkPipelineRasterizationStateCreateInfo = {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+            .flags = createInfo.rasterizationState.value().flags,
+            .depthClampEnable = createInfo.rasterizationState.value().depthClampEnable,
+            .rasterizerDiscardEnable = createInfo.rasterizationState.value().rasterizerDiscardEnable,
+            .polygonMode = createInfo.rasterizationState.value().polygonMode,
+            .cullMode = createInfo.rasterizationState.value().cullMode,
+            .frontFace = createInfo.rasterizationState.value().frontFace,
+            .depthBiasEnable = createInfo.rasterizationState.value().depthBiasEnable,
+            .depthBiasConstantFactor = createInfo.rasterizationState.value().depthBiasConstantFactor,
+            .depthBiasClamp = createInfo.rasterizationState.value().depthBiasClamp,
+            .depthBiasSlopeFactor = createInfo.rasterizationState.value().depthBiasSlopeFactor,
+            .lineWidth = createInfo.rasterizationState.value().lineWidth
+        };
+        iCreateInfo.pRasterizationState = &vkPipelineRasterizationStateCreateInfo;
       }
 
       if (createInfo.multisampleState.has_value()) {
-        iCreateInfo.pMultisampleState = &createInfo.multisampleState.value();
+        VkPipelineMultisampleStateCreateInfo vkPipelineMultisampleStateCreateInfo = {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+            .flags = createInfo.multisampleState.value().flags,
+            .rasterizationSamples = createInfo.multisampleState.value().rasterizationSamples,
+            .sampleShadingEnable = createInfo.multisampleState.value().sampleShadingEnable,
+            .minSampleShading = createInfo.multisampleState.value().minSampleShading,
+            .pSampleMask = createInfo.multisampleState.value().pSampleMask,
+            .alphaToCoverageEnable = createInfo.multisampleState.value().alphaToCoverageEnable,
+            .alphaToOneEnable = createInfo.multisampleState.value().alphaToOneEnable
+        };
+        iCreateInfo.pMultisampleState = &vkPipelineMultisampleStateCreateInfo;
       }
 
       if (createInfo.depthStencilState.has_value()) {
-        iCreateInfo.pDepthStencilState = &createInfo.depthStencilState.value();
+        VkPipelineDepthStencilStateCreateInfo vkPipelineDepthStencilStateCreateInfo = {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+            .flags = createInfo.depthStencilState.value().flags,
+            .depthTestEnable = createInfo.depthStencilState.value().depthTestEnable,
+            .depthWriteEnable = createInfo.depthStencilState.value().depthWriteEnable,
+            .depthCompareOp = createInfo.depthStencilState.value().depthCompareOp,
+            .depthBoundsTestEnable = createInfo.depthStencilState.value().depthBoundsTestEnable,
+            .stencilTestEnable = createInfo.depthStencilState.value().stencilTestEnable,
+            .front = createInfo.depthStencilState.value().front,
+            .back = createInfo.depthStencilState.value().back,
+            .minDepthBounds = createInfo.depthStencilState.value().minDepthBounds,
+            .maxDepthBounds = createInfo.depthStencilState.value().maxDepthBounds
+        };
+        iCreateInfo.pDepthStencilState = &vkPipelineDepthStencilStateCreateInfo;
       }
 
       if (createInfo.colorBlendState.has_value()) {
@@ -1630,7 +1679,13 @@ namespace exqudens::vulkan {
       }
 
       if (createInfo.dynamicState.has_value()) {
-        iCreateInfo.pDynamicState = &createInfo.dynamicState.value();
+        VkPipelineDynamicStateCreateInfo dynamicState {
+          .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+          .flags = createInfo.dynamicState.value().flags,
+          .dynamicStateCount = static_cast<uint32_t>(createInfo.dynamicState.value().dynamicStates.size()),
+          .pDynamicStates = createInfo.dynamicState.value().dynamicStates.empty() ? nullptr : createInfo.dynamicState.value().dynamicStates.data()
+        };
+        iCreateInfo.pDynamicState = &dynamicState;
       }
 
       iCreateInfo.layout = pipelineLayout;
@@ -1709,8 +1764,7 @@ namespace exqudens::vulkan {
           },
           GraphicsPipelineCreateInfo {
               .flags = 0,
-              .inputAssemblyState = VkPipelineInputAssemblyStateCreateInfo {
-                  .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+              .inputAssemblyState = PipelineInputAssemblyStateCreateInfo {
                   .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
                   .primitiveRestartEnable = VK_FALSE
               },
@@ -1734,8 +1788,7 @@ namespace exqudens::vulkan {
                     }
                 }
               },
-              .rasterizationState = VkPipelineRasterizationStateCreateInfo {
-                  .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+              .rasterizationState = PipelineRasterizationStateCreateInfo {
                   .depthClampEnable = VK_FALSE,
                   .rasterizerDiscardEnable = VK_FALSE,
                   .polygonMode = VK_POLYGON_MODE_FILL,
@@ -1747,8 +1800,7 @@ namespace exqudens::vulkan {
                   .depthBiasSlopeFactor = 0.0f, // Optional
                   .lineWidth = 1.0f
               },
-              .multisampleState = VkPipelineMultisampleStateCreateInfo {
-                  .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+              .multisampleState = PipelineMultisampleStateCreateInfo {
                   .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
                   .sampleShadingEnable = VK_FALSE,
                   .minSampleShading = 1.0f, // Optional
@@ -1756,8 +1808,7 @@ namespace exqudens::vulkan {
                   .alphaToCoverageEnable = VK_FALSE, // Optional
                   .alphaToOneEnable = VK_FALSE // Optional
               },
-              .depthStencilState = VkPipelineDepthStencilStateCreateInfo {
-                  .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+              .depthStencilState = PipelineDepthStencilStateCreateInfo {
                   .depthTestEnable = VK_TRUE,
                   .depthWriteEnable = VK_TRUE,
                   .depthCompareOp = VK_COMPARE_OP_LESS,
@@ -1787,7 +1838,6 @@ namespace exqudens::vulkan {
                   .blendConstants = {0.0f, 0.0f, 0.0f, 0.0f}
               },
               .dynamicState = {},
-              .layout = 0,
               .renderPass = renderPass,
               .subpass = 0,
               .basePipelineHandle = nullptr,
