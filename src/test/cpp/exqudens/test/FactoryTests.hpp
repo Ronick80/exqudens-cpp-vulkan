@@ -5,11 +5,11 @@
 #include <gtest/gtest.h>
 
 #include "exqudens/TestUtils.hpp"
-#include "exqudens/vulkan/Factory.hpp"
+#include "exqudens/vulkan/FactoryBase.hpp"
 
 namespace exqudens::vulkan {
 
-  class FactoryTests : public testing::Test, protected Factory {
+  class FactoryTests : public testing::Test, protected FactoryBase {
 
     protected:
 
@@ -56,18 +56,16 @@ namespace exqudens::vulkan {
       std::ostringstream stream;
       Logger logger = createLogger(stream);
 
-      functions = createFunctions();
-
-      VkInstance instance = createInstance(configuration, logger);
-      VkDebugUtilsMessengerEXT debugUtilsMessenger = createDebugUtilsMessenger(instance, logger);
-      PhysicalDevice physicalDevice = createPhysicalDevice(instance, configuration);
-      VkDevice device = createDevice(physicalDevice.value, configuration, physicalDevice.queueFamilyIndexInfo);
-      Queue graphicsQueue = createQueue(device, physicalDevice.queueFamilyIndexInfo.graphicsFamily.value(), 0);
-      VkCommandPool graphicsCommandPool = createCommandPool(device, graphicsQueue.familyIndex);
-      Image image = createImage(physicalDevice.value, device, 800, 600, VkFormat::VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-      VkImageView imageView = createImageView(device, image.value, image.format);
-      VkRenderPass renderPass = createRenderPass(
-          device,
+      Instance instance = createInstance(configuration, logger);
+      DebugUtilsMessenger debugUtilsMessenger = createDebugUtilsMessenger(instance.value, logger);
+      PhysicalDevice physicalDevice = createPhysicalDevice(instance.value, configuration);
+      Device device = createDevice(physicalDevice.value, configuration, physicalDevice.queueFamilyIndexInfo);
+      Queue graphicsQueue = createQueue(device.value, physicalDevice.queueFamilyIndexInfo.graphicsFamily.value(), 0);
+      CommandPool graphicsCommandPool = createCommandPool(device.value, graphicsQueue.familyIndex);
+      Image image = createImage(physicalDevice.value, device.value, 800, 600, VkFormat::VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+      ImageView imageView = createImageView(device.value, image.value, image.format);
+      RenderPass renderPass = createRenderPass(
+          device.value,
           RenderPassCreateInfo {
               .attachments = {
                   VkAttachmentDescription {
@@ -104,33 +102,47 @@ namespace exqudens::vulkan {
               }
           }
       );
-      VkFramebuffer frameBuffer = createFrameBuffer(
-          device,
+      FrameBuffer frameBuffer = createFrameBuffer(
+          device.value,
           FrameBufferCreateInfo {
             .flags = 0,
-            .renderPass = renderPass,
-            .attachments = {imageView},
+            .renderPass = renderPass.value,
+            .attachments = {imageView.value},
             .width = image.width,
             .height = image.height,
             .layers = 1
           }
       );
-      Pipeline graphicsPipeline = createGraphicsPipeline(device, {.width = image.width, .height = image.height}, {"resources/shader/shader-1.vert.spv", "resources/shader/shader-1.frag.spv"}, renderPass);
-      VkCommandBuffer graphicsCommandBuffer = createCommandBuffer(device, graphicsCommandPool);
-      Image imageOut = createImage(physicalDevice.value, device, 800, 600, image.format, VK_IMAGE_TILING_LINEAR, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-      VkCommandBuffer copyCommandBuffer = createCommandBuffer(device, graphicsCommandPool);
+      Pipeline graphicsPipeline = createGraphicsPipeline(
+          device.value,
+          {.width = image.width, .height = image.height},
+          {"resources/shader/shader-1.vert.spv", "resources/shader/shader-1.frag.spv"},
+          renderPass.value
+      );
+      CommandBuffer graphicsCommandBuffer = createCommandBuffer(device.value, graphicsCommandPool.value);
+      Image imageOut = createImage(
+          physicalDevice.value,
+          device.value,
+          800,
+          600,
+          image.format,
+          VK_IMAGE_TILING_LINEAR,
+          VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+      );
+      CommandBuffer copyCommandBuffer = createCommandBuffer(device.value, graphicsCommandPool.value);
 
       VkCommandBufferBeginInfo beginInfo = {};
       beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-      if (vkBeginCommandBuffer(graphicsCommandBuffer, &beginInfo) != VK_SUCCESS) {
+      if (vkBeginCommandBuffer(graphicsCommandBuffer.value, &beginInfo) != VK_SUCCESS) {
         throw std::runtime_error(CALL_INFO() + ": failed to begin graphics command buffer!");
       }
 
-      VkRenderPassBeginInfo renderPassInfo{};
+      VkRenderPassBeginInfo renderPassInfo = {};
       renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-      renderPassInfo.renderPass = renderPass;
-      renderPassInfo.framebuffer = frameBuffer;
+      renderPassInfo.renderPass = renderPass.value;
+      renderPassInfo.framebuffer = frameBuffer.value;
       renderPassInfo.renderArea.offset = {0, 0};
       renderPassInfo.renderArea.extent = {.width = image.width, .height = image.height};
 
@@ -138,20 +150,20 @@ namespace exqudens::vulkan {
       renderPassInfo.clearValueCount = 1;
       renderPassInfo.pClearValues = &clearColor;
 
-      vkCmdBeginRenderPass(graphicsCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+      vkCmdBeginRenderPass(graphicsCommandBuffer.value, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-      vkCmdBindPipeline(graphicsCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.value);
+      vkCmdBindPipeline(graphicsCommandBuffer.value, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.value);
 
-      vkCmdDraw(graphicsCommandBuffer, 3, 1, 0, 0);
+      vkCmdDraw(graphicsCommandBuffer.value, 3, 1, 0, 0);
 
-      vkCmdEndRenderPass(graphicsCommandBuffer);
+      vkCmdEndRenderPass(graphicsCommandBuffer.value);
 
-      if (vkEndCommandBuffer(graphicsCommandBuffer) != VK_SUCCESS) {
+      if (vkEndCommandBuffer(graphicsCommandBuffer.value) != VK_SUCCESS) {
         throw std::runtime_error(CALL_INFO() + ": failed to end graphics command buffer!");
       }
 
-      submitBlocking(device, graphicsCommandBuffer, graphicsQueue.value);
-      vkDeviceWaitIdle(device);
+      submitBlocking(device.value, graphicsCommandBuffer.value, graphicsQueue.value);
+      vkDeviceWaitIdle(device.value);
 
       /*VkImageSubresourceRange subresourceRange = {};
       subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -169,7 +181,7 @@ namespace exqudens::vulkan {
       memoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
       memoryBarrier.subresourceRange = subresourceRange;*/
 
-      if (vkBeginCommandBuffer(copyCommandBuffer, &beginInfo) != VK_SUCCESS) {
+      if (vkBeginCommandBuffer(copyCommandBuffer.value, &beginInfo) != VK_SUCCESS) {
         throw std::runtime_error(CALL_INFO() + ": failed to begin copy command buffer!");
       }
 
@@ -190,7 +202,7 @@ namespace exqudens::vulkan {
       };
 
       vkCmdPipelineBarrier(
-          copyCommandBuffer,
+          copyCommandBuffer.value,
           VK_PIPELINE_STAGE_TRANSFER_BIT,
           VK_PIPELINE_STAGE_TRANSFER_BIT,
           0,
@@ -212,7 +224,7 @@ namespace exqudens::vulkan {
       imageCopyRegion.extent.depth = 1;
 
       vkCmdCopyImage(
-          copyCommandBuffer,
+          copyCommandBuffer.value,
           image.value,
           VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
           imageOut.value,
@@ -238,7 +250,7 @@ namespace exqudens::vulkan {
       };
 
       vkCmdPipelineBarrier(
-          copyCommandBuffer,
+          copyCommandBuffer.value,
           VK_PIPELINE_STAGE_TRANSFER_BIT,
           VK_PIPELINE_STAGE_TRANSFER_BIT,
           0,
@@ -250,11 +262,11 @@ namespace exqudens::vulkan {
           &imageMemoryBarrier2
       );
 
-      if (vkEndCommandBuffer(copyCommandBuffer) != VK_SUCCESS) {
+      if (vkEndCommandBuffer(copyCommandBuffer.value) != VK_SUCCESS) {
         throw std::runtime_error(CALL_INFO() + ": failed to end copy command buffer!!");
       }
 
-      submitBlocking(device, copyCommandBuffer, graphicsQueue.value);
+      submitBlocking(device.value, copyCommandBuffer.value, graphicsQueue.value);
 
       ///
 
@@ -263,10 +275,10 @@ namespace exqudens::vulkan {
       };
       VkSubresourceLayout subResourceLayout;
 
-      vkGetImageSubresourceLayout(device, imageOut.value, &subResource, &subResourceLayout);
+      vkGetImageSubresourceLayout(device.value, imageOut.value, &subResource, &subResourceLayout);
 
       unsigned char* imageData;
-      vkMapMemory(device, imageOut.memory, 0, imageOut.memorySize, 0, (void**) &imageData);
+      vkMapMemory(device.value, imageOut.memory, 0, imageOut.memorySize, 0, (void**) &imageData);
       imageData += subResourceLayout.offset;
 
       //////
@@ -297,25 +309,25 @@ namespace exqudens::vulkan {
       );
       //////
 
-      vkUnmapMemory(device, imageOut.memory);
+      vkUnmapMemory(device.value, imageOut.memory);
 
       ///
 
       vkQueueWaitIdle(graphicsQueue.value);
 
-      destroyCommandBuffer(copyCommandBuffer, graphicsCommandPool, device);
-      destroyImage(imageOut, device);
-      destroyCommandBuffer(graphicsCommandBuffer, graphicsCommandPool, device);
-      destroyPipeline(graphicsPipeline, device);
-      destroyFrameBuffer(frameBuffer, device);
-      destroyRenderPass(renderPass, device);
-      destroyImageView(imageView, device);
-      destroyImage(image, device);
-      destroyCommandPool(graphicsCommandPool, device);
+      destroyCommandBuffer(copyCommandBuffer);
+      destroyImage(imageOut);
+      destroyCommandBuffer(graphicsCommandBuffer);
+      destroyPipeline(graphicsPipeline);
+      destroyFrameBuffer(frameBuffer);
+      destroyRenderPass(renderPass);
+      destroyImageView(imageView);
+      destroyImage(image);
+      destroyCommandPool(graphicsCommandPool);
       destroyQueue(graphicsQueue);
       destroyDevice(device);
       destroyPhysicalDevice(physicalDevice);
-      destroyDebugUtilsMessenger(debugUtilsMessenger, instance);
+      destroyDebugUtilsMessenger(debugUtilsMessenger);
       destroyInstance(instance);
 
       std::cout << stream.str();

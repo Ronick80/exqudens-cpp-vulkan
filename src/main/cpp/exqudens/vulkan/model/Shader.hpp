@@ -6,6 +6,7 @@ namespace exqudens::vulkan {
 
   struct Shader {
 
+    VkDevice device;
     VkShaderModule shaderModule;
     VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo;
 

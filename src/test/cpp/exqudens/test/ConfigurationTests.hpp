@@ -5,11 +5,11 @@
 #include <gtest/gtest.h>
 
 #include "exqudens/TestUtils.hpp"
-#include "exqudens/vulkan/Factory.hpp"
+#include "exqudens/vulkan/FactoryBase.hpp"
 
 namespace exqudens::vulkan {
 
-  class ConfigurationTests : public testing::Test, protected Factory {
+  class ConfigurationTests : public testing::Test, protected FactoryBase {
   };
 
   TEST_F(ConfigurationTests, test1) {

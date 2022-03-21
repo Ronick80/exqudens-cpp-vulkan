@@ -15,9 +15,6 @@ class ConanConfiguration(ConanFile):
         ("lodepng/cci.20200615", "private"),
         ("glfw/3.3.4", "private")
     ]
-    settings = "arch", "os", "compiler", "build_type"
-    options = {"shared": [True, False]}
-    default_options = {"shared": True}
     generators = "cmake_find_package"
 
     def set_name(self):
@@ -37,9 +34,6 @@ class ConanConfiguration(ConanFile):
     def configure(self):
         try:
             self.options["vulkan"].shared = True
-            self.options["gtest"].shared = self.options.shared
-            self.options["lodepng"].shared = self.options.shared
-            self.options["glfw"].shared = self.options.shared
         except Exception as e:
             error(format_exc())
             raise e
@@ -85,7 +79,14 @@ class ConanConfiguration(ConanFile):
 
     def package_info(self):
         try:
-            self.cpp_info.libs = tools.collect_libs(self)
+            self.cpp_info.libs = []
+        except Exception as e:
+            error(format_exc())
+            raise e
+
+    def package_id(self):
+        try:
+            self.info.header_only()
         except Exception as e:
             error(format_exc())
             raise e

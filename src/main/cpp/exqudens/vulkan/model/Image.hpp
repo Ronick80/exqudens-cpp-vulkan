@@ -8,6 +8,7 @@ namespace exqudens::vulkan {
 
   struct Image {
 
+    VkDevice device;
     //VkImageTiling tiling = VkImageTiling::VK_IMAGE_TILING_OPTIMAL;
     //VkImageUsageFlags usage = VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     uint32_t width;

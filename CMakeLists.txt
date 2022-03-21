@@ -9,7 +9,6 @@ message("project: '${PROJECT_NAME}-${PROJECT_VERSION}'")
 
 include("util.cmake")
 include("config.cmake")
-include("GenerateExportHeader")
 enable_testing()
 include("GoogleTest")
 
@@ -28,7 +27,10 @@ set_conan_settings(CONAN_SETTINGS
 )
 
 set_conan_options(CONAN_OPTIONS
-    "shared=${CONAN_BUILD_SHARED_LIBS}"
+    "vulkan:shared=True"
+    "gtest:shared=${CONAN_BUILD_SHARED_LIBS}"
+    "lodepng:shared=${CONAN_BUILD_SHARED_LIBS}"
+    "glfw:shared=${CONAN_BUILD_SHARED_LIBS}"
 )
 
 set("CONAN_INSTALL_PREFIX" "${PROJECT_BINARY_DIR}/conan-install")
@@ -120,22 +122,28 @@ if(NOT "" STREQUAL "${NOT_FOUND_PACKAGE_NAMES}")
     return()
 endif()
 
-add_library("${PROJECT_NAME}"
+add_library("${PROJECT_NAME}" INTERFACE
     "src/main/cpp/exqudens/vulkan/model/Functions.hpp"
     "src/main/cpp/exqudens/vulkan/model/Configuration.hpp"
+    "src/main/cpp/exqudens/vulkan/model/Instance.hpp"
+    "src/main/cpp/exqudens/vulkan/model/DebugUtilsMessenger.hpp"
     "src/main/cpp/exqudens/vulkan/model/QueueFamilyIndexInfo.hpp"
     "src/main/cpp/exqudens/vulkan/model/SwapChainSupportDetails.hpp"
     "src/main/cpp/exqudens/vulkan/model/PhysicalDevice.hpp"
-    "src/main/cpp/exqudens/vulkan/model/SwapChain.hpp"
+    "src/main/cpp/exqudens/vulkan/model/Device.hpp"
     "src/main/cpp/exqudens/vulkan/model/Queue.hpp"
+    "src/main/cpp/exqudens/vulkan/model/CommandPool.hpp"
+    "src/main/cpp/exqudens/vulkan/model/CommandBuffer.hpp"
     "src/main/cpp/exqudens/vulkan/model/BufferCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/model/Buffer.hpp"
     "src/main/cpp/exqudens/vulkan/model/ImageCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/model/Image.hpp"
-    "src/main/cpp/exqudens/vulkan/model/FrameBufferCreateInfo.hpp"
-    "src/main/cpp/exqudens/vulkan/model/RenderPassCreateInfo.hpp"
+    "src/main/cpp/exqudens/vulkan/model/ImageView.hpp"
     "src/main/cpp/exqudens/vulkan/model/DescriptorSetLayoutCreateInfo.hpp"
+    "src/main/cpp/exqudens/vulkan/model/DescriptorSetLayout.hpp"
+    "src/main/cpp/exqudens/vulkan/model/RenderPass.hpp"
     "src/main/cpp/exqudens/vulkan/model/Shader.hpp"
+    "src/main/cpp/exqudens/vulkan/model/RenderPassCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/model/PipelineLayoutCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/model/PipelineInputAssemblyStateCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/model/PipelineTessellationStateCreateInfo.hpp"
@@ -146,47 +154,82 @@ add_library("${PROJECT_NAME}"
     "src/main/cpp/exqudens/vulkan/model/PipelineColorBlendStateCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/model/PipelineDynamicStateCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/model/GraphicsPipelineCreateInfo.hpp"
-    "src/main/cpp/exqudens/vulkan/model/DescriptorPoolCreateInfo.hpp"
-    "src/main/cpp/exqudens/vulkan/model/WriteDescriptorSet.hpp"
     "src/main/cpp/exqudens/vulkan/model/Pipeline.hpp"
+    "src/main/cpp/exqudens/vulkan/model/Sampler.hpp"
+    "src/main/cpp/exqudens/vulkan/model/DescriptorPoolCreateInfo.hpp"
+    "src/main/cpp/exqudens/vulkan/model/DescriptorPool.hpp"
+    "src/main/cpp/exqudens/vulkan/model/WriteDescriptorSet.hpp"
+    "src/main/cpp/exqudens/vulkan/model/DescriptorSet.hpp"
+    "src/main/cpp/exqudens/vulkan/model/FrameBufferCreateInfo.hpp"
+    "src/main/cpp/exqudens/vulkan/model/FrameBuffer.hpp"
+    "src/main/cpp/exqudens/vulkan/model/Semaphore.hpp"
+    "src/main/cpp/exqudens/vulkan/model/Fence.hpp"
+    "src/main/cpp/exqudens/vulkan/model/Surface.hpp"
+    "src/main/cpp/exqudens/vulkan/model/SwapChain.hpp"
+
+    "src/main/cpp/exqudens/vulkan/factory/UtilityFactory.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/UtilityFactoryBase.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/InstanceFactory.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/InstanceFactoryBase.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/DebugUtilsMessengerFactory.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/DebugUtilsMessengerFactoryBase.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/PhysicalDeviceFactory.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/PhysicalDeviceFactoryBase.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/DeviceFactory.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/DeviceFactoryBase.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/BufferFactory.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/BufferFactoryBase.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/ImageFactory.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/ImageFactoryBase.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/ImageViewFactory.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/ImageViewFactoryBase.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/DescriptorSetLayoutFactory.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/DescriptorSetLayoutFactoryBase.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/RenderPassFactory.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/RenderPassFactoryBase.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/PipelineFactory.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/PipelineFactoryBase.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/SamplerFactory.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/SamplerFactoryBase.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/DescriptorPoolFactory.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/DescriptorPoolFactoryBase.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/DescriptorSetFactory.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/DescriptorSetFactoryBase.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/FrameBufferFactory.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/FrameBufferFactoryBase.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/QueueFactory.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/QueueFactoryBase.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/CommandPoolFactory.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/CommandPoolFactoryBase.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/CommandBufferFactory.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/CommandBufferFactoryBase.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/SemaphoreFactory.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/SemaphoreFactoryBase.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/FenceFactory.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/FenceFactoryBase.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/SurfaceFactory.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/SurfaceFactoryBase.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/SwapChainFactory.hpp"
+    "src/main/cpp/exqudens/vulkan/factory/SwapChainFactoryBase.hpp"
 
     "src/main/cpp/exqudens/vulkan/Macros.hpp"
     "src/main/cpp/exqudens/vulkan/Logger.hpp"
+    "src/main/cpp/exqudens/vulkan/FunctionsProvider.hpp"
+    "src/main/cpp/exqudens/vulkan/FunctionsProviderBase.hpp"
+    "src/main/cpp/exqudens/vulkan/Utility.hpp"
+    "src/main/cpp/exqudens/vulkan/UtilityBase.hpp"
     "src/main/cpp/exqudens/vulkan/Factory.hpp"
-    "src/main/cpp/exqudens/vulkan/Factory.cpp"
+    "src/main/cpp/exqudens/vulkan/FactoryBase.hpp"
+    "src/main/cpp/exqudens/vulkan/MyFactory.hpp"
+    "src/main/cpp/exqudens/vulkan/MyFactoryBase.hpp"
 )
-generate_export_header("${PROJECT_NAME}" BASE_NAME "EXQUDENS_VULKAN" EXPORT_FILE_NAME
-    "generated/main/exqudens/vulkan/Export.hpp"
-)
-if(NOT "${BUILD_SHARED_LIBS}")
-    set_target_properties("${PROJECT_NAME}" PROPERTIES COMPILE_FLAGS -DEXQUDENS_VULKAN_STATIC_DEFINE)
-endif()
-target_include_directories("${PROJECT_NAME}" PUBLIC
+target_include_directories("${PROJECT_NAME}" INTERFACE
     "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/generated/main>"
     "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/main/cpp>"
     "$<INSTALL_INTERFACE:include>"
 )
-target_link_libraries("${PROJECT_NAME}" PUBLIC
+target_link_libraries("${PROJECT_NAME}" INTERFACE
     "Vulkan::Vulkan"
-)
-set_target_properties("${PROJECT_NAME}" PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY                "${PROJECT_BINARY_DIR}/main/bin"
-    RUNTIME_OUTPUT_DIRECTORY_RELEASE        "${PROJECT_BINARY_DIR}/main/bin"
-    RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${PROJECT_BINARY_DIR}/main/bin"
-    RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL     "${PROJECT_BINARY_DIR}/main/bin"
-    RUNTIME_OUTPUT_DIRECTORY_DEBUG          "${PROJECT_BINARY_DIR}/main/bin"
-
-    ARCHIVE_OUTPUT_DIRECTORY                "${PROJECT_BINARY_DIR}/main/lib"
-    ARCHIVE_OUTPUT_DIRECTORY_RELEASE        "${PROJECT_BINARY_DIR}/main/lib"
-    ARCHIVE_OUTPUT_DIRECTORY_RELWITHDEBINFO "${PROJECT_BINARY_DIR}/main/lib"
-    ARCHIVE_OUTPUT_DIRECTORY_MINSIZEREL     "${PROJECT_BINARY_DIR}/main/lib"
-    ARCHIVE_OUTPUT_DIRECTORY_DEBUG          "${PROJECT_BINARY_DIR}/main/lib"
-
-    LIBRARY_OUTPUT_DIRECTORY                "${PROJECT_BINARY_DIR}/main/lib"
-    LIBRARY_OUTPUT_DIRECTORY_RELEASE        "${PROJECT_BINARY_DIR}/main/lib"
-    LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "${PROJECT_BINARY_DIR}/main/lib"
-    LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL     "${PROJECT_BINARY_DIR}/main/lib"
-    LIBRARY_OUTPUT_DIRECTORY_DEBUG          "${PROJECT_BINARY_DIR}/main/lib"
 )
 set_property(TARGET "${PROJECT_NAME}" PROPERTY "VERSION" "${PROJECT_VERSION}")
 set_property(TARGET "${PROJECT_NAME}" PROPERTY "SOVERSION" "${PROJECT_VERSION_MAJOR}")
@@ -223,8 +266,7 @@ install(
     DESTINATION "cmake"
 )
 install(
-    DIRECTORY "${PROJECT_BINARY_DIR}/generated/main/"
-              "src/main/cpp/"
+    DIRECTORY "src/main/cpp/"
     DESTINATION "include"
     FILES_MATCHING
     PATTERN "*.h"
@@ -243,10 +285,11 @@ add_library("test-lib" INTERFACE
     "src/test/cpp/exqudens/test/ConfigurationTests.hpp"
     "src/test/cpp/exqudens/test/ShaderTests.hpp"
     "src/test/cpp/exqudens/test/FactoryTests.hpp"
-    "src/test/cpp/exqudens/test/UiTestsA.hpp"
-    "src/test/cpp/exqudens/test/UiTestsB.hpp"
-    "src/test/cpp/exqudens/test/UiTestsC.hpp"
+    #"src/test/cpp/exqudens/test/UiTestsA.hpp"
+    #"src/test/cpp/exqudens/test/UiTestsB.hpp"
+    #"src/test/cpp/exqudens/test/UiTestsC.hpp"
     "src/test/cpp/exqudens/test/UiTestsD.hpp"
+    "src/test/cpp/exqudens/test/UiTestsE.hpp"
 )
 target_include_directories("test-lib" INTERFACE
     "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/test/cpp>"
@@ -326,7 +369,7 @@ if("${BUILD_SHARED_LIBS}")
     add_custom_command(TARGET "test-app"
         PRE_BUILD
         COMMAND "${CMAKE_COMMAND}" -E rm -f "$<TARGET_PROPERTY:test-app,RUNTIME_OUTPUT_DIRECTORY>/*"
-        COMMAND "${CMAKE_COMMAND}" -E copy_directory "$<TARGET_PROPERTY:${PROJECT_NAME},RUNTIME_OUTPUT_DIRECTORY>" "$<TARGET_PROPERTY:test-app,RUNTIME_OUTPUT_DIRECTORY>"
+        #COMMAND "${CMAKE_COMMAND}" -E copy_directory "$<TARGET_PROPERTY:${PROJECT_NAME},RUNTIME_OUTPUT_DIRECTORY>" "$<TARGET_PROPERTY:test-app,RUNTIME_OUTPUT_DIRECTORY>"
         COMMAND "${CMAKE_COMMAND}" -E copy_directory "${CONAN_INSTALL_PREFIX}/bin" "$<TARGET_PROPERTY:test-app,RUNTIME_OUTPUT_DIRECTORY>"
         COMMAND "${CMAKE_COMMAND}" -E make_directory "$<TARGET_PROPERTY:test-app,RUNTIME_OUTPUT_DIRECTORY>/resources"
         COMMAND "${CMAKE_COMMAND}" -E copy_directory "${PROJECT_SOURCE_DIR}/src/test/resources" "$<TARGET_PROPERTY:test-app,RUNTIME_OUTPUT_DIRECTORY>/resources"

@@ -5,11 +5,11 @@
 #include <gtest/gtest.h>
 
 #include "exqudens/TestUtils.hpp"
-#include "exqudens/vulkan/Factory.hpp"
+#include "exqudens/vulkan/FactoryBase.hpp"
 
 namespace exqudens::vulkan {
 
-  class ShaderTests : public testing::Test, protected Factory {
+  class ShaderTests : public testing::Test, protected FactoryBase {
   };
 
   TEST_F(ShaderTests, test1) {
@@ -26,15 +26,13 @@ namespace exqudens::vulkan {
       std::ostringstream stream;
       Logger logger = createLogger(stream);
 
-      functions = createFunctions();
+      Instance instance = createInstance(configuration, logger);
+      DebugUtilsMessenger debugUtilsMessenger = createDebugUtilsMessenger(instance.value, logger);
+      PhysicalDevice physicalDevice = createPhysicalDevice(instance.value, configuration);
+      Device device = createDevice(physicalDevice.value, configuration, physicalDevice.queueFamilyIndexInfo);
 
-      VkInstance instance = createInstance(configuration, logger);
-      VkDebugUtilsMessengerEXT debugUtilsMessenger = createDebugUtilsMessenger(instance, logger);
-      PhysicalDevice physicalDevice = createPhysicalDevice(instance, configuration);
-      VkDevice device = createDevice(physicalDevice.value, configuration, physicalDevice.queueFamilyIndexInfo);
-
-      Shader vertexShader1 = createShader(device, "resources/shader/shader-1.vert.spv");
-      Shader fragmentShader1 = createShader(device, "resources/shader/shader-1.frag.spv");
+      Shader vertexShader1 = createShader(device.value, "resources/shader/shader-1.vert.spv");
+      Shader fragmentShader1 = createShader(device.value, "resources/shader/shader-1.frag.spv");
 
       ASSERT_TRUE(vertexShader1.shaderModule != nullptr);
       ASSERT_EQ(vertexShader1.pipelineShaderStageCreateInfo.stage, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT);
@@ -49,15 +47,15 @@ namespace exqudens::vulkan {
       ASSERT_TRUE(fragmentShader2.shaderModule != nullptr);
       ASSERT_EQ(fragmentShader2.pipelineShaderStageCreateInfo.stage, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
 
-      destroyShader(vertexShader1, device);
-      destroyShader(fragmentShader1, device);
+      destroyShader(vertexShader1);
+      destroyShader(fragmentShader1);
 
       ASSERT_TRUE(vertexShader2.shaderModule != nullptr);
       ASSERT_TRUE(fragmentShader2.shaderModule != nullptr);
 
       destroyDevice(device);
       destroyPhysicalDevice(physicalDevice);
-      destroyDebugUtilsMessenger(debugUtilsMessenger, instance);
+      destroyDebugUtilsMessenger(debugUtilsMessenger);
       destroyInstance(instance);
     } catch (const std::exception& e) {
       FAIL() << TestUtils::toString(e);

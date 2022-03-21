@@ -8,6 +8,7 @@ namespace exqudens::vulkan {
 
   struct SwapChain {
 
+    VkDevice device;
     VkFormat format;
     VkExtent2D extent;
     uint32_t imageCount;

@@ -9,7 +9,7 @@
 #include <vulkan/vulkan.h>
 
 #include "exqudens/TestUtils.hpp"
-#include "exqudens/vulkan/Factory.hpp"
+#include "exqudens/vulkan/MyFactoryBase.hpp"
 
 namespace exqudens::vulkan {
 
@@ -18,23 +18,7 @@ namespace exqudens::vulkan {
 
   TEST_F(OtherTests, test1) {
     try {
-      RenderPassCreateInfo createInfo = {
-          .subPasses = {
-              SubPassDescription {
-                  .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
-                  .colorAttachments = {
-                      VkAttachmentReference {
-                          .attachment = 0,
-                          .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-                      }
-                  },
-                  .depthStencilAttachment = VkAttachmentReference {
-                      .attachment = 1,
-                      .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-                  }
-              }
-          }
-      };
+      ASSERT_EQ(1, 1);
     } catch (const std::exception& e) {
       FAIL() << TestUtils::toString(e);
     }
