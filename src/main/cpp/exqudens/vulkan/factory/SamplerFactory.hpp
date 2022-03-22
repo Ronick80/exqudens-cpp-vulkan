@@ -11,6 +11,8 @@ namespace exqudens::vulkan {
 
       virtual Sampler createSampler(VkPhysicalDevice& physicalDevice, VkDevice& device) = 0;
 
+      virtual Sampler createSampler(VkPhysicalDevice& physicalDevice, VkDevice& device, bool anisotropyEnable) = 0;
+
       virtual void destroySampler(Sampler& sampler) = 0;
 
   };

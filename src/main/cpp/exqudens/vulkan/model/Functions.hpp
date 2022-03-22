@@ -29,6 +29,11 @@ namespace exqudens::vulkan {
 
     std::function<void(
         VkPhysicalDevice                            physicalDevice,
+        VkPhysicalDeviceProperties*                 pProperties
+    )> getPhysicalDeviceProperties;
+
+    std::function<void(
+        VkPhysicalDevice                            physicalDevice,
         uint32_t*                                   pQueueFamilyPropertyCount,
         VkQueueFamilyProperties*                    pQueueFamilyProperties
     )> getPhysicalDeviceQueueFamilyProperties;

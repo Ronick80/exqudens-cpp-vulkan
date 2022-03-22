@@ -17,6 +17,7 @@ namespace exqudens::vulkan {
               .enumerateInstanceLayerProperties = vkEnumerateInstanceLayerProperties,
               .enumerateDeviceExtensionProperties = vkEnumerateDeviceExtensionProperties,
               .enumeratePhysicalDevices = vkEnumeratePhysicalDevices,
+              .getPhysicalDeviceProperties = vkGetPhysicalDeviceProperties,
               .getPhysicalDeviceQueueFamilyProperties = vkGetPhysicalDeviceQueueFamilyProperties,
               .getPhysicalDeviceSurfaceSupportKHR = vkGetPhysicalDeviceSurfaceSupportKHR,
               .getPhysicalDeviceFeatures = vkGetPhysicalDeviceFeatures,

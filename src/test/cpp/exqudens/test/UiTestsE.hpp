@@ -21,7 +21,7 @@
 #include "exqudens/TestMacros.hpp"
 #include "exqudens/TestConfiguration.hpp"
 #include "exqudens/TestUtils.hpp"
-#include "exqudens/vulkan/MyFactoryBase.hpp"
+#include "exqudens/vulkan/FactoryBase.hpp"
 #include "exqudens/test/model/Vertex.hpp"
 #include "exqudens/test/model/UniformBufferObject.hpp"
 
@@ -31,7 +31,7 @@ namespace exqudens::vulkan {
 
     protected:
 
-      class Environment : public MyFactoryBase {
+      class Environment : public FactoryBase {
 
         public:
 
@@ -362,7 +362,7 @@ namespace exqudens::vulkan {
                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                   MAX_FRAMES_IN_FLIGHT
               );
-              sampler = createSampler(physicalDevice.value, device.value);
+              sampler = createSampler(physicalDevice.value, device.value, true);
               descriptorPool = createDescriptorPool(
                   device.value,
                   DescriptorPoolCreateInfo {

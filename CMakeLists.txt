@@ -220,8 +220,8 @@ add_library("${PROJECT_NAME}" INTERFACE
     "src/main/cpp/exqudens/vulkan/UtilityBase.hpp"
     "src/main/cpp/exqudens/vulkan/Factory.hpp"
     "src/main/cpp/exqudens/vulkan/FactoryBase.hpp"
-    "src/main/cpp/exqudens/vulkan/MyFactory.hpp"
-    "src/main/cpp/exqudens/vulkan/MyFactoryBase.hpp"
+    "src/main/cpp/exqudens/vulkan/Context.hpp"
+    "src/main/cpp/exqudens/vulkan/ContextBase.hpp"
 )
 target_include_directories("${PROJECT_NAME}" INTERFACE
     "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/generated/main>"
