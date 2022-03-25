@@ -54,6 +54,7 @@ namespace exqudens::vulkan {
               .allocateCommandBuffers = vkAllocateCommandBuffers,
               .bindBufferMemory = vkBindBufferMemory,
               .bindImageMemory = vkBindImageMemory,
+              .mapMemory = vkMapMemory,
               .unmapMemory = vkUnmapMemory,
               .freeMemory = vkFreeMemory,
               .freeCommandBuffers = vkFreeCommandBuffers,
@@ -73,7 +74,10 @@ namespace exqudens::vulkan {
               .destroyCommandPool = vkDestroyCommandPool,
               .destroyDevice = vkDestroyDevice,
               .destroySurfaceKHR = vkDestroySurfaceKHR,
-              .destroyInstance = vkDestroyInstance
+              .destroyInstance = vkDestroyInstance,
+              .cmdCopyBuffer = vkCmdCopyBuffer,
+              .cmdCopyBufferToImage = vkCmdCopyBufferToImage,
+              .cmdPipelineBarrier = vkCmdPipelineBarrier
           };
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));

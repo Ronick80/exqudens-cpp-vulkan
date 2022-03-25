@@ -222,6 +222,8 @@ add_library("${PROJECT_NAME}" INTERFACE
     "src/main/cpp/exqudens/vulkan/FactoryBase.hpp"
     "src/main/cpp/exqudens/vulkan/Context.hpp"
     "src/main/cpp/exqudens/vulkan/ContextBase.hpp"
+    "src/main/cpp/exqudens/vulkan/Renderer.hpp"
+    "src/main/cpp/exqudens/vulkan/RendererBase.hpp"
 )
 target_include_directories("${PROJECT_NAME}" INTERFACE
     "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/generated/main>"
@@ -231,13 +233,15 @@ target_include_directories("${PROJECT_NAME}" INTERFACE
 target_link_libraries("${PROJECT_NAME}" INTERFACE
     "Vulkan::Vulkan"
 )
-target_compile_options("${PROJECT_NAME}" INTERFACE
-    "-bigobj"
-)
 set_property(TARGET "${PROJECT_NAME}" PROPERTY "VERSION" "${PROJECT_VERSION}")
 set_property(TARGET "${PROJECT_NAME}" PROPERTY "SOVERSION" "${PROJECT_VERSION_MAJOR}")
 set_property(TARGET "${PROJECT_NAME}" PROPERTY "INTERFACE_${PROJECT_NAME}_MAJOR_VERSION" "${PROJECT_VERSION_MAJOR}")
 set_property(TARGET "${PROJECT_NAME}" APPEND PROPERTY "COMPATIBLE_INTERFACE_STRING" "${PROJECT_NAME}_MAJOR_VERSION")
+if(MSVC)
+    target_compile_options("${PROJECT_NAME}" INTERFACE
+        "-bigobj"
+        )
+endif()
 install(
     TARGETS "${PROJECT_NAME}"
     EXPORT "${PROJECT_NAME}-targets"

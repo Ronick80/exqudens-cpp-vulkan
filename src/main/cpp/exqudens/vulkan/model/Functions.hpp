@@ -277,6 +277,15 @@ namespace exqudens::vulkan {
         VkDeviceSize                                memoryOffset
     )> bindImageMemory;
 
+    std::function<VkResult(
+        VkDevice                                    device,
+        VkDeviceMemory                              memory,
+        VkDeviceSize                                offset,
+        VkDeviceSize                                size,
+        VkMemoryMapFlags                            flags,
+        void**                                      ppData
+    )> mapMemory;
+
     std::function<void(
         VkDevice                                    device,
         VkDeviceMemory                              memory
@@ -394,6 +403,36 @@ namespace exqudens::vulkan {
         VkInstance                                  instance,
         const VkAllocationCallbacks*                pAllocator
     )> destroyInstance;
+
+    std::function<void(
+        VkCommandBuffer                             commandBuffer,
+        VkBuffer                                    srcBuffer,
+        VkBuffer                                    dstBuffer,
+        uint32_t                                    regionCount,
+        const VkBufferCopy*                         pRegions
+    )> cmdCopyBuffer;
+
+    std::function<void(
+        VkCommandBuffer                             commandBuffer,
+        VkBuffer                                    srcBuffer,
+        VkImage                                     dstImage,
+        VkImageLayout                               dstImageLayout,
+        uint32_t                                    regionCount,
+        const VkBufferImageCopy*                    pRegions
+    )> cmdCopyBufferToImage;
+
+    std::function<void(
+        VkCommandBuffer                             commandBuffer,
+        VkPipelineStageFlags                        srcStageMask,
+        VkPipelineStageFlags                        dstStageMask,
+        VkDependencyFlags                           dependencyFlags,
+        uint32_t                                    memoryBarrierCount,
+        const VkMemoryBarrier*                      pMemoryBarriers,
+        uint32_t                                    bufferMemoryBarrierCount,
+        const VkBufferMemoryBarrier*                pBufferMemoryBarriers,
+        uint32_t                                    imageMemoryBarrierCount,
+        const VkImageMemoryBarrier*                 pImageMemoryBarriers
+    )> cmdPipelineBarrier;
 
   };
 
