@@ -6,6 +6,8 @@ namespace exqudens::vulkan {
 
   struct DescriptorSet {
 
+    unsigned int id;
+    bool destroyed;
     VkDescriptorSet value;
 
   };

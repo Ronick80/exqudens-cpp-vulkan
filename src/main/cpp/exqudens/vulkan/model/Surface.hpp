@@ -6,8 +6,10 @@ namespace exqudens::vulkan {
 
   struct Surface {
 
-      VkInstance instance;
-      VkSurfaceKHR value;
+    unsigned int id;
+    bool destroyed;
+    VkInstance instance;
+    VkSurfaceKHR value;
 
   };
 

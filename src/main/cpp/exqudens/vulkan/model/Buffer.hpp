@@ -6,6 +6,8 @@ namespace exqudens::vulkan {
 
   struct Buffer {
 
+    unsigned int id;
+    bool destroyed;
     VkDevice device;
     VkDeviceMemory memory;
     VkDeviceSize memorySize;

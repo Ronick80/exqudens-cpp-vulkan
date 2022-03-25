@@ -6,6 +6,8 @@ namespace exqudens::vulkan {
 
   struct Device {
 
+    unsigned int id;
+    bool destroyed;
     VkDevice value;
 
   };

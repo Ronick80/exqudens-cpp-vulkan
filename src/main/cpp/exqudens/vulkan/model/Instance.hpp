@@ -6,6 +6,8 @@ namespace exqudens::vulkan {
 
   struct Instance {
 
+    unsigned int id;
+    bool destroyed;
     VkInstance value;
 
   };

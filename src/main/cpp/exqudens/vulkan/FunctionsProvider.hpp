@@ -10,6 +10,8 @@ namespace exqudens::vulkan {
 
       virtual Functions functions() = 0;
 
+      virtual ~FunctionsProvider() = default;
+
   };
 
 }

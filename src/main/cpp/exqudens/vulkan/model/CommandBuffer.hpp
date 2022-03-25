@@ -6,6 +6,8 @@ namespace exqudens::vulkan {
 
   struct CommandBuffer {
 
+    unsigned int id;
+    bool destroyed;
     VkDevice device;
     VkCommandPool commandPool;
     VkCommandBuffer value;

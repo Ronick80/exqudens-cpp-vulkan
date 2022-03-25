@@ -6,6 +6,8 @@ namespace exqudens::vulkan {
 
   struct Fence {
 
+    unsigned int id;
+    bool destroyed;
     VkDevice device;
     VkFence value;
 

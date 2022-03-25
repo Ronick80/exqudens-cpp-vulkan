@@ -6,6 +6,8 @@ namespace exqudens::vulkan {
 
   struct Sampler {
 
+    unsigned int id;
+    bool destroyed;
     VkDevice device;
     VkSampler value;
 

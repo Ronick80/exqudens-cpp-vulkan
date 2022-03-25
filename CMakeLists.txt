@@ -231,6 +231,9 @@ target_include_directories("${PROJECT_NAME}" INTERFACE
 target_link_libraries("${PROJECT_NAME}" INTERFACE
     "Vulkan::Vulkan"
 )
+target_compile_options("${PROJECT_NAME}" INTERFACE
+    "-bigobj"
+)
 set_property(TARGET "${PROJECT_NAME}" PROPERTY "VERSION" "${PROJECT_VERSION}")
 set_property(TARGET "${PROJECT_NAME}" PROPERTY "SOVERSION" "${PROJECT_VERSION_MAJOR}")
 set_property(TARGET "${PROJECT_NAME}" PROPERTY "INTERFACE_${PROJECT_NAME}_MAJOR_VERSION" "${PROJECT_VERSION_MAJOR}")

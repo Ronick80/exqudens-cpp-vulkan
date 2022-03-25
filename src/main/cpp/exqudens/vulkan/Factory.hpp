@@ -51,6 +51,11 @@ namespace exqudens::vulkan {
       virtual public SurfaceFactory,
       virtual public SwapChainFactory
   {
+
+    public:
+
+      ~Factory() override = default;
+
   };
 
 }

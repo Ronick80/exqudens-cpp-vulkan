@@ -6,6 +6,8 @@ namespace exqudens::vulkan {
 
   struct RenderPass {
 
+    unsigned int id;
+    bool destroyed;
     VkDevice device;
     VkRenderPass value;
 

@@ -51,28 +51,11 @@ namespace exqudens::vulkan {
           std::size_t size
       ) override {
         try {
-          std::vector<VkCommandBuffer> vkCommandBuffers;
-          vkCommandBuffers.resize(size);
-
-          VkCommandBufferAllocateInfo allocInfo = {};
-          allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-          allocInfo.commandPool = commandPool;
-          allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-          allocInfo.commandBufferCount = (uint32_t) vkCommandBuffers.size();
-
-          if (functions().allocateCommandBuffers(device, &allocInfo, vkCommandBuffers.data()) != VK_SUCCESS) {
-            throw std::runtime_error(CALL_INFO() + ": failed to allocate command buffers!");
-          }
-
           std::vector<CommandBuffer> commandBuffers;
           commandBuffers.resize(size);
 
           for (std::size_t i = 0; i < commandBuffers.size(); i++) {
-            commandBuffers[i] = {
-                .device = device,
-                .commandPool = commandPool,
-                .value = vkCommandBuffers[i]
-            };
+            commandBuffers[i] = createCommandBuffer(device, commandPool);
           }
 
           return commandBuffers;

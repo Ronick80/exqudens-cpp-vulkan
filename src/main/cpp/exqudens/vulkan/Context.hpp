@@ -10,7 +10,7 @@ namespace exqudens::vulkan {
 
       virtual void destroy() = 0;
 
-      virtual ~Context() = default;
+      ~Context() override = default;
 
   };
 

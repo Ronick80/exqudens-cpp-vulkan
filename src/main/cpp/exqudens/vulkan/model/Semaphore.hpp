@@ -6,6 +6,8 @@ namespace exqudens::vulkan {
 
   struct Semaphore {
 
+    unsigned int id;
+    bool destroyed;
     VkDevice device;
     VkSemaphore value;
 

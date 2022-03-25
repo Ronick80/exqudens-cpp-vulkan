@@ -6,6 +6,8 @@ namespace exqudens::vulkan {
 
   struct DescriptorSetLayout {
 
+    unsigned int id;
+    bool destroyed;
     VkDevice device;
     VkDescriptorSetLayout value;
 

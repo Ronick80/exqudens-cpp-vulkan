@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdlib>
 #include <string>
 #include <vector>
 #include <sstream>
@@ -19,11 +20,61 @@ namespace exqudens::vulkan {
     public:
 
       static std::string getExecutableFile() {
-        return TestConfiguration::getExecutableFile();
+        try {
+          return TestConfiguration::getExecutableFile();
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
       }
 
       static std::string getExecutableDir() {
-        return TestConfiguration::getExecutableDir();
+        try {
+          return TestConfiguration::getExecutableDir();
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      static std::optional<std::string> getEnvironmentVariable(const std::string& name) {
+        try {
+          std::optional<std::string> value;
+#ifdef _WIN32
+          char* buffer;
+          size_t size;
+          errno_t error = _dupenv_s(&buffer, &size, name.c_str());
+          if (error) {
+            return value;
+          }
+          if (buffer != nullptr) {
+            value.emplace(std::string(buffer));
+          }
+#elif _WIN64
+          char* buffer;
+          size_t size;
+          errno_t error = _dupenv_s(&buffer, &size, name.c_str());
+          if (error) {
+            return value;
+          }
+          if (buffer != nullptr) {
+            value.emplace(std::string(buffer));
+          }
+#endif
+          return value;
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      static void setEnvironmentVariable(const std::string& name, const std::string& value) {
+        try {
+#ifdef _WIN32
+          _putenv_s(name.c_str(), value.c_str());
+#elif _WIN64
+          _putenv_s(name.c_str(), value.c_str());
+#endif
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
       }
 
       static std::vector<std::string> toStringVector(

@@ -89,6 +89,8 @@ namespace exqudens::vulkan {
           VkPhysicalDevice& physicalDevice
       ) = 0;
 
+      virtual ~Utility() = default;
+
   };
 
 }

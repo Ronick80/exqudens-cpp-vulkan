@@ -6,6 +6,8 @@ namespace exqudens::vulkan {
 
   struct ImageView {
 
+    unsigned int id;
+    bool destroyed;
     VkDevice device;
     VkImageView value;
 

@@ -8,6 +8,8 @@ namespace exqudens::vulkan {
 
   struct Image {
 
+    unsigned int id;
+    bool destroyed;
     VkDevice device;
     //VkImageTiling tiling = VkImageTiling::VK_IMAGE_TILING_OPTIMAL;
     //VkImageUsageFlags usage = VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_SRC_BIT;

@@ -6,6 +6,8 @@ namespace exqudens::vulkan {
 
   struct Pipeline {
 
+    unsigned int id;
+    bool destroyed;
     VkDevice device;
     VkPipelineLayout layout;
     VkPipeline value;

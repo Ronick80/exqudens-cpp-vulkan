@@ -11,6 +11,8 @@ namespace exqudens::vulkan {
 
   struct PhysicalDevice {
 
+    unsigned int id;
+    bool destroyed;
     QueueFamilyIndexInfo queueFamilyIndexInfo;
     std::optional<SwapChainSupportDetails> swapChainSupportDetails;
     VkPhysicalDevice value;

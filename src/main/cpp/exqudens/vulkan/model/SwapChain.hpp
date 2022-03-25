@@ -8,6 +8,8 @@ namespace exqudens::vulkan {
 
   struct SwapChain {
 
+    unsigned int id;
+    bool destroyed;
     VkDevice device;
     VkFormat format;
     VkExtent2D extent;
