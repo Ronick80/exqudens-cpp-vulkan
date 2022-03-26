@@ -12,7 +12,7 @@
 //#include "exqudens/test/UiTestsA.hpp"
 //#include "exqudens/test/UiTestsB.hpp"
 //#include "exqudens/test/UiTestsC.hpp"
-#include "exqudens/test/UiTestsD.hpp"
+//#include "exqudens/test/UiTestsD.hpp"
 #include "exqudens/test/UiTestsE.hpp"
 
 namespace exqudens::vulkan {

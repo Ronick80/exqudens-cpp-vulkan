@@ -237,7 +237,7 @@ set_property(TARGET "${PROJECT_NAME}" PROPERTY "VERSION" "${PROJECT_VERSION}")
 set_property(TARGET "${PROJECT_NAME}" PROPERTY "SOVERSION" "${PROJECT_VERSION_MAJOR}")
 set_property(TARGET "${PROJECT_NAME}" PROPERTY "INTERFACE_${PROJECT_NAME}_MAJOR_VERSION" "${PROJECT_VERSION_MAJOR}")
 set_property(TARGET "${PROJECT_NAME}" APPEND PROPERTY "COMPATIBLE_INTERFACE_STRING" "${PROJECT_NAME}_MAJOR_VERSION")
-if(MSVC)
+if(MSVC AND "Debug" STREQUAL "${CMAKE_BUILD_TYPE}")
     target_compile_options("${PROJECT_NAME}" INTERFACE
         "-bigobj"
         )
@@ -295,7 +295,7 @@ add_library("test-lib" INTERFACE
     #"src/test/cpp/exqudens/test/UiTestsA.hpp"
     #"src/test/cpp/exqudens/test/UiTestsB.hpp"
     #"src/test/cpp/exqudens/test/UiTestsC.hpp"
-    "src/test/cpp/exqudens/test/UiTestsD.hpp"
+    #"src/test/cpp/exqudens/test/UiTestsD.hpp"
     "src/test/cpp/exqudens/test/UiTestsE.hpp"
 )
 target_include_directories("test-lib" INTERFACE
