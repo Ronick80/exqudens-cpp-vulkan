@@ -1,11 +1,10 @@
 #pragma once
 
-#include "exqudens/vulkan/Utility.hpp"
 #include "exqudens/vulkan/model/Sampler.hpp"
 
 namespace exqudens::vulkan {
 
-  class SamplerFactory : virtual public Utility {
+  class SamplerFactory {
 
     public:
 

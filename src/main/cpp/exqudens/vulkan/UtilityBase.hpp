@@ -11,7 +11,10 @@
 
 namespace exqudens::vulkan {
 
-  class UtilityBase : virtual public Utility, virtual public FunctionsProviderBase {
+  class UtilityBase:
+      virtual public Utility,
+      virtual public FunctionsProviderBase
+  {
 
     public:
 

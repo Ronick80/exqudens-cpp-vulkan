@@ -6,8 +6,8 @@
 namespace exqudens::vulkan {
 
   class SurfaceFactoryBase:
-      virtual public UtilityBase,
-      virtual public SurfaceFactory
+      virtual public SurfaceFactory,
+      virtual public UtilityBase
   {
 
     public:

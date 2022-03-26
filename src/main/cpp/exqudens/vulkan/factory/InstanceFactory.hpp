@@ -1,13 +1,12 @@
 #pragma once
 
 #include "exqudens/vulkan/Logger.hpp"
-#include "exqudens/vulkan/Utility.hpp"
 #include "exqudens/vulkan/model/Instance.hpp"
 #include "exqudens/vulkan/model/Configuration.hpp"
 
 namespace exqudens::vulkan {
 
-  class InstanceFactory : virtual public Utility {
+  class InstanceFactory {
 
     public:
 

@@ -9,11 +9,11 @@
 #include "exqudens/test/ConfigurationTests.hpp"
 #include "exqudens/test/ShaderTests.hpp"
 #include "exqudens/test/FactoryTests.hpp"
-//#include "exqudens/test/UiTestsA.hpp"
+#include "exqudens/test/UiTestsA.hpp"
 //#include "exqudens/test/UiTestsB.hpp"
 //#include "exqudens/test/UiTestsC.hpp"
 //#include "exqudens/test/UiTestsD.hpp"
-#include "exqudens/test/UiTestsE.hpp"
+//#include "exqudens/test/UiTestsE.hpp"
 
 namespace exqudens::vulkan {
 

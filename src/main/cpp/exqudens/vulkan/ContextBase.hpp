@@ -688,6 +688,19 @@ namespace exqudens::vulkan {
         }
       }
 
+      Surface add(const Surface& surface) override {
+        try {
+          unsigned int key = surfaceId++;
+          Surface value = surface;
+          value.id = key;
+          value.destroyed = false;
+          surfaces[key] = value;
+          return value;
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
       void destroy() override {
         try {
           // destroy fences

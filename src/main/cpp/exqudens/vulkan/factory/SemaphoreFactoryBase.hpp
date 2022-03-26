@@ -6,8 +6,8 @@
 namespace exqudens::vulkan {
 
   class SemaphoreFactoryBase:
-      virtual public UtilityBase,
-      virtual public SemaphoreFactory
+      virtual public SemaphoreFactory,
+      virtual public UtilityBase
   {
 
     public:

@@ -6,8 +6,8 @@
 namespace exqudens::vulkan {
 
   class SwapChainFactoryBase:
-      virtual public UtilityBase,
-      virtual public SwapChainFactory
+      virtual public SwapChainFactory,
+      virtual public UtilityBase
   {
 
     public:

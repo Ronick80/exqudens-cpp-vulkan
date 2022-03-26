@@ -1,12 +1,11 @@
 #pragma once
 
-#include "exqudens/vulkan/Utility.hpp"
 #include "exqudens/vulkan/model/DescriptorSetLayoutCreateInfo.hpp"
 #include "exqudens/vulkan/model/DescriptorSetLayout.hpp"
 
 namespace exqudens::vulkan {
 
-  class DescriptorSetLayoutFactory : virtual public Utility {
+  class DescriptorSetLayoutFactory {
 
     public:
 

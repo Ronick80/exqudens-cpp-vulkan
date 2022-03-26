@@ -1,13 +1,13 @@
 #pragma once
 
-#include "exqudens/vulkan/FunctionsProviderBase.hpp"
+#include "exqudens/vulkan/UtilityBase.hpp"
 #include "exqudens/vulkan/factory/DebugUtilsMessengerFactory.hpp"
 
 namespace exqudens::vulkan {
 
   class DebugUtilsMessengerFactoryBase:
       virtual public DebugUtilsMessengerFactory,
-      virtual public FunctionsProviderBase
+      virtual public UtilityBase
   {
 
     public:

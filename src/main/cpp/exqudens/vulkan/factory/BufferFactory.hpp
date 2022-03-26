@@ -1,12 +1,11 @@
 #pragma once
 
-#include "exqudens/vulkan/Utility.hpp"
 #include "exqudens/vulkan/model/BufferCreateInfo.hpp"
 #include "exqudens/vulkan/model/Buffer.hpp"
 
 namespace exqudens::vulkan {
 
-  class BufferFactory : virtual public Utility {
+  class BufferFactory {
 
     public:
 

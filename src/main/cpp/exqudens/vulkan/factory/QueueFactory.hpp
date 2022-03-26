@@ -1,11 +1,10 @@
 #pragma once
 
-#include "exqudens/vulkan/Utility.hpp"
 #include "exqudens/vulkan/model/Queue.hpp"
 
 namespace exqudens::vulkan {
 
-  class QueueFactory : virtual public Utility {
+  class QueueFactory {
 
     public:
 

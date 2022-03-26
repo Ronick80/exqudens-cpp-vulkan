@@ -1,12 +1,11 @@
 #pragma once
 
-#include "exqudens/vulkan/Utility.hpp"
 #include "exqudens/vulkan/model/WriteDescriptorSet.hpp"
 #include "exqudens/vulkan/model/DescriptorSet.hpp"
 
 namespace exqudens::vulkan {
 
-  class DescriptorSetFactory : virtual public Utility {
+  class DescriptorSetFactory {
 
     public:
 

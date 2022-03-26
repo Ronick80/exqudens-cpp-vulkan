@@ -6,8 +6,8 @@
 namespace exqudens::vulkan {
 
   class SamplerFactoryBase:
-      virtual public UtilityBase,
-      virtual public SamplerFactory
+      virtual public SamplerFactory,
+      virtual public UtilityBase
   {
 
     public:

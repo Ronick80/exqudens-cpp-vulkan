@@ -1,11 +1,10 @@
 #pragma once
 
-#include "exqudens/vulkan/Utility.hpp"
 #include "exqudens/vulkan/model/CommandPool.hpp"
 
 namespace exqudens::vulkan {
 
-  class CommandPoolFactory : virtual public Utility {
+  class CommandPoolFactory {
 
     public:
 

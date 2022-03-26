@@ -6,8 +6,8 @@
 namespace exqudens::vulkan {
 
   class DescriptorPoolFactoryBase:
-      virtual public UtilityBase,
-      virtual public DescriptorPoolFactory
+      virtual public DescriptorPoolFactory,
+      virtual public UtilityBase
   {
 
     public:

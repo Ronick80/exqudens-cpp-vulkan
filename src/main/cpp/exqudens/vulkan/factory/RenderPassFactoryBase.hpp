@@ -6,8 +6,8 @@
 namespace exqudens::vulkan {
 
   class RenderPassFactoryBase:
-      virtual public UtilityBase,
-      virtual public RenderPassFactory
+      virtual public RenderPassFactory,
+      virtual public UtilityBase
   {
 
     public:

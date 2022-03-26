@@ -6,8 +6,8 @@
 namespace exqudens::vulkan {
 
   class FenceFactoryBase:
-      virtual public UtilityBase,
-      virtual public FenceFactory
+      virtual public FenceFactory,
+      virtual public UtilityBase
   {
 
     public:

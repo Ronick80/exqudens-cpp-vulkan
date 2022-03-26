@@ -7,7 +7,9 @@
 
 namespace exqudens::vulkan {
 
-  class UtilityFactoryBase : virtual public UtilityFactory {
+  class UtilityFactoryBase:
+      virtual public UtilityFactory
+  {
 
     public:
 

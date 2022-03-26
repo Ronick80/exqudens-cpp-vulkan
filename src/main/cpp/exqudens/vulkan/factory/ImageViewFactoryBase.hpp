@@ -6,8 +6,8 @@
 namespace exqudens::vulkan {
 
   class ImageViewFactoryBase:
-      virtual public UtilityBase,
-      virtual public ImageViewFactory
+      virtual public ImageViewFactory,
+      virtual public UtilityBase
   {
 
     public:

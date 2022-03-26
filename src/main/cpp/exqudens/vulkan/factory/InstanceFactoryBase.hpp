@@ -5,7 +5,10 @@
 
 namespace exqudens::vulkan {
 
-  class InstanceFactoryBase : virtual public InstanceFactory, virtual public UtilityBase {
+  class InstanceFactoryBase:
+      virtual public InstanceFactory,
+      virtual public UtilityBase
+  {
 
     public:
 

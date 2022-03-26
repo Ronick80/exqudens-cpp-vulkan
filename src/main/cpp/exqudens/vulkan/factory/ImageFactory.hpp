@@ -1,12 +1,11 @@
 #pragma once
 
-#include "exqudens/vulkan/Utility.hpp"
 #include "exqudens/vulkan/model/ImageCreateInfo.hpp"
 #include "exqudens/vulkan/model/Image.hpp"
 
 namespace exqudens::vulkan {
 
-  class ImageFactory : virtual public Utility {
+  class ImageFactory {
 
     public:
 

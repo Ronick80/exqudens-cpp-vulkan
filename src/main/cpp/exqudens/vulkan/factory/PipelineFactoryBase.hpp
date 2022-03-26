@@ -6,8 +6,8 @@
 namespace exqudens::vulkan {
 
   class PipelineFactoryBase:
-      virtual public UtilityBase,
-      virtual public PipelineFactory
+      virtual public PipelineFactory,
+      virtual public UtilityBase
   {
 
     public:

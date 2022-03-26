@@ -1,12 +1,11 @@
 #pragma once
 
-#include "exqudens/vulkan/Utility.hpp"
 #include "exqudens/vulkan/model/DescriptorPoolCreateInfo.hpp"
 #include "exqudens/vulkan/model/DescriptorPool.hpp"
 
 namespace exqudens::vulkan {
 
-  class DescriptorPoolFactory : virtual public Utility {
+  class DescriptorPoolFactory {
 
     public:
 

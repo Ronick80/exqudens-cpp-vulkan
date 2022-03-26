@@ -1,12 +1,11 @@
 #pragma once
 
-#include "exqudens/vulkan/Utility.hpp"
 #include "exqudens/vulkan/model/FrameBufferCreateInfo.hpp"
 #include "exqudens/vulkan/model/FrameBuffer.hpp"
 
 namespace exqudens::vulkan {
 
-  class FrameBufferFactory : virtual public Utility {
+  class FrameBufferFactory {
 
     public:
 

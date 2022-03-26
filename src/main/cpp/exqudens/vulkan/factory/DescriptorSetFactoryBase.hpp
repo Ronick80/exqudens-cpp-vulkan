@@ -6,8 +6,8 @@
 namespace exqudens::vulkan {
 
   class DescriptorSetFactoryBase:
-      virtual public UtilityBase,
-      virtual public DescriptorSetFactory
+      virtual public DescriptorSetFactory,
+      virtual public UtilityBase
   {
 
     public:

@@ -1,12 +1,11 @@
 #pragma once
 
-#include "exqudens/vulkan/Utility.hpp"
 #include "exqudens/vulkan/model/RenderPassCreateInfo.hpp"
 #include "exqudens/vulkan/model/RenderPass.hpp"
 
 namespace exqudens::vulkan {
 
-  class RenderPassFactory : virtual public Utility {
+  class RenderPassFactory {
 
     public:
 

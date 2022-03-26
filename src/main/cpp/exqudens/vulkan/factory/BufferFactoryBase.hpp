@@ -6,8 +6,8 @@
 namespace exqudens::vulkan {
 
   class BufferFactoryBase:
-      virtual public UtilityBase,
-      virtual public BufferFactory
+      virtual public BufferFactory,
+      virtual public UtilityBase
   {
 
     public:

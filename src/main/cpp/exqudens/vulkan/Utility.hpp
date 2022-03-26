@@ -8,13 +8,16 @@
 
 #include <vulkan/vulkan.h>
 
+#include "exqudens/vulkan/FunctionsProvider.hpp"
 #include "exqudens/vulkan/Logger.hpp"
 #include "exqudens/vulkan/model/QueueFamilyIndexInfo.hpp"
 #include "exqudens/vulkan/model/SwapChainSupportDetails.hpp"
 
 namespace exqudens::vulkan {
 
-  class Utility {
+  class Utility:
+      virtual public FunctionsProvider
+  {
 
     public:
 
@@ -89,7 +92,7 @@ namespace exqudens::vulkan {
           VkPhysicalDevice& physicalDevice
       ) = 0;
 
-      virtual ~Utility() = default;
+      ~Utility() override = default;
 
   };
 

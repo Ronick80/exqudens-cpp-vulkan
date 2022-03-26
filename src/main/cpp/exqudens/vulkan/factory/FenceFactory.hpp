@@ -1,11 +1,10 @@
 #pragma once
 
-#include "exqudens/vulkan/Utility.hpp"
 #include "exqudens/vulkan/model/Fence.hpp"
 
 namespace exqudens::vulkan {
 
-  class FenceFactory : virtual public Utility {
+  class FenceFactory {
 
     public:
 

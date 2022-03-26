@@ -1,11 +1,10 @@
 #pragma once
 
-#include "exqudens/vulkan/Utility.hpp"
 #include "exqudens/vulkan/model/Semaphore.hpp"
 
 namespace exqudens::vulkan {
 
-  class SemaphoreFactory : virtual public Utility {
+  class SemaphoreFactory {
 
     public:
 

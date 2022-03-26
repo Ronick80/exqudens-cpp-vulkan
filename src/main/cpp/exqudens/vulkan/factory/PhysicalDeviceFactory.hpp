@@ -1,12 +1,11 @@
 #pragma once
 
-#include "exqudens/vulkan/Utility.hpp"
 #include "exqudens/vulkan/model/Configuration.hpp"
 #include "exqudens/vulkan/model/PhysicalDevice.hpp"
 
 namespace exqudens::vulkan {
 
-  class PhysicalDeviceFactory: virtual public Utility {
+  class PhysicalDeviceFactory {
 
     public:
 

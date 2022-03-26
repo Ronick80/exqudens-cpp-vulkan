@@ -7,7 +7,9 @@
 
 namespace exqudens::vulkan {
 
-  class FunctionsProviderBase : virtual public FunctionsProvider {
+  class FunctionsProviderBase:
+      virtual public FunctionsProvider
+  {
 
     public:
 

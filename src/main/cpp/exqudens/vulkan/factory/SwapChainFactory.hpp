@@ -1,6 +1,5 @@
 #pragma once
 
-#include "exqudens/vulkan/Utility.hpp"
 #include "exqudens/vulkan/model/SwapChain.hpp"
 
 namespace exqudens::vulkan {
