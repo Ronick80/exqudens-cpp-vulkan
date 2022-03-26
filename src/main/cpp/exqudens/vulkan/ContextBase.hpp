@@ -309,7 +309,6 @@ namespace exqudens::vulkan {
       Pipeline createPipeline(
           VkDevice& device,
           const std::vector<std::string>& shaderPaths,
-          const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts,
           const std::vector<VkVertexInputBindingDescription>& vertexBindingDescriptions,
           const std::vector<VkVertexInputAttributeDescription>& vertexAttributeDescriptions,
           const PipelineLayoutCreateInfo& layoutCreateInfo,
@@ -320,7 +319,6 @@ namespace exqudens::vulkan {
           Pipeline value = PipelineFactoryBase::createPipeline(
               device,
               shaderPaths,
-              descriptorSetLayouts,
               vertexBindingDescriptions,
               vertexAttributeDescriptions,
               layoutCreateInfo,

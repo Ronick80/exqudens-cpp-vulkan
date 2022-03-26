@@ -17,7 +17,6 @@ namespace exqudens::vulkan {
       virtual Pipeline createPipeline(
           VkDevice& device,
           const std::vector<std::string>& shaderPaths,
-          const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts,
           const std::vector<VkVertexInputBindingDescription>& vertexBindingDescriptions,
           const std::vector<VkVertexInputAttributeDescription>& vertexAttributeDescriptions,
           const PipelineLayoutCreateInfo& layoutCreateInfo,

@@ -61,7 +61,6 @@ namespace exqudens::vulkan {
       Pipeline createPipeline(
           VkDevice& device,
           const std::vector<std::string>& shaderPaths,
-          const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts,
           const std::vector<VkVertexInputBindingDescription>& vertexBindingDescriptions,
           const std::vector<VkVertexInputAttributeDescription>& vertexAttributeDescriptions,
           const PipelineLayoutCreateInfo& layoutCreateInfo,
@@ -288,12 +287,11 @@ namespace exqudens::vulkan {
           return createPipeline(
               device,
               shaderPaths,
-              descriptorSetLayouts,
               vertexBindingDescriptions,
               vertexAttributeDescriptions,
               PipelineLayoutCreateInfo {
                   .flags = 0,
-                  .setLayouts = {descriptorSetLayouts},
+                  .setLayouts = descriptorSetLayouts,
                   .pushConstantRanges = {}
               },
               GraphicsPipelineCreateInfo {
