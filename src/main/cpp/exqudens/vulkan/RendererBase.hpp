@@ -8,8 +8,8 @@
 namespace exqudens::vulkan {
 
   class RendererBase:
-      public Renderer,
-      public FunctionsProviderBase
+      virtual public Renderer,
+      virtual public FunctionsProviderBase
   {
 
     public:
