@@ -153,18 +153,21 @@ namespace exqudens::vulkan {
             if (result.computeFamilyRequired) {
               if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) {
                 result.computeFamily = i;
+                result.computeFamilyQueueCount = queueFamily.queueCount;
               }
             }
 
             if (result.transferFamilyRequired) {
               if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) {
                 result.transferFamily = i;
+                result.transferFamilyQueueCount = queueFamily.queueCount;
               }
             }
 
             if (result.graphicsFamilyRequired) {
               if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
                 result.graphicsFamily = i;
+                result.graphicsFamilyQueueCount = queueFamily.queueCount;
               }
             }
 
@@ -173,6 +176,7 @@ namespace exqudens::vulkan {
               functions().getPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &presentSupport);
               if (presentSupport) {
                 result.presentFamily = i;
+                result.presentFamilyQueueCount = queueFamily.queueCount;
               }
             }
 
@@ -186,6 +190,11 @@ namespace exqudens::vulkan {
               result.complete = complete;
               break;
             }
+
+            result.computeFamilyQueueCount = 0;
+            result.transferFamilyQueueCount = 0;
+            result.graphicsFamilyQueueCount = 0;
+            result.presentFamilyQueueCount = 0;
 
             i++;
           }
