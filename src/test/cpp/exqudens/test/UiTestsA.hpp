@@ -97,7 +97,7 @@ namespace exqudens::vulkan {
 
         public:
 
-          void create(GLFWwindow* window) {
+          void create(const std::vector<std::string>& arguments, GLFWwindow* window) {
             try {
               this->window = window;
 
@@ -120,7 +120,7 @@ namespace exqudens::vulkan {
 
               context = new ContextBase;
 
-              environmentVariables = context->createEnvironmentVariables(TestUtils::getExecutableDir());
+              environmentVariables = context->createEnvironmentVariables(arguments.front());
               for (auto const& [name, value] : environmentVariables) {
                 context->setEnvironmentVariable(name, value);
               }
@@ -856,17 +856,17 @@ namespace exqudens::vulkan {
 
         public:
 
-          //std::vector<std::string> arguments = {};
+          std::vector<std::string> arguments = {};
           Environment* environment = nullptr;
 
           TestUiApplication(const int& argc, char** argv) {
-            /*try {
+            try {
               for (std::size_t i = 0; i < argc; i++) {
                 arguments.emplace_back(std::string(argv[i]));
               }
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
-            }*/
+            }
           }
 
           int run() {
@@ -885,7 +885,7 @@ namespace exqudens::vulkan {
               glfwSetFramebufferSizeCallback(window, frameBufferResizeCallback);
 
               environment = new Environment();
-              environment->create(window);
+              environment->create(arguments, window);
 
               while (!glfwWindowShouldClose(window)) {
                 glfwPollEvents();
@@ -926,8 +926,10 @@ namespace exqudens::vulkan {
 
   TEST_F(UiTestsA, test1) {
     try {
-      int argc = 0;
-      char** argv = nullptr;
+      std::string executableDir = TestUtils::getExecutableDir();
+      std::vector<char*> arguments = {executableDir.data()};
+      int argc = static_cast<int>(arguments.size());
+      char** argv = &arguments[0];
       int result = TestUiApplication(argc, argv).run();
       ASSERT_EQ(EXIT_SUCCESS, result);
     } catch (const std::exception& e) {

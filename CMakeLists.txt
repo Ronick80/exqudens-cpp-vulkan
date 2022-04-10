@@ -293,7 +293,7 @@ add_library("test-lib" INTERFACE
     "src/test/cpp/exqudens/test/ShaderTests.hpp"
     "src/test/cpp/exqudens/test/FactoryTests.hpp"
     "src/test/cpp/exqudens/test/UiTestsA.hpp"
-    #"src/test/cpp/exqudens/test/UiTestsB.hpp"
+    "src/test/cpp/exqudens/test/UiTestsB.hpp"
     #"src/test/cpp/exqudens/test/UiTestsC.hpp"
     #"src/test/cpp/exqudens/test/UiTestsD.hpp"
     #"src/test/cpp/exqudens/test/UiTestsE.hpp"
