@@ -42,7 +42,12 @@ namespace exqudens::vulkan {
           std::optional<vk::raii::DebugUtilsMessengerEXT> debugUtilsMessenger = {};
           std::optional<vk::raii::SurfaceKHR> surface = {};
           std::vector<vk::raii::PhysicalDevice> physicalDevices = {};
-          std::optional<size_t> physicalDeviceIndex = {};
+          std::optional<std::size_t> physicalDeviceIndex = {};
+          std::optional<std::uint32_t> computeQueueFamilyIndex = {};
+          std::optional<std::uint32_t> transferQueueFamilyIndex = {};
+          std::optional<std::uint32_t> graphicsQueueFamilyIndex = {};
+          std::optional<std::uint32_t> presentQueueFamilyIndex = {};
+          std::optional<vk::raii::Device> device = {};
 
         public:
 
@@ -103,7 +108,52 @@ namespace exqudens::vulkan {
                   true
               ).front();
 
-              ASSERT_TRUE(physicalDeviceIndex.has_value());
+              computeQueueFamilyIndex = raii::Utility::getQueueFamilyIndices(
+                  physicalDevices[*physicalDeviceIndex],
+                  vk::QueueFlagBits::eCompute,
+                  nullptr
+              ).front();
+              transferQueueFamilyIndex = raii::Utility::getQueueFamilyIndices(
+                  physicalDevices[*physicalDeviceIndex],
+                  vk::QueueFlagBits::eTransfer,
+                  nullptr
+              ).front();
+              graphicsQueueFamilyIndex = raii::Utility::getQueueFamilyIndices(
+                  physicalDevices[*physicalDeviceIndex],
+                  vk::QueueFlagBits::eGraphics,
+                  nullptr
+              ).front();
+              presentQueueFamilyIndex = raii::Utility::getQueueFamilyIndices(
+                  physicalDevices[*physicalDeviceIndex],
+                  {},
+                  &surface.value()
+              ).front();
+
+              std::set<std::uint32_t> uniqueQueueFamilyIndices = {
+                  *computeQueueFamilyIndex,
+                  *transferQueueFamilyIndex,
+                  *graphicsQueueFamilyIndex,
+                  *presentQueueFamilyIndex
+              };
+              std::vector<vk::DeviceQueueCreateInfo> queueCreateInfo;
+              float queuePriority = 1.0f;
+              for (const uint32_t& queueFamilyIndex : uniqueQueueFamilyIndices) {
+                vk::DeviceQueueCreateInfo info = vk::DeviceQueueCreateInfo()
+                    .setQueueFamilyIndex(queueFamilyIndex)
+                    .setQueueCount(1)
+                    .setQueuePriorities(queuePriority);
+                queueCreateInfo.emplace_back(info);
+              }
+              vk::PhysicalDeviceFeatures enabledFeatures = vk::PhysicalDeviceFeatures()
+                  .setSamplerAnisotropy(true);
+              vk::DeviceCreateInfo deviceCreateInfo = vk::DeviceCreateInfo()
+                  .setQueueCreateInfos(queueCreateInfo)
+                  .setPEnabledFeatures(&enabledFeatures)
+                  .setPEnabledExtensionNames(enabledDeviceExtensionNames)
+                  .setPEnabledLayerNames(enabledLayerNames);
+              device = vk::raii::Device(physicalDevices[*physicalDeviceIndex], deviceCreateInfo);
+
+              // TODO
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
             }
