@@ -41,13 +41,26 @@ namespace exqudens::vulkan {
           std::optional<vk::raii::Instance> instance = {};
           std::optional<vk::raii::DebugUtilsMessengerEXT> debugUtilsMessenger = {};
           std::optional<vk::raii::SurfaceKHR> surface = {};
+
           std::vector<vk::raii::PhysicalDevice> physicalDevices = {};
           std::optional<std::size_t> physicalDeviceIndex = {};
+
           std::optional<std::uint32_t> computeQueueFamilyIndex = {};
           std::optional<std::uint32_t> transferQueueFamilyIndex = {};
           std::optional<std::uint32_t> graphicsQueueFamilyIndex = {};
           std::optional<std::uint32_t> presentQueueFamilyIndex = {};
+
           std::optional<vk::raii::Device> device = {};
+
+          std::optional<vk::raii::CommandPool> transferCommandPool = {};
+          std::vector<vk::raii::CommandBuffer> transferCommandBuffers = {};
+          std::optional<vk::raii::Queue> transferQueue = {};
+
+          std::optional<vk::raii::CommandPool> graphicsCommandPool = {};
+          std::vector<vk::raii::CommandBuffer> graphicsCommandBuffers = {};
+          std::optional<vk::raii::Queue> graphicsQueue = {};
+
+          std::optional<vk::raii::SwapchainKHR> swapChain = {};
 
         public:
 
@@ -144,14 +157,46 @@ namespace exqudens::vulkan {
                     .setQueuePriorities(queuePriority);
                 queueCreateInfo.emplace_back(info);
               }
-              vk::PhysicalDeviceFeatures enabledFeatures = vk::PhysicalDeviceFeatures()
+              vk::PhysicalDeviceFeatures physicalDeviceEnabledFeatures = vk::PhysicalDeviceFeatures()
                   .setSamplerAnisotropy(true);
-              vk::DeviceCreateInfo deviceCreateInfo = vk::DeviceCreateInfo()
-                  .setQueueCreateInfos(queueCreateInfo)
-                  .setPEnabledFeatures(&enabledFeatures)
-                  .setPEnabledExtensionNames(enabledDeviceExtensionNames)
-                  .setPEnabledLayerNames(enabledLayerNames);
-              device = vk::raii::Device(physicalDevices[*physicalDeviceIndex], deviceCreateInfo);
+              device = vk::raii::Device(
+                  physicalDevices[*physicalDeviceIndex],
+                  vk::DeviceCreateInfo()
+                      .setQueueCreateInfos(queueCreateInfo)
+                      .setPEnabledFeatures(&physicalDeviceEnabledFeatures)
+                      .setPEnabledExtensionNames(enabledDeviceExtensionNames)
+                      .setPEnabledLayerNames(enabledLayerNames)
+              );
+
+              transferCommandPool = vk::raii::CommandPool(
+                  *device,
+                  vk::CommandPoolCreateInfo()
+                    .setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
+                    .setQueueFamilyIndex(*transferQueueFamilyIndex)
+              );
+              transferCommandBuffers = vk::raii::CommandBuffers(
+                  *device,
+                  vk::CommandBufferAllocateInfo()
+                    .setCommandPool(*transferCommandPool.value())
+                    .setLevel(vk::CommandBufferLevel::ePrimary)
+                    .setCommandBufferCount(1)
+              );
+              transferQueue = vk::raii::Queue(*device, *transferQueueFamilyIndex, 0);
+
+              graphicsCommandPool = vk::raii::CommandPool(
+                  *device,
+                  vk::CommandPoolCreateInfo()
+                      .setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
+                      .setQueueFamilyIndex(*transferQueueFamilyIndex)
+              );
+              graphicsCommandBuffers = vk::raii::CommandBuffers(
+                  *device,
+                  vk::CommandBufferAllocateInfo()
+                      .setCommandPool(*graphicsCommandPool.value())
+                      .setLevel(vk::CommandBufferLevel::ePrimary)
+                      .setCommandBufferCount(1)
+              );
+              graphicsQueue = vk::raii::Queue(*device, *graphicsQueueFamilyIndex, 0);
 
               // TODO
             } catch (...) {
