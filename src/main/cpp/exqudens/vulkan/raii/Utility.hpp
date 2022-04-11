@@ -127,7 +127,7 @@ namespace exqudens::vulkan::raii {
 
       static std::vector<std::size_t> getPhysicalDeviceIndices(
           const std::vector<vk::raii::PhysicalDevice>& physicalDevices,
-          const std::set<vk::QueueFlagBits>& types,
+          const std::vector<vk::QueueFlagBits>& types,
           const vk::raii::SurfaceKHR* surface,
           const std::vector<const char*>& enabledDeviceExtensionNames,
           const bool& anisotropyRequired

@@ -88,18 +88,22 @@ namespace exqudens::vulkan {
                   .setPEngineName("Exqudens Engine")
                   .setEngineVersion(VK_MAKE_VERSION(1, 0, 0))
                   .setApiVersion(VK_API_VERSION_1_0);
-              vk::InstanceCreateInfo instanceCreateInfo = vk::InstanceCreateInfo()
-                  .setPApplicationInfo(&applicationInfo)
-                  .setPEnabledExtensionNames(enabledExtensionNames)
-                  .setPEnabledLayerNames(enabledLayerNames);
-              instance = vk::raii::Instance(*context, instanceCreateInfo);
+              instance = vk::raii::Instance(
+                  *context,
+                  vk::InstanceCreateInfo()
+                      .setPApplicationInfo(&applicationInfo)
+                      .setPEnabledExtensionNames(enabledExtensionNames)
+                      .setPEnabledLayerNames(enabledLayerNames)
+              );
 
-              vk::DebugUtilsMessengerCreateInfoEXT debugUtilsMessengerCreateInfo = vk::DebugUtilsMessengerCreateInfoEXT()
-                  .setMessageSeverity(vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError)
-                  .setMessageType(vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance)
-                  .setPfnUserCallback(&Environment::debugCallback)
-                  .setPUserData(nullptr);
-              debugUtilsMessenger = vk::raii::DebugUtilsMessengerEXT(*instance, debugUtilsMessengerCreateInfo);
+              debugUtilsMessenger = vk::raii::DebugUtilsMessengerEXT(
+                  *instance,
+                  vk::DebugUtilsMessengerCreateInfoEXT()
+                      .setMessageSeverity(vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError)
+                      .setMessageType(vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance)
+                      .setPfnUserCallback(&Environment::debugCallback)
+                      .setPUserData(nullptr)
+              );
 
               VkSurfaceKHR vkSurface = nullptr;
               auto vkInstance = static_cast<VkInstance>(*instance.value());
@@ -113,12 +117,15 @@ namespace exqudens::vulkan {
 
               physicalDevices = vk::raii::PhysicalDevices(*instance);
 
+              vk::PhysicalDeviceFeatures physicalDeviceEnabledFeatures = vk::PhysicalDeviceFeatures()
+                  .setSamplerAnisotropy(true);
+
               physicalDeviceIndex = raii::Utility::getPhysicalDeviceIndices(
                   physicalDevices,
                   {vk::QueueFlagBits::eCompute, vk::QueueFlagBits::eTransfer, vk::QueueFlagBits::eGraphics},
                   &surface.value(),
                   enabledDeviceExtensionNames,
-                  true
+                  physicalDeviceEnabledFeatures.samplerAnisotropy
               ).front();
 
               computeQueueFamilyIndex = raii::Utility::getQueueFamilyIndices(
@@ -157,8 +164,6 @@ namespace exqudens::vulkan {
                     .setQueuePriorities(queuePriority);
                 queueCreateInfo.emplace_back(info);
               }
-              vk::PhysicalDeviceFeatures physicalDeviceEnabledFeatures = vk::PhysicalDeviceFeatures()
-                  .setSamplerAnisotropy(true);
               device = vk::raii::Device(
                   physicalDevices[*physicalDeviceIndex],
                   vk::DeviceCreateInfo()
