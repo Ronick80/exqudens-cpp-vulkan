@@ -7,6 +7,7 @@
 #include <format>
 
 #include <gtest/gtest.h>
+#include <vulkan/vulkan_raii.hpp>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #define GLM_FORCE_RADIANS
@@ -14,9 +15,9 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <vulkan/vulkan_raii.hpp>
 
 #include "exqudens/TestUtils.hpp"
+#include "exqudens/vulkan/raii/Utility.hpp"
 
 namespace exqudens::vulkan {
 
@@ -32,13 +33,77 @@ namespace exqudens::vulkan {
 
         private:
 
-          vk::Optional<vk::raii::Instance> instance = nullptr;
+          std::vector<const char*> enabledLayerNames = {};
+          std::vector<const char*> enabledExtensionNames = {};
+          std::vector<const char*> enabledDeviceExtensionNames = {};
+
+          std::optional<vk::raii::Context> context = {};
+          std::optional<vk::raii::Instance> instance = {};
+          std::optional<vk::raii::DebugUtilsMessengerEXT> debugUtilsMessenger = {};
+          std::optional<vk::raii::SurfaceKHR> surface = {};
+          std::vector<vk::raii::PhysicalDevice> physicalDevices = {};
+          std::optional<size_t> physicalDeviceIndex = {};
 
         public:
 
           void create(const std::vector<std::string>& arguments, GLFWwindow* window) {
             try {
               TestUtils::setEnvironmentVariable("VK_LAYER_PATH", arguments.front());
+
+              enabledLayerNames = {"VK_LAYER_KHRONOS_validation"};
+              enabledExtensionNames = {VK_EXT_DEBUG_UTILS_EXTENSION_NAME};
+              enabledDeviceExtensionNames = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+
+              uint32_t glfwExtensionCount = 0;
+              const char** glfwExtensions;
+              glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+              std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+              for (const char*& extension : extensions) {
+                enabledExtensionNames.emplace_back(extension);
+              }
+
+              context = vk::raii::Context();
+
+              vk::ApplicationInfo applicationInfo = vk::ApplicationInfo()
+                  .setPApplicationName("Exqudens Application")
+                  .setApplicationVersion(VK_MAKE_VERSION(1, 0, 0))
+                  .setPEngineName("Exqudens Engine")
+                  .setEngineVersion(VK_MAKE_VERSION(1, 0, 0))
+                  .setApiVersion(VK_API_VERSION_1_0);
+              vk::InstanceCreateInfo instanceCreateInfo = vk::InstanceCreateInfo()
+                  .setPApplicationInfo(&applicationInfo)
+                  .setPEnabledExtensionNames(enabledExtensionNames)
+                  .setPEnabledLayerNames(enabledLayerNames);
+              instance = vk::raii::Instance(*context, instanceCreateInfo);
+
+              vk::DebugUtilsMessengerCreateInfoEXT debugUtilsMessengerCreateInfo = vk::DebugUtilsMessengerCreateInfoEXT()
+                  .setMessageSeverity(vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError)
+                  .setMessageType(vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance)
+                  .setPfnUserCallback(&Environment::debugCallback)
+                  .setPUserData(nullptr);
+              debugUtilsMessenger = vk::raii::DebugUtilsMessengerEXT(*instance, debugUtilsMessengerCreateInfo);
+
+              VkSurfaceKHR vkSurface = nullptr;
+              auto vkInstance = static_cast<VkInstance>(*instance.value());
+              if (glfwCreateWindowSurface(vkInstance, window, nullptr, &vkSurface) != VK_SUCCESS) {
+                throw std::runtime_error(CALL_INFO() + ": failed to create surface!");
+              }
+              if (vkSurface == nullptr) {
+                throw std::runtime_error(CALL_INFO() + ": surface is null!");
+              }
+              surface = vk::raii::SurfaceKHR(*instance, vkSurface);
+
+              physicalDevices = vk::raii::PhysicalDevices(*instance);
+
+              physicalDeviceIndex = raii::Utility::getPhysicalDeviceIndices(
+                  physicalDevices,
+                  {vk::QueueFlagBits::eCompute, vk::QueueFlagBits::eTransfer, vk::QueueFlagBits::eGraphics},
+                  &surface.value(),
+                  enabledDeviceExtensionNames,
+                  true
+              ).front();
+
+              ASSERT_TRUE(physicalDeviceIndex.has_value());
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
             }
@@ -63,6 +128,58 @@ namespace exqudens::vulkan {
           void destroy() {
             try {
               // TODO
+            } catch (...) {
+              std::throw_with_nested(std::runtime_error(CALL_INFO()));
+            }
+          }
+
+        private:
+
+          static VkBool32 debugCallback(
+              VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+              VkDebugUtilsMessageTypeFlagsEXT messageTypes,
+              const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+              void* pUserData
+          ) {
+            try {
+              std::string level;
+              if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT == messageSeverity) {
+                level = "[VERBOSE]";
+              } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT == messageSeverity) {
+                level = "[INFO]";
+              } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT == messageSeverity) {
+                level = "[WARNING]";
+              } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT == messageSeverity) {
+                level = "[ERROR]";
+              } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT == messageSeverity) {
+                level = "[MAX]";
+              }
+
+              std::string type;
+              if (VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT == messageTypes) {
+                type = "(GENERAL)";
+              } else if (VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT == messageTypes) {
+                type = "(VALIDATION)";
+              } else if (VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT == messageTypes) {
+                type = "(PERFORMANCE)";
+              } else if (VK_DEBUG_UTILS_MESSAGE_TYPE_FLAG_BITS_MAX_ENUM_EXT == messageTypes) {
+                type = "(MAX)";
+              }
+
+              std::string message(pCallbackData->pMessage);
+
+              std::string line;
+
+              line += level;
+              line += " ";
+              line += type;
+              line += " ";
+              line += "validation layer:";
+              line += " ";
+              line += message;
+
+              std::cout << std::format("{}", CALL_INFO() + ": " + line) << std::endl;
+              return VK_FALSE;
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
             }
@@ -140,81 +257,9 @@ namespace exqudens::vulkan {
 
       };
 
-      static VkBool32 debugCallback(
-          VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-          VkDebugUtilsMessageTypeFlagsEXT messageTypes,
-          const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-          void* pUserData
-      ) {
-        try {
-          std::string level;
-          if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT == messageSeverity) {
-            level = "[VERBOSE]";
-          } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT == messageSeverity) {
-            level = "[INFO]";
-          } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT == messageSeverity) {
-            level = "[WARNING]";
-          } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT == messageSeverity) {
-            level = "[ERROR]";
-          } else if (VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT == messageSeverity) {
-            level = "[MAX]";
-          }
-
-          std::string type;
-          if (VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT == messageTypes) {
-            type = "(GENERAL)";
-          } else if (VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT == messageTypes) {
-            type = "(VALIDATION)";
-          } else if (VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT == messageTypes) {
-            type = "(PERFORMANCE)";
-          } else if (VK_DEBUG_UTILS_MESSAGE_TYPE_FLAG_BITS_MAX_ENUM_EXT == messageTypes) {
-            type = "(MAX)";
-          }
-
-          std::string message(pCallbackData->pMessage);
-
-          std::string line;
-
-          line += level;
-          line += " ";
-          line += type;
-          line += " ";
-          line += "validation layer:";
-          line += " ";
-          line += message;
-
-          std::cout << std::format("{}", CALL_INFO() + ": " + line) << std::endl;
-          return VK_FALSE;
-        } catch (...) {
-          std::throw_with_nested(std::runtime_error(CALL_INFO()));
-        }
-      }
-
       void SetUp() override {
         try {
           std::cout << std::format("{}", CALL_INFO()) << std::endl;
-        } catch (...) {
-          std::throw_with_nested(std::runtime_error(CALL_INFO()));
-        }
-      }
-
-      std::vector<uint32_t> getQueueFamilyIndices(
-          const vk::raii::PhysicalDevice& physicalDevice,
-          const std::optional<vk::raii::SurfaceKHR>& surface,
-          const vk::QueueFlagBits& type
-      ) {
-        try {
-          std::vector<uint32_t> queueFamilyIndices;
-
-          std::vector<vk::QueueFamilyProperties> properties = physicalDevice.getQueueFamilyProperties();
-          for (std::size_t i = 0; i < properties.size(); i++) {
-            if (properties[i].queueFlags & type) {
-              auto queueFamilyIndex = static_cast<uint32_t>(i);
-              queueFamilyIndices.emplace_back(queueFamilyIndex);
-            }
-          }
-
-          return queueFamilyIndices;
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }
@@ -232,7 +277,7 @@ namespace exqudens::vulkan {
 
   TEST_F(UiTestsB, test1) {
     try {
-      TestUtils::setEnvironmentVariable("VK_LAYER_PATH", TestUtils::getExecutableDir());
+      /*TestUtils::setEnvironmentVariable("VK_LAYER_PATH", TestUtils::getExecutableDir());
 
       std::optional<vk::raii::Context> context = {};
       std::optional<vk::raii::Instance> instance = {};
@@ -266,14 +311,6 @@ namespace exqudens::vulkan {
       physicalDevices = vk::raii::PhysicalDevices(instance.value());
 
       for (std::size_t i = 0; i < physicalDevices.size(); i++) {
-        /*std::vector<vk::QueueFamilyProperties> propertiesVector = physicalDevices[i].getQueueFamilyProperties();
-        for (const vk::QueueFamilyProperties& properties : propertiesVector) {
-          if (properties.queueFlags & vk::QueueFlagBits::eCompute) {
-            result.computeFamily = i;
-            result.computeFamilyQueueCount = queueFamily.queueCount;
-          }
-        }*/
-
         std::vector<uint32_t> computeFamilyIndices = getQueueFamilyIndices(
             physicalDevices[i],
             {},
@@ -307,7 +344,14 @@ namespace exqudens::vulkan {
       std::cout << std::format("--- context ---") << std::endl;
       std::cout << std::format("context->enumerateInstanceVersion(): '{}'", context->enumerateInstanceVersion()) << std::endl;
       std::cout << std::format("--- physicalDevices ---") << std::endl;
-      std::cout << std::format("physicalDevices.size(): '{}'", physicalDevices.size()) << std::endl;
+      std::cout << std::format("physicalDevices.size(): '{}'", physicalDevices.size()) << std::endl;*/
+
+      std::string executableDir = TestUtils::getExecutableDir();
+      std::vector<char*> arguments = {executableDir.data()};
+      int argc = static_cast<int>(arguments.size());
+      char** argv = &arguments[0];
+      int result = TestUiApplication(argc, argv).run();
+      ASSERT_EQ(EXIT_SUCCESS, result);
     } catch (const std::exception& e) {
       FAIL() << TestUtils::toString(e);
     }

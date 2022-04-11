@@ -224,6 +224,8 @@ add_library("${PROJECT_NAME}" INTERFACE
     "src/main/cpp/exqudens/vulkan/ContextBase.hpp"
     "src/main/cpp/exqudens/vulkan/Renderer.hpp"
     "src/main/cpp/exqudens/vulkan/RendererBase.hpp"
+
+    "src/main/cpp/exqudens/vulkan/raii/Utility.hpp"
 )
 target_include_directories("${PROJECT_NAME}" INTERFACE
     "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/generated/main>"

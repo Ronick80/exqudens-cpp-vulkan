@@ -1,16 +1,13 @@
 #pragma once
 
-#include <optional>
-#include <memory>
-#include <stdexcept>
+#include <vector>
 #include <iostream>
 #include <format>
 
 #include <gtest/gtest.h>
-#include <vulkan/vulkan.h>
 
 #include "exqudens/TestUtils.hpp"
-#include "exqudens/vulkan/ContextBase.hpp"
+#include "exqudens/vulkan/raii/Utility.hpp"
 
 namespace exqudens::vulkan {
 
@@ -21,18 +18,16 @@ namespace exqudens::vulkan {
       void SetUp() override {
         try {
           std::cout << std::format("{}", CALL_INFO()) << std::endl;
-          std::cout << std::format("PATH: '{}'", TestUtils::getEnvironmentVariable("PATH").value_or("")) << std::endl;
-          std::cout << std::format("Path: '{}'", TestUtils::getEnvironmentVariable("Path").value_or("")) << std::endl;
-        } catch (const std::exception& e) {
-          FAIL() << TestUtils::toString(e);
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }
       }
 
       void TearDown() override {
         try {
           std::cout << std::format("{}", CALL_INFO()) << std::endl;
-        } catch (const std::exception& e) {
-          FAIL() << TestUtils::toString(e);
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }
       }
 
@@ -40,48 +35,25 @@ namespace exqudens::vulkan {
 
   TEST_F(OtherTests, test1) {
     try {
-      std::map<std::string, std::string> environmentVariables = {};
-      Configuration configuration = {};
-      Logger logger = {};
-      Instance instance = {};
-      DebugUtilsMessenger debugUtilsMessenger = {};
-      PhysicalDevice physicalDevice = {};
-      Device device = {};
-      Queue graphicsQueue = {};
-      CommandPool graphicsCommandPool = {};
-      Image image = {};
-      ImageView imageView = {};
+      std::cout << std::format("{}", "--- 111 ---") << std::endl;
 
-      Factory* factory = new FactoryBase;
-      Context* context = new ContextBase;
+      std::vector<const char*> enabledLayerNames = {};
+      std::optional<vk::raii::Context> context = {};
 
-      environmentVariables = context->createEnvironmentVariables(TestUtils::getExecutableDir());
-      for (auto const& [name, value] : environmentVariables) {
-        context->setEnvironmentVariable(name, value);
+      TestUtils::setEnvironmentVariable("VK_LAYER_PATH", TestUtils::getExecutableDir());
+
+      enabledLayerNames = {"VK_LAYER_KHRONOS_validation"};
+      context = vk::raii::Context();
+
+      bool validationSupported = raii::Utility::isValidationLayersSupported(*context, enabledLayerNames);
+
+      if (validationSupported) {
+        std::cout << std::format("ON: {}", validationSupported) << std::endl;
+      } else {
+        std::cout << std::format("OFF: {}", validationSupported) << std::endl;
       }
 
-      configuration = context->createConfiguration();
-      configuration.presentQueueFamilyRequired = false;
-      configuration.deviceExtensions = {};
-
-      logger = context->createLogger();
-
-      instance = factory->createInstance(configuration, logger);
-      debugUtilsMessenger = context->createDebugUtilsMessenger(instance.value, logger);
-      physicalDevice = context->createPhysicalDevice(instance.value, configuration);
-      device = context->createDevice(physicalDevice.value, configuration, physicalDevice.queueFamilyIndexInfo);
-      graphicsQueue = context->createQueue(device.value, physicalDevice.queueFamilyIndexInfo.graphicsFamily.value(), 0);
-      graphicsCommandPool = context->createCommandPool(device.value, graphicsQueue.familyIndex);
-      image = context->createImage(physicalDevice.value, device.value, 800, 600, VkFormat::VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-      imageView = context->createImageView(device.value, image.value, image.format);
-
-      context->destroyImageView(imageView);
-      context->destroy();
-
-      factory->destroyInstance(instance);
-
-      delete factory;
-      delete context;
+      std::cout << std::format("{}", "--- 222 ---") << std::endl;
     } catch (const std::exception& e) {
       FAIL() << TestUtils::toString(e);
     }
