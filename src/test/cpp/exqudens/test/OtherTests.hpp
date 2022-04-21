@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <vector>
 #include <iostream>
 #include <format>
@@ -35,25 +36,21 @@ namespace exqudens::vulkan {
 
   TEST_F(OtherTests, test1) {
     try {
-      std::cout << std::format("{}", "--- 111 ---") << std::endl;
+      std::vector<std::string> names = {"111", "222", "aaa", "bbb", "ccc", "333", "444"};
+      int index = 3;
 
-      std::vector<const char*> enabledLayerNames = {};
-      std::optional<vk::raii::Context> context = {};
-
-      TestUtils::setEnvironmentVariable("VK_LAYER_PATH", TestUtils::getExecutableDir());
-
-      enabledLayerNames = {"VK_LAYER_KHRONOS_validation"};
-      context = vk::raii::Context();
-
-      bool validationSupported = raii::Utility::isValidationLayersSupported(*context, enabledLayerNames);
-
-      if (validationSupported) {
-        std::cout << std::format("ON: {}", validationSupported) << std::endl;
-      } else {
-        std::cout << std::format("OFF: {}", validationSupported) << std::endl;
+      std::cout << std::format("--- 1 ---") << std::endl;
+      for (const std::string& name : names) {
+        std::cout << std::format("{}", name) << std::endl;
       }
 
-      std::cout << std::format("{}", "--- 222 ---") << std::endl;
+      names.erase(names.begin(), names.begin() + index);
+      names.erase(names.begin() + 1, names.end());
+
+      std::cout << std::format("--- 2 ---") << std::endl;
+      for (const std::string& name : names) {
+        std::cout << std::format("{}", name) << std::endl;
+      }
     } catch (const std::exception& e) {
       FAIL() << TestUtils::toString(e);
     }

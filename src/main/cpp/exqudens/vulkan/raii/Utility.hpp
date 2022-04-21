@@ -5,6 +5,8 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <numeric>
+#include <algorithm>
 #include <stdexcept>
 
 #include "vulkan/vulkan_raii.hpp"
@@ -173,6 +175,134 @@ namespace exqudens::vulkan::raii {
           }
 
           return physicalDeviceIndices;
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      static std::optional<vk::SurfaceFormatKHR> surfaceFormat(
+          const std::vector<vk::SurfaceFormatKHR>& formats,
+          const std::vector<vk::Format>& criteria1 = {vk::Format::eB8G8R8A8Srgb},
+          const std::vector<vk::ColorSpaceKHR>& criteria2 = {vk::ColorSpaceKHR::eSrgbNonlinear}
+      ) {
+        try {
+          std::optional<vk::SurfaceFormatKHR> format = {};
+
+          if (formats.size() == 1 && formats.front() == vk::Format::eUndefined) {
+            format = formats.front();
+          } else {
+            auto check1 = [](
+                const std::vector<vk::Format>& filterValues,
+                const vk::SurfaceFormatKHR& value
+            ) {
+              return std::ranges::any_of(
+                  filterValues,
+                  [&value](const vk::Format& o) { return o == value.format; }
+              );
+            };
+
+            auto check2 = [](
+                const std::vector<vk::ColorSpaceKHR>& filterValues,
+                const vk::SurfaceFormatKHR& value
+            ) {
+              return std::ranges::any_of(
+                  filterValues,
+                  [&value](const vk::ColorSpaceKHR& o) { return o == value.colorSpace; }
+              );
+            };
+
+            for (const vk::SurfaceFormatKHR& f : formats) {
+              if (check1(criteria1, f) && check2(criteria2, f)) {
+                format = f;
+                break;
+              }
+            }
+          }
+
+          return format;
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      static std::optional<vk::PresentModeKHR> surfacePresentMode(
+          const std::vector<vk::PresentModeKHR>& presentModes,
+          const vk::PresentModeKHR& searchValue = vk::PresentModeKHR::eMailbox,
+          const vk::PresentModeKHR& defaultValue = vk::PresentModeKHR::eFifo
+      ) {
+        try {
+          std::optional<vk::PresentModeKHR> presentMode = defaultValue;
+
+          for (const vk::PresentModeKHR& p : presentModes) {
+            if (p == searchValue) {
+              presentMode = searchValue;
+              return presentMode;
+            }
+          }
+
+          return presentMode;
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      static std::optional<vk::Extent2D> surfaceExtent(
+          const vk::SurfaceCapabilitiesKHR& surfaceCapabilities,
+          const uint32_t& width,
+          const uint32_t& height
+      ) {
+        try {
+          std::optional<vk::Extent2D> extend = {};
+
+          if (surfaceCapabilities.currentExtent.width == std::numeric_limits<uint32_t>::max()) {
+            extend = vk::Extent2D()
+                .setWidth(std::clamp(width, surfaceCapabilities.minImageExtent.width, surfaceCapabilities.maxImageExtent.width))
+                .setHeight(std::clamp(height, surfaceCapabilities.minImageExtent.height, surfaceCapabilities.maxImageExtent.height));
+          } else {
+            extend = surfaceCapabilities.currentExtent;
+          }
+
+          return extend;
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      static std::optional<vk::SurfaceTransformFlagBitsKHR> surfaceTransform(
+          const vk::SurfaceCapabilitiesKHR& surfaceCapabilities
+      ) {
+        try {
+          std::optional<vk::SurfaceTransformFlagBitsKHR> surfaceTransform = {};
+
+          if (surfaceCapabilities.supportedTransforms & vk::SurfaceTransformFlagBitsKHR::eIdentity) {
+            surfaceTransform = vk::SurfaceTransformFlagBitsKHR::eIdentity;
+          } else {
+            surfaceTransform = surfaceCapabilities.currentTransform;
+          }
+
+          return surfaceTransform;
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      static std::optional<vk::CompositeAlphaFlagBitsKHR> surfaceCompositeAlpha(
+          const vk::SurfaceCapabilitiesKHR& surfaceCapabilities
+      ) {
+        try {
+          std::optional<vk::CompositeAlphaFlagBitsKHR> surfaceCompositeAlpha = {};
+
+          if (surfaceCapabilities.supportedCompositeAlpha & vk::CompositeAlphaFlagBitsKHR::ePreMultiplied) {
+            surfaceCompositeAlpha = vk::CompositeAlphaFlagBitsKHR::ePreMultiplied;
+          } else if (surfaceCapabilities.supportedCompositeAlpha & vk::CompositeAlphaFlagBitsKHR::ePostMultiplied) {
+            surfaceCompositeAlpha = vk::CompositeAlphaFlagBitsKHR::ePostMultiplied;
+          } else if (surfaceCapabilities.supportedCompositeAlpha & vk::CompositeAlphaFlagBitsKHR::eInherit) {
+            surfaceCompositeAlpha = vk::CompositeAlphaFlagBitsKHR::eInherit;
+          } else {
+            surfaceCompositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
+          }
+
+          return surfaceCompositeAlpha;
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }

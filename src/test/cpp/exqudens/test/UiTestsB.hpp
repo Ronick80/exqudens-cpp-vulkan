@@ -3,6 +3,8 @@
 #include <string>
 #include <optional>
 #include <vector>
+#include <limits>
+#include <algorithm>
 #include <iostream>
 #include <format>
 
@@ -43,14 +45,16 @@ namespace exqudens::vulkan {
           std::optional<vk::raii::SurfaceKHR> surface = {};
 
           std::vector<vk::raii::PhysicalDevice> physicalDevices = {};
-          std::optional<std::size_t> physicalDeviceIndex = {};
+          std::optional<vk::PhysicalDeviceFeatures> physicalDeviceEnabledFeatures = {};
+          vk::raii::PhysicalDevice* physicalDevice = nullptr;
 
-          std::optional<std::uint32_t> computeQueueFamilyIndex = {};
           std::optional<std::uint32_t> transferQueueFamilyIndex = {};
           std::optional<std::uint32_t> graphicsQueueFamilyIndex = {};
           std::optional<std::uint32_t> presentQueueFamilyIndex = {};
 
           std::optional<vk::raii::Device> device = {};
+
+          std::optional<vk::raii::SwapchainKHR> swapChain = {};
 
           std::optional<vk::raii::CommandPool> transferCommandPool = {};
           std::vector<vk::raii::CommandBuffer> transferCommandBuffers = {};
@@ -60,11 +64,9 @@ namespace exqudens::vulkan {
           std::vector<vk::raii::CommandBuffer> graphicsCommandBuffers = {};
           std::optional<vk::raii::Queue> graphicsQueue = {};
 
-          std::optional<vk::raii::SwapchainKHR> swapChain = {};
-
         public:
 
-          void create(const std::vector<std::string>& arguments, GLFWwindow* window) {
+          void create(const std::vector<std::string>& arguments, GLFWwindow* window, uint32_t width, uint32_t height) {
             try {
               TestUtils::setEnvironmentVariable("VK_LAYER_PATH", arguments.front());
 
@@ -116,41 +118,34 @@ namespace exqudens::vulkan {
               surface = vk::raii::SurfaceKHR(*instance, vkSurface);
 
               physicalDevices = vk::raii::PhysicalDevices(*instance);
-
-              vk::PhysicalDeviceFeatures physicalDeviceEnabledFeatures = vk::PhysicalDeviceFeatures()
+              physicalDeviceEnabledFeatures = vk::PhysicalDeviceFeatures()
                   .setSamplerAnisotropy(true);
-
-              physicalDeviceIndex = raii::Utility::getPhysicalDeviceIndices(
+              std::size_t physicalDeviceIndex = raii::Utility::getPhysicalDeviceIndices(
                   physicalDevices,
                   {vk::QueueFlagBits::eCompute, vk::QueueFlagBits::eTransfer, vk::QueueFlagBits::eGraphics},
                   &surface.value(),
                   enabledDeviceExtensionNames,
-                  physicalDeviceEnabledFeatures.samplerAnisotropy
+                  (*physicalDeviceEnabledFeatures).samplerAnisotropy
               ).front();
+              physicalDevice = &physicalDevices.at(physicalDeviceIndex);
 
-              computeQueueFamilyIndex = raii::Utility::getQueueFamilyIndices(
-                  physicalDevices[*physicalDeviceIndex],
-                  vk::QueueFlagBits::eCompute,
-                  nullptr
-              ).front();
               transferQueueFamilyIndex = raii::Utility::getQueueFamilyIndices(
-                  physicalDevices[*physicalDeviceIndex],
+                  *physicalDevice,
                   vk::QueueFlagBits::eTransfer,
                   nullptr
               ).front();
               graphicsQueueFamilyIndex = raii::Utility::getQueueFamilyIndices(
-                  physicalDevices[*physicalDeviceIndex],
+                  *physicalDevice,
                   vk::QueueFlagBits::eGraphics,
                   nullptr
               ).front();
               presentQueueFamilyIndex = raii::Utility::getQueueFamilyIndices(
-                  physicalDevices[*physicalDeviceIndex],
+                  *physicalDevice,
                   {},
                   &surface.value()
               ).front();
 
               std::set<std::uint32_t> uniqueQueueFamilyIndices = {
-                  *computeQueueFamilyIndex,
                   *transferQueueFamilyIndex,
                   *graphicsQueueFamilyIndex,
                   *presentQueueFamilyIndex
@@ -165,12 +160,38 @@ namespace exqudens::vulkan {
                 queueCreateInfo.emplace_back(info);
               }
               device = vk::raii::Device(
-                  physicalDevices[*physicalDeviceIndex],
+                  *physicalDevice,
                   vk::DeviceCreateInfo()
                       .setQueueCreateInfos(queueCreateInfo)
-                      .setPEnabledFeatures(&physicalDeviceEnabledFeatures)
+                      .setPEnabledFeatures(&physicalDeviceEnabledFeatures.value())
                       .setPEnabledExtensionNames(enabledDeviceExtensionNames)
                       .setPEnabledLayerNames(enabledLayerNames)
+              );
+
+              vk::SurfaceFormatKHR surfaceFormat = raii::Utility::surfaceFormat(physicalDevice->getSurfaceFormatsKHR(*surface.value())).value();
+              vk::PresentModeKHR surfacePresentMode = raii::Utility::surfacePresentMode(physicalDevice->getSurfacePresentModesKHR(*surface.value())).value();
+              vk::SurfaceCapabilitiesKHR surfaceCapabilities = physicalDevice->getSurfaceCapabilitiesKHR(*surface.value());
+              vk::Extent2D surfaceExtent = raii::Utility::surfaceExtent(surfaceCapabilities, width, height).value();
+              vk::SurfaceTransformFlagBitsKHR surfaceTransform = raii::Utility::surfaceTransform(surfaceCapabilities).value();
+              vk::CompositeAlphaFlagBitsKHR surfaceCompositeAlpha = raii::Utility::surfaceCompositeAlpha(surfaceCapabilities).value();
+              swapChain = vk::raii::SwapchainKHR(
+                  *device,
+                  vk::SwapchainCreateInfoKHR()
+                    .setFlags({})
+                    .setSurface(*surface.value())
+                    .setMinImageCount(surfaceCapabilities.minImageCount)
+                    .setImageFormat(surfaceFormat.format)
+                    .setImageColorSpace(surfaceFormat.colorSpace)
+                    .setImageExtent(surfaceExtent)
+                    .setImageArrayLayers(1)
+                    .setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
+                    .setImageSharingMode(vk::SharingMode::eExclusive)
+                    .setQueueFamilyIndices({})
+                    .setPreTransform(surfaceTransform)
+                    .setCompositeAlpha(surfaceCompositeAlpha)
+                    .setPresentMode(surfacePresentMode)
+                    .setClipped(true)
+                    .setOldSwapchain({})
               );
 
               transferCommandPool = vk::raii::CommandPool(
@@ -320,7 +341,7 @@ namespace exqudens::vulkan {
               glfwSetFramebufferSizeCallback(window, frameBufferResizeCallback);
 
               environment = new Environment();
-              environment->create(arguments, window);
+              environment->create(arguments, window, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
 
               while (!glfwWindowShouldClose(window)) {
                 glfwPollEvents();
@@ -377,75 +398,6 @@ namespace exqudens::vulkan {
 
   TEST_F(UiTestsB, test1) {
     try {
-      /*TestUtils::setEnvironmentVariable("VK_LAYER_PATH", TestUtils::getExecutableDir());
-
-      std::optional<vk::raii::Context> context = {};
-      std::optional<vk::raii::Instance> instance = {};
-      std::optional<vk::raii::DebugUtilsMessengerEXT> debugUtilsMessenger = {};
-      std::vector<vk::raii::PhysicalDevice> physicalDevices = {};
-      std::optional<size_t> physicalDeviceIndex = {};
-
-      context = vk::raii::Context();
-
-      std::vector<const char*> enabledLayerNames = {"VK_LAYER_KHRONOS_validation"};
-      std::vector<const char*> enabledExtensionNames = {VK_EXT_DEBUG_UTILS_EXTENSION_NAME};
-      vk::Optional<vk::ApplicationInfo> applicationInfo = vk::ApplicationInfo()
-          .setPApplicationName("Exqudens Application")
-          .setApplicationVersion(VK_MAKE_VERSION(1, 0, 0))
-          .setPEngineName("Exqudens Engine")
-          .setEngineVersion(VK_MAKE_VERSION(1, 0, 0))
-          .setApiVersion(VK_API_VERSION_1_0);
-      vk::InstanceCreateInfo instanceCreateInfo = vk::InstanceCreateInfo()
-          .setPApplicationInfo(applicationInfo)
-          .setPEnabledExtensionNames(enabledExtensionNames)
-          .setPEnabledLayerNames(enabledLayerNames);
-      instance = vk::raii::Instance(*context, instanceCreateInfo);
-
-      vk::DebugUtilsMessengerCreateInfoEXT debugUtilsMessengerCreateInfo = vk::DebugUtilsMessengerCreateInfoEXT()
-          .setMessageSeverity(vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError)
-          .setMessageType(vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance)
-          .setPfnUserCallback(&UiTestsB::debugCallback)
-          .setPUserData(nullptr);
-      debugUtilsMessenger = vk::raii::DebugUtilsMessengerEXT(*instance, debugUtilsMessengerCreateInfo);
-
-      physicalDevices = vk::raii::PhysicalDevices(instance.value());
-
-      for (std::size_t i = 0; i < physicalDevices.size(); i++) {
-        std::vector<uint32_t> computeFamilyIndices = getQueueFamilyIndices(
-            physicalDevices[i],
-            {},
-            vk::QueueFlagBits::eCompute
-        );
-        std::vector<uint32_t> transferFamilyIndices = getQueueFamilyIndices(
-            physicalDevices[i],
-            {},
-            vk::QueueFlagBits::eTransfer
-        );
-        std::vector<uint32_t> graphicsFamilyIndices = getQueueFamilyIndices(
-            physicalDevices[i],
-            {},
-            vk::QueueFlagBits::eGraphics
-        );
-
-        std::cout << std::format("--- physicalDevices[{}].computeFamilyIndices ---", i) << std::endl;
-        for (const uint32_t& index : computeFamilyIndices) {
-          std::cout << std::format("{}", index) << std::endl;
-        }
-        std::cout << std::format("--- physicalDevices[{}].transferFamilyIndices ---", i) << std::endl;
-        for (const uint32_t& index : transferFamilyIndices) {
-          std::cout << std::format("{}", index) << std::endl;
-        }
-        std::cout << std::format("--- physicalDevices[{}].graphicsFamilyIndices ---", i) << std::endl;
-        for (const uint32_t& index : graphicsFamilyIndices) {
-          std::cout << std::format("{}", index) << std::endl;
-        }
-      }
-
-      std::cout << std::format("--- context ---") << std::endl;
-      std::cout << std::format("context->enumerateInstanceVersion(): '{}'", context->enumerateInstanceVersion()) << std::endl;
-      std::cout << std::format("--- physicalDevices ---") << std::endl;
-      std::cout << std::format("physicalDevices.size(): '{}'", physicalDevices.size()) << std::endl;*/
-
       std::string executableDir = TestUtils::getExecutableDir();
       std::vector<char*> arguments = {executableDir.data()};
       int argc = static_cast<int>(arguments.size());
