@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdlib>
 #include <string>
 #include <optional>
 #include <vector>
@@ -11,13 +12,62 @@
 
 #include "vulkan/vulkan_raii.hpp"
 
-#include "exqudens/vulkan/Macros.hpp"
+#include "exqudens/vulkan/raii/Macros.hpp"
 
 namespace exqudens::vulkan::raii {
 
   class Utility {
 
     public:
+
+      // utility
+
+      static void setEnvironmentVariable(const std::string& name, const std::string& value) {
+        try {
+#if defined(_WINDOWS)
+          _putenv_s(name.c_str(), value.c_str());
+#endif
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      static std::optional<std::string> getEnvironmentVariable(const std::string& name) {
+        try {
+          std::optional<std::string> value;
+#if defined(_WINDOWS)
+          char* buffer;
+          size_t size;
+          errno_t error = _dupenv_s(&buffer, &size, name.c_str());
+          if (error) {
+            return value;
+          }
+          if (buffer != nullptr) {
+            value.emplace(std::string(buffer));
+          }
+#endif
+          return value;
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      static VkBool32 debugCallback(
+          VkDebugUtilsMessageSeverityFlagBitsEXT cSeverity,
+          VkDebugUtilsMessageTypeFlagsEXT cType,
+          const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
+          void* data
+      ) {
+        try {
+          auto severity = vk::DebugUtilsMessageSeverityFlagsEXT(cSeverity);
+          auto type = vk::DebugUtilsMessageTypeFlagsEXT(cType);
+          std::string message(callbackData->pMessage);
+          std::cout << vk::to_string(severity) << " " << vk::to_string(type) << ": " << message << std::endl;
+          return VK_FALSE;
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
 
       static bool isValidationLayersSupported(
           const vk::raii::Context& context,
@@ -303,6 +353,33 @@ namespace exqudens::vulkan::raii {
           }
 
           return surfaceCompositeAlpha;
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      static uint32_t memoryType(
+          const vk::PhysicalDeviceMemoryProperties& properties,
+          uint32_t typeBits,
+          vk::MemoryPropertyFlags requirementsMask
+      ) {
+        try {
+          auto typeIndex = uint32_t(~0);
+          for (uint32_t i = 0; i < properties.memoryTypeCount; i++) {
+            if (
+                (typeBits & 1)
+                &&
+                (properties.memoryTypes[i].propertyFlags & requirementsMask) == requirementsMask
+            ) {
+              typeIndex = i;
+              break;
+            }
+            typeBits >>= 1;
+          }
+          if (typeIndex == uint32_t(~0)) {
+            throw std::runtime_error(CALL_INFO() + ": failed to find memory type!");
+          }
+          return typeIndex;
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }

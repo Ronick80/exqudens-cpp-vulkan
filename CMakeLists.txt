@@ -225,7 +225,13 @@ add_library("${PROJECT_NAME}" INTERFACE
     "src/main/cpp/exqudens/vulkan/Renderer.hpp"
     "src/main/cpp/exqudens/vulkan/RendererBase.hpp"
 
+    "src/main/cpp/exqudens/vulkan/raii/ContextInfo.hpp"
+    "src/main/cpp/exqudens/vulkan/raii/Context.hpp"
+    "src/main/cpp/exqudens/vulkan/raii/Instance.hpp"
+    "src/main/cpp/exqudens/vulkan/raii/DebugUtilsMessenger.hpp"
+    "src/main/cpp/exqudens/vulkan/raii/Macros.hpp"
     "src/main/cpp/exqudens/vulkan/raii/Utility.hpp"
+    "src/main/cpp/exqudens/vulkan/raii/Factory.hpp"
 )
 target_include_directories("${PROJECT_NAME}" INTERFACE
     "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/generated/main>"
