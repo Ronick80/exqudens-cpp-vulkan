@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstring>
+#include <memory>
 #include <string>
 #include <optional>
 #include <vector>
@@ -21,16 +22,16 @@
 
 #include "TestUtils.hpp"
 #include "exqudens/vulkan/Vertex.hpp"
-#include "exqudens/vulkan/raii/Utility.hpp"
-#include "exqudens/vulkan/raii/Factory.hpp"
+#include "exqudens/vulkan/UniformBufferObject.hpp"
+#include "exqudens/vulkan/Environment.hpp"
 
-namespace exqudens::vulkan::raii {
+namespace exqudens::vulkan {
 
   class UiTestsA : public testing::Test {
 
     protected:
 
-      class Environment {
+      class Renderer {
 
         public:
 
@@ -41,44 +42,11 @@ namespace exqudens::vulkan::raii {
           std::vector<Vertex> vertices = {};
           std::vector<uint16_t> indices = {};
 
-          Context context = {};
-          Instance instance = {};
-          DebugUtilsMessenger debugUtilsMessenger = {};
-
-          //std::optional<vk::raii::Context> context = {};
-          //std::optional<vk::raii::Instance> instance = {};
-          //std::optional<vk::raii::DebugUtilsMessengerEXT> debugUtilsMessenger = {};
-          std::optional<vk::raii::SurfaceKHR> surface = {};
-
-          std::vector<vk::raii::PhysicalDevice> physicalDevices = {};
-          std::optional<vk::PhysicalDeviceFeatures> physicalDeviceEnabledFeatures = {};
-          vk::raii::PhysicalDevice* physicalDevice = nullptr;
-
-          std::vector<std::uint32_t> transferQueueFamilyIndices = {};
-          std::vector<std::uint32_t> graphicsQueueFamilyIndices = {};
-          std::vector<std::uint32_t> presentQueueFamilyIndices = {};
-
-          std::optional<vk::raii::Device> device = {};
-
-          std::optional<vk::raii::SwapchainKHR> swapChain = {};
-
-          std::optional<vk::raii::Buffer> vertexStagingBuffer = {};
-          std::optional<vk::raii::DeviceMemory> vertexStagingBufferMemory = {};
-          std::optional<vk::raii::Buffer> vertexBuffer = {};
-          std::optional<vk::raii::DeviceMemory> vertexBufferMemory = {};
-
-          std::optional<vk::raii::Buffer> indexStagingBuffer = {};
-          std::optional<vk::raii::DeviceMemory> indexStagingBufferMemory = {};
-          std::optional<vk::raii::Buffer> indexBuffer = {};
-          std::optional<vk::raii::DeviceMemory> indexBufferMemory = {};
-
-          std::optional<vk::raii::CommandPool> transferCommandPool = {};
-          std::vector<vk::raii::CommandBuffer> transferCommandBuffers = {};
-          std::optional<vk::raii::Queue> transferQueue = {};
-
-          std::optional<vk::raii::CommandPool> graphicsCommandPool = {};
-          std::vector<vk::raii::CommandBuffer> graphicsCommandBuffers = {};
-          std::optional<vk::raii::Queue> graphicsQueue = {};
+          std::shared_ptr<Environment> environment = {};
+          std::shared_ptr<Context> context = {};
+          std::shared_ptr<Instance> instance = {};
+          std::shared_ptr<Messenger> messenger = {};
+          std::shared_ptr<DebugUtilsMessenger> debugUtilsMessenger = {};
 
         public:
 
@@ -101,20 +69,26 @@ namespace exqudens::vulkan::raii {
                   4, 5, 6, 6, 7, 4
               };
 
-              Utility::setEnvironmentVariable("VK_LAYER_PATH", arguments.front());
+              environment = std::make_shared<Environment>();
 
-              context = Factory::createContext();
+              context = environment->createContext(
+                  ContextCreateInfo()
+                      .setEnvironmentVariables({{"VK_LAYER_PATH", arguments.front().c_str()}})
+                      .setEnabledLayerNames({"VK_LAYER_KHRONOS_validation"})
+                      .setEnabledExtensionNames({VK_EXT_DEBUG_UTILS_EXTENSION_NAME})
+                      .setEnabledDeviceExtensionNames({VK_KHR_SWAPCHAIN_EXTENSION_NAME})
+              );
 
               uint32_t glfwExtensionCount = 0;
               const char** glfwExtensions;
               glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
               std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
               for (const char*& extension : extensions) {
-                context.info.enabledExtensionNames.emplace_back(extension);
+                context->createInfo.enabledExtensionNames.emplace_back(extension);
               }
 
-              instance = Factory::createInstance(
-                  context,
+              instance = environment->createInstance(
+                  *context,
                   vk::ApplicationInfo()
                       .setPApplicationName("Exqudens Application")
                       .setApplicationVersion(VK_MAKE_VERSION(1, 0, 0))
@@ -122,164 +96,32 @@ namespace exqudens::vulkan::raii {
                       .setEngineVersion(VK_MAKE_VERSION(1, 0, 0))
                       .setApiVersion(VK_API_VERSION_1_0),
                   vk::InstanceCreateInfo()
-                      .setPEnabledExtensionNames(context.info.enabledExtensionNames)
-                      .setPEnabledLayerNames(context.info.enabledLayerNames)
+                      .setPEnabledExtensionNames(context->createInfo.enabledExtensionNames)
+                      .setPEnabledLayerNames(context->createInfo.enabledLayerNames)
               );
 
-              debugUtilsMessenger = Factory::createDebugUtilsMessenger(
-                  instance,
+              messenger = environment->createMessenger(
+                  std::cout,
+                  {},
+                  vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
+                  &Utility::toString
+              );
+
+              debugUtilsMessenger = environment->createDebugUtilsMessenger(
+                  *instance,
+                  *messenger,
                   vk::DebugUtilsMessengerCreateInfoEXT()
-                      .setPUserData(nullptr)
-                      .setPfnUserCallback(&Utility::debugCallback)
+                      .setPUserData(messenger.get())
+                      .setPfnUserCallback(&Messenger::callback)
                       .setMessageSeverity(vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError)
                       .setMessageType(vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance)
               );
 
-              VkSurfaceKHR vkSurface = nullptr;
-              auto vkInstance = static_cast<VkInstance>(*instance.optional.value());
-              if (glfwCreateWindowSurface(vkInstance, window, nullptr, &vkSurface) != VK_SUCCESS) {
-                throw std::runtime_error(CALL_INFO() + ": failed to create surface!");
-              }
-              if (vkSurface == nullptr) {
-                throw std::runtime_error(CALL_INFO() + ": surface is null!");
-              }
-              surface = vk::raii::SurfaceKHR(*instance.optional, vkSurface);
-
-              physicalDevices = vk::raii::PhysicalDevices(instance.optional.value());
-              physicalDeviceEnabledFeatures = vk::PhysicalDeviceFeatures()
-                  .setSamplerAnisotropy(context.info.samplerAnisotropyEnabled);
-              std::size_t physicalDeviceIndex = Utility::getPhysicalDeviceIndices(
-                  physicalDevices,
-                  {vk::QueueFlagBits::eCompute, vk::QueueFlagBits::eTransfer, vk::QueueFlagBits::eGraphics},
-                  &surface.value(),
-                  context.info.enabledDeviceExtensionNames,
-                  (*physicalDeviceEnabledFeatures).samplerAnisotropy
-              ).front();
-              physicalDevice = &physicalDevices.at(physicalDeviceIndex);
-
-              transferQueueFamilyIndices = Utility::getQueueFamilyIndices(
-                  *physicalDevice,
-                  vk::QueueFlagBits::eTransfer,
-                  nullptr
-              );
-              graphicsQueueFamilyIndices = Utility::getQueueFamilyIndices(
-                  *physicalDevice,
-                  vk::QueueFlagBits::eGraphics,
-                  nullptr
-              );
-              presentQueueFamilyIndices = Utility::getQueueFamilyIndices(
-                  *physicalDevice,
-                  {},
-                  &surface.value()
-              );
-
-              std::set<std::uint32_t> uniqueQueueFamilyIndices = {
-                  transferQueueFamilyIndices.front(),
-                  graphicsQueueFamilyIndices.front(),
-                  presentQueueFamilyIndices.front()
-              };
-              std::vector<vk::DeviceQueueCreateInfo> queueCreateInfo;
-              float queuePriority = 1.0f;
-              for (const uint32_t& queueFamilyIndex : uniqueQueueFamilyIndices) {
-                vk::DeviceQueueCreateInfo info = vk::DeviceQueueCreateInfo()
-                    .setQueueFamilyIndex(queueFamilyIndex)
-                    .setQueueCount(1)
-                    .setQueuePriorities(queuePriority);
-                queueCreateInfo.emplace_back(info);
-              }
-              device = vk::raii::Device(
-                  *physicalDevice,
-                  vk::DeviceCreateInfo()
-                      .setQueueCreateInfos(queueCreateInfo)
-                      .setPEnabledFeatures(&physicalDeviceEnabledFeatures.value())
-                      .setPEnabledExtensionNames(context.info.enabledDeviceExtensionNames)
-                      .setPEnabledLayerNames(context.info.enabledLayerNames)
-              );
-
-              vk::SurfaceFormatKHR surfaceFormat = Utility::surfaceFormat(physicalDevice->getSurfaceFormatsKHR(*surface.value())).value();
-              vk::PresentModeKHR surfacePresentMode = Utility::surfacePresentMode(physicalDevice->getSurfacePresentModesKHR(*surface.value())).value();
-              vk::SurfaceCapabilitiesKHR surfaceCapabilities = physicalDevice->getSurfaceCapabilitiesKHR(*surface.value());
-              vk::Extent2D surfaceExtent = Utility::surfaceExtent(surfaceCapabilities, width, height).value();
-              vk::SurfaceTransformFlagBitsKHR surfaceTransform = Utility::surfaceTransform(surfaceCapabilities).value();
-              vk::CompositeAlphaFlagBitsKHR surfaceCompositeAlpha = Utility::surfaceCompositeAlpha(surfaceCapabilities).value();
-              swapChain = vk::raii::SwapchainKHR(
-                  *device,
-                  vk::SwapchainCreateInfoKHR()
-                    .setFlags({})
-                    .setSurface(*surface.value())
-                    .setMinImageCount(surfaceCapabilities.minImageCount)
-                    .setImageFormat(surfaceFormat.format)
-                    .setImageColorSpace(surfaceFormat.colorSpace)
-                    .setImageExtent(surfaceExtent)
-                    .setImageArrayLayers(1)
-                    .setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
-                    .setImageSharingMode(vk::SharingMode::eExclusive)
-                    .setQueueFamilyIndices({})
-                    .setPreTransform(surfaceTransform)
-                    .setCompositeAlpha(surfaceCompositeAlpha)
-                    .setPresentMode(surfacePresentMode)
-                    .setClipped(true)
-                    .setOldSwapchain({})
-              );
-
-              vertexStagingBuffer = vk::raii::Buffer(
-                  *device,
-                  vk::BufferCreateInfo()
-                    .setFlags({})
-                    .setSize(sizeof(vertices[0]) * vertices.size())
-                    .setUsage(vk::BufferUsageFlagBits::eTransferSrc)
-                    .setSharingMode(vk::SharingMode::eExclusive)
-                    .setQueueFamilyIndices({})
-              );
-              vertexStagingBufferMemory = vk::raii::DeviceMemory(
-                  *device,
-                  vk::MemoryAllocateInfo()
-                    .setAllocationSize(vertexStagingBuffer.value().getMemoryRequirements().size)
-                    .setMemoryTypeIndex(
-                        Utility::memoryType(
-                            physicalDevice->getMemoryProperties(),
-                            vertexStagingBuffer.value().getMemoryRequirements().memoryTypeBits,
-                            vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
-                        )
-                    )
-              );
-              void* vertexData = vertexStagingBufferMemory
-                  .value()
-                  .mapMemory(0, vertexStagingBuffer.value().getMemoryRequirements().size);
-              std::memcpy(vertexData, vertices.data(), sizeof(vertices[0]) * vertices.size());
-              vertexStagingBufferMemory.value().unmapMemory();
-
-              transferCommandPool = vk::raii::CommandPool(
-                  *device,
-                  vk::CommandPoolCreateInfo()
-                    .setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
-                    .setQueueFamilyIndex(transferQueueFamilyIndices.front())
-              );
-              transferCommandBuffers = vk::raii::CommandBuffers(
-                  *device,
-                  vk::CommandBufferAllocateInfo()
-                    .setCommandPool(*transferCommandPool.value())
-                    .setLevel(vk::CommandBufferLevel::ePrimary)
-                    .setCommandBufferCount(1)
-              );
-              transferQueue = vk::raii::Queue(*device, transferQueueFamilyIndices.front(), 0);
-
-              graphicsCommandPool = vk::raii::CommandPool(
-                  *device,
-                  vk::CommandPoolCreateInfo()
-                      .setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
-                      .setQueueFamilyIndex(transferQueueFamilyIndices.front())
-              );
-              graphicsCommandBuffers = vk::raii::CommandBuffers(
-                  *device,
-                  vk::CommandBufferAllocateInfo()
-                      .setCommandPool(*graphicsCommandPool.value())
-                      .setLevel(vk::CommandBufferLevel::ePrimary)
-                      .setCommandBufferCount(1)
-              );
-              graphicsQueue = vk::raii::Queue(*device, graphicsQueueFamilyIndices.front(), 0);
-
-              // TODO
+              std::cout << std::format("context->createInfo.environmentVariables['VK_LAYER_PATH']: '{}'", context->createInfo.environmentVariables["VK_LAYER_PATH"]) << std::endl;
+              std::cout << std::format("context->id: '{}'", context->id) << std::endl;
+              std::cout << std::format("instance->id: '{}'", instance->id) << std::endl;
+              std::cout << std::format("messenger->id: '{}'", messenger->id) << std::endl;
+              std::cout << std::format("debugUtilsMessenger->id: '{}'", debugUtilsMessenger->id) << std::endl;
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
             }
@@ -316,7 +158,7 @@ namespace exqudens::vulkan::raii {
         public:
 
           std::vector<std::string> arguments = {};
-          Environment* environment = nullptr;
+          Renderer* renderer = nullptr;
 
           TestUiApplication(const int& argc, char** argv) {
             try {
@@ -343,8 +185,8 @@ namespace exqudens::vulkan::raii {
               glfwSetWindowUserPointer(window, this);
               glfwSetFramebufferSizeCallback(window, frameBufferResizeCallback);
 
-              environment = new Environment();
-              environment->create(arguments, window, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
+              renderer = new Renderer();
+              renderer->create(arguments, window, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
 
               while (!glfwWindowShouldClose(window)) {
                 glfwPollEvents();
@@ -353,12 +195,12 @@ namespace exqudens::vulkan::raii {
                   glfwGetFramebufferSize(window, &width, &height);
                   glfwWaitEvents();
                 }
-                environment->drawFrame(width, height);
+                renderer->drawFrame(width, height);
               }
-              environment->waitIdle();
+              renderer->waitIdle();
 
-              environment->destroy();
-              delete environment;
+              renderer->destroy();
+              delete renderer;
               glfwDestroyWindow(window);
               glfwTerminate();
 
@@ -373,7 +215,7 @@ namespace exqudens::vulkan::raii {
           static void frameBufferResizeCallback(GLFWwindow* window, int width, int height) {
             try {
               auto* app = reinterpret_cast<TestUiApplication*>(glfwGetWindowUserPointer(window));
-              app->environment->resized = true;
+              app->renderer->resized = true;
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
             }

@@ -30,7 +30,7 @@ namespace exqudens::vulkan::raii {
 
     protected:
 
-      class Environment {
+      class Renderer {
 
         public:
 
@@ -316,7 +316,7 @@ namespace exqudens::vulkan::raii {
         public:
 
           std::vector<std::string> arguments = {};
-          Environment* environment = nullptr;
+          Renderer* renderer = nullptr;
 
           TestUiApplication(const int& argc, char** argv) {
             try {
@@ -343,8 +343,8 @@ namespace exqudens::vulkan::raii {
               glfwSetWindowUserPointer(window, this);
               glfwSetFramebufferSizeCallback(window, frameBufferResizeCallback);
 
-              environment = new Environment();
-              environment->create(arguments, window, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
+              renderer = new Renderer();
+              renderer->create(arguments, window, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
 
               while (!glfwWindowShouldClose(window)) {
                 glfwPollEvents();
@@ -353,12 +353,12 @@ namespace exqudens::vulkan::raii {
                   glfwGetFramebufferSize(window, &width, &height);
                   glfwWaitEvents();
                 }
-                environment->drawFrame(width, height);
+                renderer->drawFrame(width, height);
               }
-              environment->waitIdle();
+              renderer->waitIdle();
 
-              environment->destroy();
-              delete environment;
+              renderer->destroy();
+              delete renderer;
               glfwDestroyWindow(window);
               glfwTerminate();
 
@@ -373,7 +373,7 @@ namespace exqudens::vulkan::raii {
           static void frameBufferResizeCallback(GLFWwindow* window, int width, int height) {
             try {
               auto* app = reinterpret_cast<TestUiApplication*>(glfwGetWindowUserPointer(window));
-              app->environment->resized = true;
+              app->renderer->resized = true;
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
             }
