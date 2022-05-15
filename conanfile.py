@@ -21,14 +21,14 @@ class ConanConfiguration(ConanFile):
 
     def set_name(self):
         try:
-            self.name = path.basename(path.dirname(path.abspath(__file__)))
+            self.name = tools.load(path.join(path.dirname(path.abspath(__file__)), "name-version.txt")).split(':')[0].strip()
         except Exception as e:
             error(format_exc())
             raise e
 
     def set_version(self):
         try:
-            self.version = tools.load(path.join(path.dirname(path.abspath(__file__)), "version.txt")).strip()
+            self.version = tools.load(path.join(path.dirname(path.abspath(__file__)), "name-version.txt")).split(':')[1].strip()
         except Exception as e:
             error(format_exc())
             raise e

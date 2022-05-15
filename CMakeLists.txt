@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.21 FATAL_ERROR)
-get_filename_component(RAW_NAME "${CMAKE_CURRENT_SOURCE_DIR}" NAME)
-string(REPLACE " " "_" NAME "${RAW_NAME}")
-file(READ "${CMAKE_CURRENT_SOURCE_DIR}/version.txt" RAW_VERSION)
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/name-version.txt" INFO)
+string(REPLACE ":" ";" INFO_LIST "${INFO}")
+list(GET INFO_LIST 0 RAW_NAME)
+list(GET INFO_LIST 1 RAW_VERSION)
+string(STRIP "${RAW_NAME}" NAME)
 string(STRIP "${RAW_VERSION}" VERSION)
 project("${NAME}" VERSION "${VERSION}" LANGUAGES "NONE")
 
@@ -14,7 +16,7 @@ include("GoogleTest")
 
 set_conan_settings(CONAN_SETTINGS
     "${CMAKE_SYSTEM_NAME}"
-    "${CXX_TARGET_ARCH}"
+    "${CMAKE_SYSTEM_PROCESSOR}"
     "${CMAKE_CXX_COMPILER_ID}"
     "${CMAKE_CXX_COMPILER_VERSION}"
     "${CMAKE_MSVC_RUNTIME_LIBRARY}"
@@ -25,16 +27,13 @@ set_conan_settings(CONAN_SETTINGS
     "glfw:build_type=Release"
     "glfw:compiler.runtime=${CONAN_RELEASE_COMPILER_RUNTIME}"
 )
-
 set_conan_options(CONAN_OPTIONS
     "vulkan:shared=True"
     "gtest:shared=${CONAN_BUILD_SHARED_LIBS}"
     "lodepng:shared=${CONAN_BUILD_SHARED_LIBS}"
     "glfw:shared=${CONAN_BUILD_SHARED_LIBS}"
 )
-
 set("CONAN_INSTALL_PREFIX" "${PROJECT_BINARY_DIR}/conan-install")
-
 if(NOT EXISTS "${CONAN_INSTALL_PREFIX}")
     execute_process(
         COMMAND "${CONAN_COMMAND}"
@@ -50,15 +49,11 @@ if(NOT EXISTS "${CONAN_INSTALL_PREFIX}")
         COMMAND_ERROR_IS_FATAL ANY
     )
 endif()
-
 if(NOT EXISTS "${CONAN_INSTALL_PREFIX}/conan-packages.cmake")
     message(FATAL_ERROR "Not exists: '${CONAN_INSTALL_PREFIX}/conan-packages.cmake'!")
 endif()
-
 include("${CONAN_INSTALL_PREFIX}/conan-packages.cmake")
-
 set(CMAKE_MODULE_PATH "${CONAN_INSTALL_PREFIX}")
-
 foreach(
     conanPackageName
     cmakePackageName
@@ -110,11 +105,8 @@ foreach(
         list(APPEND NOT_FOUND_PACKAGE_NAMES "${cmakePackageName}")
         find_package("${cmakePackageName}" "${cmakePackageVersion}" EXACT QUIET CONFIG)
     endif()
-
 endforeach()
-
 set_not_found_package_names(NOT_FOUND_PACKAGE_NAMES ${NOT_FOUND_PACKAGE_NAMES})
-
 if(NOT "" STREQUAL "${NOT_FOUND_PACKAGE_NAMES}")
     foreach(package ${NOT_FOUND_PACKAGE_NAMES})
         message(WARNING "${package}_FOUND: '${${package}_FOUND}'")
@@ -156,7 +148,7 @@ set_property(TARGET "${PROJECT_NAME}" APPEND PROPERTY "COMPATIBLE_INTERFACE_STRI
 if(MSVC AND "Debug" STREQUAL "${CMAKE_BUILD_TYPE}")
     target_compile_options("${PROJECT_NAME}" INTERFACE
         "-bigobj"
-        )
+    )
 endif()
 install(
     TARGETS "${PROJECT_NAME}"
