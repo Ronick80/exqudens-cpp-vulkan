@@ -128,6 +128,7 @@ add_library("${PROJECT_NAME}" INTERFACE
     "src/main/cpp/exqudens/vulkan/Instance.hpp"
     "src/main/cpp/exqudens/vulkan/Messenger.hpp"
     "src/main/cpp/exqudens/vulkan/DebugUtilsMessenger.hpp"
+    "src/main/cpp/exqudens/vulkan/Surface.hpp"
 
     "src/main/cpp/exqudens/vulkan/Macros.hpp"
     "src/main/cpp/exqudens/vulkan/Utility.hpp"

@@ -10,6 +10,7 @@
 #include "exqudens/vulkan/Instance.hpp"
 #include "exqudens/vulkan/Messenger.hpp"
 #include "exqudens/vulkan/DebugUtilsMessenger.hpp"
+#include "exqudens/vulkan/Surface.hpp"
 
 namespace exqudens::vulkan {
 
@@ -21,6 +22,7 @@ namespace exqudens::vulkan {
       unsigned int instanceId = 1;
       unsigned int messengerId = 1;
       unsigned int debugUtilsMessengerId = 1;
+      unsigned int surfaceId = 1;
 
       std::shared_ptr<Utility> utility = {};
 
@@ -28,6 +30,7 @@ namespace exqudens::vulkan {
       std::map<unsigned int, std::shared_ptr<Instance>> instances = {};
       std::map<unsigned int, std::shared_ptr<Messenger>> messengers = {};
       std::map<unsigned int, std::shared_ptr<DebugUtilsMessenger>> debugUtilsMessengers = {};
+      std::map<unsigned int, std::shared_ptr<Surface>> surfaces = {};
 
     public:
 
@@ -45,16 +48,16 @@ namespace exqudens::vulkan {
             utility->setEnvironmentVariable(std::string(key), std::string(value));
           }
 
-          auto* context = new Context;
+          auto* value = new Context;
 
-          context->id = contextId++;
-          context->createInfo = createInfo;
+          value->id = contextId++;
+          value->createInfo = createInfo;
 
-          auto* value = new vk::raii::Context;
+          auto* object = new vk::raii::Context;
 
-          context->value = std::shared_ptr<vk::raii::Context>(value);
+          value->value = std::shared_ptr<vk::raii::Context>(object);
 
-          return contexts[context->id] = std::shared_ptr<Context>(context);
+          return contexts[value->id] = std::shared_ptr<Context>(value);
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }
@@ -66,22 +69,22 @@ namespace exqudens::vulkan {
           const vk::InstanceCreateInfo& createInfo
       ) {
         try {
-          auto* instance = new Instance;
+          auto* value = new Instance;
 
-          instance->id = instanceId++;
-          instance->applicationInfo = applicationInfo;
-          instance->createInfo = createInfo;
+          value->id = instanceId++;
+          value->applicationInfo = applicationInfo;
+          value->createInfo = createInfo;
 
-          instance->createInfo.pApplicationInfo = &instance->applicationInfo;
+          value->createInfo.pApplicationInfo = &value->applicationInfo;
 
-          auto* value = new vk::raii::Instance(
+          auto* object = new vk::raii::Instance(
               *context.value,
-              instance->createInfo
+              value->createInfo
           );
 
-          instance->value = std::shared_ptr<vk::raii::Instance>(value);
+          value->value = std::shared_ptr<vk::raii::Instance>(object);
 
-          return instances[instance->id] = std::shared_ptr<Instance>(instance);
+          return instances[value->id] = std::shared_ptr<Instance>(value);
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }
@@ -98,15 +101,15 @@ namespace exqudens::vulkan {
           )>& toStringFunction
       ) {
         try {
-          auto* messenger = new Messenger;
+          auto* value = new Messenger;
 
-          messenger->id = messengerId++;
-          messenger->exceptionSeverity = exceptionSeverity;
-          messenger->outSeverity = outSeverity;
-          messenger->toStringFunction = toStringFunction;
-          messenger->out = &out;
+          value->id = messengerId++;
+          value->exceptionSeverity = exceptionSeverity;
+          value->outSeverity = outSeverity;
+          value->toStringFunction = toStringFunction;
+          value->out = &out;
 
-          return messengers[messengerId++] = std::shared_ptr<Messenger>(messenger);
+          return messengers[value->id] = std::shared_ptr<Messenger>(value);
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }
@@ -118,19 +121,38 @@ namespace exqudens::vulkan {
           const vk::DebugUtilsMessengerCreateInfoEXT& createInfo
       ) {
         try {
-          auto* debugUtilsMessenger = new DebugUtilsMessenger;
+          auto* value = new DebugUtilsMessenger;
 
-          debugUtilsMessenger->id = debugUtilsMessengerId++;
-          debugUtilsMessenger->createInfo = createInfo;
+          value->id = debugUtilsMessengerId++;
+          value->createInfo = createInfo;
 
-          auto* value = new vk::raii::DebugUtilsMessengerEXT(
+          auto* object = new vk::raii::DebugUtilsMessengerEXT(
               *instance.value,
               createInfo
           );
 
-          debugUtilsMessenger->value = std::shared_ptr<vk::raii::DebugUtilsMessengerEXT>(value);
+          value->value = std::shared_ptr<vk::raii::DebugUtilsMessengerEXT>(object);
 
-          return debugUtilsMessengers[debugUtilsMessenger->id] = std::shared_ptr<DebugUtilsMessenger>(debugUtilsMessenger);
+          return debugUtilsMessengers[value->id] = std::shared_ptr<DebugUtilsMessenger>(value);
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      std::shared_ptr<Surface> createSurface(
+          Instance& instance,
+          VkSurfaceKHR& vkSurface
+      ) {
+        try {
+          auto* value = new Surface;
+
+          value->id = surfaceId++;
+
+          auto* object = new vk::raii::SurfaceKHR(*instance.value, vkSurface);
+
+          value->value = std::shared_ptr<vk::raii::SurfaceKHR>(object);
+
+          return surfaces[value->id] = std::shared_ptr<Surface>(value);
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }

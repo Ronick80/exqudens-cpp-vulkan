@@ -47,6 +47,7 @@ namespace exqudens::vulkan {
           std::shared_ptr<Instance> instance = {};
           std::shared_ptr<Messenger> messenger = {};
           std::shared_ptr<DebugUtilsMessenger> debugUtilsMessenger = {};
+          std::shared_ptr<Surface> surface = {};
 
         public:
 
@@ -117,11 +118,22 @@ namespace exqudens::vulkan {
                       .setMessageType(vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance)
               );
 
+              VkSurfaceKHR vkSurface = nullptr;
+              auto vkInstance = static_cast<VkInstance>(*(*instance->value));
+              if (glfwCreateWindowSurface(vkInstance, window, nullptr, &vkSurface) != VK_SUCCESS) {
+                throw std::runtime_error(CALL_INFO() + ": failed to create surface!");
+              }
+              if (vkSurface == nullptr) {
+                throw std::runtime_error(CALL_INFO() + ": surface is null!");
+              }
+              surface = environment->createSurface(*instance, vkSurface);
+
               std::cout << std::format("context->createInfo.environmentVariables['VK_LAYER_PATH']: '{}'", context->createInfo.environmentVariables["VK_LAYER_PATH"]) << std::endl;
               std::cout << std::format("context->id: '{}'", context->id) << std::endl;
               std::cout << std::format("instance->id: '{}'", instance->id) << std::endl;
               std::cout << std::format("messenger->id: '{}'", messenger->id) << std::endl;
               std::cout << std::format("debugUtilsMessenger->id: '{}'", debugUtilsMessenger->id) << std::endl;
+              std::cout << std::format("surface->id: '{}'", surface->id) << std::endl;
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
             }
