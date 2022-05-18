@@ -48,6 +48,7 @@ namespace exqudens::vulkan {
           std::shared_ptr<Messenger> messenger = {};
           std::shared_ptr<DebugUtilsMessenger> debugUtilsMessenger = {};
           std::shared_ptr<Surface> surface = {};
+          std::shared_ptr<PhysicalDevice> physicalDevice = {};
 
         public:
 
@@ -105,7 +106,7 @@ namespace exqudens::vulkan {
                   std::cout,
                   {},
                   vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
-                  &Utility::toString
+                  {}
               );
 
               debugUtilsMessenger = environment->createDebugUtilsMessenger(
@@ -128,12 +129,22 @@ namespace exqudens::vulkan {
               }
               surface = environment->createSurface(*instance, vkSurface);
 
+              physicalDevice = environment->createPhysicalDevice(
+                  *instance,
+                  context->createInfo.enabledDeviceExtensionNames,
+                  vk::PhysicalDeviceFeatures()
+                    .setSamplerAnisotropy(context->createInfo.samplerAnisotropy),
+                  {vk::QueueFlagBits::eCompute, vk::QueueFlagBits::eTransfer, vk::QueueFlagBits::eGraphics},
+                  surface
+              );
+
               std::cout << std::format("context->createInfo.environmentVariables['VK_LAYER_PATH']: '{}'", context->createInfo.environmentVariables["VK_LAYER_PATH"]) << std::endl;
               std::cout << std::format("context->id: '{}'", context->id) << std::endl;
               std::cout << std::format("instance->id: '{}'", instance->id) << std::endl;
               std::cout << std::format("messenger->id: '{}'", messenger->id) << std::endl;
               std::cout << std::format("debugUtilsMessenger->id: '{}'", debugUtilsMessenger->id) << std::endl;
               std::cout << std::format("surface->id: '{}'", surface->id) << std::endl;
+              std::cout << std::format("physicalDevice->id: '{}'", physicalDevice->id) << std::endl;
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
             }

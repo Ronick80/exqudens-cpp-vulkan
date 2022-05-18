@@ -13,6 +13,7 @@ namespace exqudens::vulkan {
       std::vector<const char*> enabledLayerNames;
       std::vector<const char*> enabledExtensionNames;
       std::vector<const char*> enabledDeviceExtensionNames;
+      bool samplerAnisotropy;
 
       ContextCreateInfo& setEnvironmentVariables(const std::map<const char*, const char*>& value) {
         environmentVariables = value;
@@ -31,6 +32,11 @@ namespace exqudens::vulkan {
 
       ContextCreateInfo& setEnabledDeviceExtensionNames(const std::vector<const char*>& value) {
         enabledDeviceExtensionNames = value;
+        return *this;
+      }
+
+      ContextCreateInfo& setSamplerAnisotropy(const bool& value) {
+        samplerAnisotropy = value;
         return *this;
       }
 
