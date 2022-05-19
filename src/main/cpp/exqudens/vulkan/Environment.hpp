@@ -15,6 +15,7 @@
 #include "exqudens/vulkan/DebugUtilsMessenger.hpp"
 #include "exqudens/vulkan/Surface.hpp"
 #include "exqudens/vulkan/PhysicalDevice.hpp"
+#include "exqudens/vulkan/Device.hpp"
 
 namespace exqudens::vulkan {
 
@@ -28,6 +29,7 @@ namespace exqudens::vulkan {
       unsigned int debugUtilsMessengerId = 1;
       unsigned int surfaceId = 1;
       unsigned int physicalDeviceId = 1;
+      unsigned int deviceId = 1;
 
       std::vector<vk::raii::PhysicalDevice> physicalDevices = {};
 
@@ -37,6 +39,7 @@ namespace exqudens::vulkan {
       std::map<unsigned int, std::shared_ptr<DebugUtilsMessenger>> debugUtilsMessengerMap = {};
       std::map<unsigned int, std::shared_ptr<Surface>> surfaceMap = {};
       std::map<unsigned int, std::shared_ptr<PhysicalDevice>> physicalDeviceMap = {};
+      std::map<unsigned int, std::shared_ptr<Device>> deviceMap = {};
 
     public:
 
@@ -163,12 +166,14 @@ namespace exqudens::vulkan {
           Instance& instance,
           const std::vector<const char*>& enabledDeviceExtensionNames,
           const vk::PhysicalDeviceFeatures& features,
+          const float& queuePriorities,
           const std::vector<vk::QueueFlagBits>& queueTypes,
           const std::shared_ptr<Surface>& surface
       ) {
         try {
           auto* value = new PhysicalDevice;
           value->id = physicalDeviceId++;
+          value->queuePriorities = queuePriorities;
           value->features = features;
           physicalDevices = vk::raii::PhysicalDevices(*instance.value);
           for (vk::raii::PhysicalDevice& physicalDevice : physicalDevices) {
@@ -178,45 +183,54 @@ namespace exqudens::vulkan {
             bool swapChainAdequate = true;
             bool anisotropyAdequate = true;
 
-            std::vector<Queue> computeQueues = {};
-            std::vector<Queue> transferQueues = {};
-            std::vector<Queue> graphicsQueues = {};
-            std::vector<Queue> presentQueues = {};
+            std::vector<vk::DeviceQueueCreateInfo> computeQueueCreateInfos = {};
+            std::vector<vk::DeviceQueueCreateInfo> transferQueueCreateInfos = {};
+            std::vector<vk::DeviceQueueCreateInfo> graphicsQueueCreateInfos = {};
+            std::vector<vk::DeviceQueueCreateInfo> presentQueueCreateInfos = {};
+            std::map<uint32_t, vk::DeviceQueueCreateInfo> queueCreateInfoMap = {};
 
             std::vector<vk::QueueFamilyProperties> queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
             for (const vk::QueueFlagBits& queueType : queueTypes) {
-              std::vector<Queue> queues = {};
+              std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos = {};
               for (std::size_t i = 0; i < queueFamilyProperties.size(); i++) {
                 if (queueFamilyProperties[i].queueFlags & queueType) {
-                  auto queueFamilyIndex = static_cast<uint32_t>(i);
-                  uint32_t queueCount = queueFamilyProperties[i].queueCount;
-                  queues.emplace_back(Queue {.familyIndex = queueFamilyIndex, .count = queueCount});
+                  vk::DeviceQueueCreateInfo queueCreateInfo = vk::DeviceQueueCreateInfo()
+                      .setQueueFamilyIndex(static_cast<uint32_t>(i))
+                      .setQueueCount(queueFamilyProperties[i].queueCount)
+                      .setFlags({})
+                      .setQueuePriorities(value->queuePriorities);
+                  queueCreateInfos.emplace_back(queueCreateInfo);
+                  queueCreateInfoMap.try_emplace(queueCreateInfo.queueFamilyIndex, queueCreateInfo);
                 }
               }
-              if (queues.empty()) {
+              if (queueCreateInfos.empty()) {
                 queueFamilyIndicesAdequate = false;
                 break;
               } else {
                 if (vk::QueueFlagBits::eCompute == queueType) {
-                  computeQueues = queues;
+                  computeQueueCreateInfos = queueCreateInfos;
                 } else if (vk::QueueFlagBits::eTransfer == queueType) {
-                  transferQueues = queues;
+                  transferQueueCreateInfos = queueCreateInfos;
                 } else if (vk::QueueFlagBits::eGraphics == queueType) {
-                  graphicsQueues = queues;
+                  graphicsQueueCreateInfos = queueCreateInfos;
                 }
               }
             }
             if (surface) {
-              std::vector<Queue> queues = {};
+              std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos = {};
               for (std::size_t i = 0; i < queueFamilyProperties.size(); i++) {
                 if (physicalDevice.getSurfaceSupportKHR(static_cast<uint32_t>(i), *(*surface->value))) {
-                  auto queueFamilyIndex = static_cast<uint32_t>(i);
-                  uint32_t queueCount = queueFamilyProperties[i].queueCount;
-                  queues.emplace_back(Queue {.familyIndex = queueFamilyIndex, .count = queueCount});
+                  vk::DeviceQueueCreateInfo queueCreateInfo = vk::DeviceQueueCreateInfo()
+                      .setQueueFamilyIndex(static_cast<uint32_t>(i))
+                      .setQueueCount(queueFamilyProperties[i].queueCount)
+                      .setFlags({})
+                      .setQueuePriorities(value->queuePriorities);
+                  queueCreateInfos.emplace_back(queueCreateInfo);
+                  queueCreateInfoMap.try_emplace(queueCreateInfo.queueFamilyIndex, queueCreateInfo);
                 }
               }
-              if (queues.empty()) {
-                presentQueues = queues;
+              if (queueCreateInfos.empty()) {
+                presentQueueCreateInfos = queueCreateInfos;
                 queueFamilyIndicesAdequate = false;
               }
             }
@@ -258,15 +272,39 @@ namespace exqudens::vulkan {
                 && swapChainAdequate
                 && anisotropyAdequate
             ) {
-              value->computeQueues = computeQueues;
-              value->transferQueues = transferQueues;
-              value->graphicsQueues = graphicsQueues;
-              value->presentQueues = presentQueues;
+              value->computeQueueCreateInfos = computeQueueCreateInfos;
+              value->transferQueueCreateInfos = transferQueueCreateInfos;
+              value->graphicsQueueCreateInfos = graphicsQueueCreateInfos;
+              value->presentQueueCreateInfos = presentQueueCreateInfos;
+              std::vector<vk::DeviceQueueCreateInfo> uniqueQueueCreateInfos;
+              for (const auto& [k, v] : queueCreateInfoMap) {
+                uniqueQueueCreateInfos.emplace_back(v);
+              }
+              value->uniqueQueueCreateInfos = uniqueQueueCreateInfos;
               value->value = &physicalDevice;
               break;
             }
           }
           return physicalDeviceMap[value->id] = std::shared_ptr<PhysicalDevice>(value);
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      virtual std::shared_ptr<Device> createDevice(
+          PhysicalDevice& physicalDevice,
+          const vk::DeviceCreateInfo& createInfo
+      ) {
+        try {
+          auto* value = new Device;
+          value->id = deviceId++;
+          value->createInfo = createInfo;
+          auto* object = new vk::raii::Device(
+              *physicalDevice.value,
+              value->createInfo
+          );
+          value->value = std::shared_ptr<vk::raii::Device>(object);
+          return deviceMap[value->id] = std::shared_ptr<Device>(value);
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }

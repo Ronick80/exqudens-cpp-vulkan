@@ -49,6 +49,7 @@ namespace exqudens::vulkan {
           std::shared_ptr<DebugUtilsMessenger> debugUtilsMessenger = {};
           std::shared_ptr<Surface> surface = {};
           std::shared_ptr<PhysicalDevice> physicalDevice = {};
+          std::shared_ptr<Device> device = {};
 
         public:
 
@@ -134,8 +135,18 @@ namespace exqudens::vulkan {
                   context->createInfo.enabledDeviceExtensionNames,
                   vk::PhysicalDeviceFeatures()
                     .setSamplerAnisotropy(context->createInfo.samplerAnisotropy),
+                  1.0f,
                   {vk::QueueFlagBits::eCompute, vk::QueueFlagBits::eTransfer, vk::QueueFlagBits::eGraphics},
                   surface
+              );
+
+              device = environment->createDevice(
+                  *physicalDevice,
+                  vk::DeviceCreateInfo()
+                      .setQueueCreateInfos(physicalDevice->uniqueQueueCreateInfos)
+                      .setPEnabledFeatures(&physicalDevice->features)
+                      .setPEnabledExtensionNames(context->createInfo.enabledDeviceExtensionNames)
+                      .setPEnabledLayerNames(context->createInfo.enabledLayerNames)
               );
 
               std::cout << std::format("context->createInfo.environmentVariables['VK_LAYER_PATH']: '{}'", context->createInfo.environmentVariables["VK_LAYER_PATH"]) << std::endl;
@@ -145,6 +156,7 @@ namespace exqudens::vulkan {
               std::cout << std::format("debugUtilsMessenger->id: '{}'", debugUtilsMessenger->id) << std::endl;
               std::cout << std::format("surface->id: '{}'", surface->id) << std::endl;
               std::cout << std::format("physicalDevice->id: '{}'", physicalDevice->id) << std::endl;
+              std::cout << std::format("device->id: '{}'", device->id) << std::endl;
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
             }

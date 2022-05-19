@@ -8,6 +8,7 @@
 #include <format>
 
 #include <gtest/gtest.h>
+#include <vulkan/vulkan_raii.hpp>
 
 #include "TestUtils.hpp"
 
@@ -73,7 +74,7 @@ namespace exqudens::vulkan {
 
   TEST_F(OtherTests, test1) {
     try {
-      std::shared_ptr<MyClassA> obj1 = {};
+      /*std::shared_ptr<MyClassA> obj1 = {};
       obj1 = std::shared_ptr<MyClassA>(create()); // std::make_shared<MyClassA>(MyClassA());
       std::shared_ptr<MyClassA> obj2 = obj1;
 
@@ -87,7 +88,16 @@ namespace exqudens::vulkan {
       obj1->setId(11);
 
       ASSERT_EQ(11, obj1->getId());
-      ASSERT_EQ(11, obj2->getId());
+      ASSERT_EQ(11, obj2->getId());*/
+
+      std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos = {
+          vk::DeviceQueueCreateInfo(),
+          vk::DeviceQueueCreateInfo()
+      };
+      vk::DeviceCreateInfo deviceCreateInfo = vk::DeviceCreateInfo()
+          .setQueueCreateInfos(queueCreateInfos);
+
+      ASSERT_EQ(2, deviceCreateInfo.queueCreateInfoCount);
     } catch (const std::exception& e) {
       FAIL() << TestUtils::toString(e);
     }
