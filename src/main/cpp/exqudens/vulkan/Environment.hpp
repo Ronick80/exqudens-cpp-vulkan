@@ -1,14 +1,19 @@
 #pragma once
 
+#include <cstdint>
+#include <cstdlib>
 #include <string>
+#include <optional>
 #include <vector>
 #include <set>
 #include <map>
 #include <memory>
+#include <limits>
 #include <utility>
+#include <algorithm>
 #include <ostream>
 
-#include "exqudens/vulkan/Utility.hpp"
+#include "exqudens/vulkan/Macros.hpp"
 #include "exqudens/vulkan/Context.hpp"
 #include "exqudens/vulkan/Instance.hpp"
 #include "exqudens/vulkan/Messenger.hpp"
@@ -16,6 +21,7 @@
 #include "exqudens/vulkan/Surface.hpp"
 #include "exqudens/vulkan/PhysicalDevice.hpp"
 #include "exqudens/vulkan/Device.hpp"
+#include "exqudens/vulkan/SwapChain.hpp"
 
 namespace exqudens::vulkan {
 
@@ -30,6 +36,7 @@ namespace exqudens::vulkan {
       unsigned int surfaceId = 1;
       unsigned int physicalDeviceId = 1;
       unsigned int deviceId = 1;
+      unsigned int swapChainId = 1;
 
       std::vector<vk::raii::PhysicalDevice> physicalDevices = {};
 
@@ -40,6 +47,7 @@ namespace exqudens::vulkan {
       std::map<unsigned int, std::shared_ptr<Surface>> surfaceMap = {};
       std::map<unsigned int, std::shared_ptr<PhysicalDevice>> physicalDeviceMap = {};
       std::map<unsigned int, std::shared_ptr<Device>> deviceMap = {};
+      std::map<unsigned int, std::shared_ptr<SwapChain>> swapChainMap = {};
 
     public:
 
@@ -48,7 +56,7 @@ namespace exqudens::vulkan {
       ) {
         try {
           for (auto const& [key, value] : createInfo.environmentVariables) {
-            getUtility()->setEnvironmentVariable(std::string(key), std::string(value));
+            setEnvironmentVariable(std::string(key), std::string(value));
           }
 
           auto* value = new Context;
@@ -106,14 +114,14 @@ namespace exqudens::vulkan {
             value->toStringFunction = toStringFunction;
           } else {
             /*value->toStringFunction = std::bind(
-                &Utility::toString,
-                utility,
+                &Environment::toString,
+                this,
                 std::placeholders::_1,
                 std::placeholders::_2,
                 std::placeholders::_3
             );*/
             value->toStringFunction = [this](auto&& o1, auto&& o2, auto&& o3) {
-              return getUtility()->toString(
+              return toString(
                   std::forward<decltype(o1)>(o1),
                   std::forward<decltype(o2)>(o2),
                   std::forward<decltype(o3)>(o3)
@@ -310,11 +318,146 @@ namespace exqudens::vulkan {
         }
       }
 
-    protected:
-
-      virtual std::shared_ptr<Utility> getUtility() {
+      virtual std::shared_ptr<SwapChain> createSwapChain(
+          Device& device,
+          const vk::SwapchainCreateInfoKHR& createInfo
+      ) {
         try {
-          return std::make_shared<Utility>();
+          auto* value = new SwapChain;
+          value->id = swapChainId++;
+          value->createInfo = createInfo;
+          auto* object = new vk::raii::SwapchainKHR(
+              *device.value,
+              value->createInfo
+          );
+          value->value = std::shared_ptr<vk::raii::SwapchainKHR>(object);
+          return swapChainMap[value->id] = std::shared_ptr<SwapChain>(value);
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+    public:
+
+      virtual void setEnvironmentVariable(const std::string& name, const std::string& value) {
+        try {
+#if defined(_WINDOWS)
+          _putenv_s(name.c_str(), value.c_str());
+#endif
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      virtual std::optional<std::string> getEnvironmentVariable(const std::string& name) {
+        try {
+          std::optional<std::string> value;
+#if defined(_WINDOWS)
+          char* buffer;
+          size_t size;
+          errno_t error = _dupenv_s(&buffer, &size, name.c_str());
+          if (error) {
+            return value;
+          }
+          if (buffer != nullptr) {
+            value.emplace(std::string(buffer));
+          }
+#endif
+          return value;
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      virtual std::string toString(
+          vk::DebugUtilsMessageSeverityFlagsEXT severity,
+          vk::DebugUtilsMessageTypeFlagsEXT type,
+          const std::string& message
+      ) {
+        try {
+          return vk::to_string(severity) + " " + vk::to_string(type) + ": " + message;
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      virtual vk::SwapchainCreateInfoKHR swapChainCreateInfo(
+          PhysicalDevice& physicalDevice,
+          Surface& surface,
+          uint32_t& width,
+          uint32_t& height
+      ) {
+        try {
+          std::optional<vk::SurfaceFormatKHR> surfaceFormat;
+          std::optional<vk::PresentModeKHR> surfacePresentMode;
+          std::optional<vk::SurfaceCapabilitiesKHR> surfaceCapabilities;
+          std::optional<vk::Extent2D> surfaceExtent;
+          std::optional<vk::SurfaceTransformFlagBitsKHR> surfaceTransform;
+          std::optional<vk::CompositeAlphaFlagBitsKHR> surfaceCompositeAlpha;
+
+          std::vector<vk::SurfaceFormatKHR> surfaceFormats = physicalDevice.value->getSurfaceFormatsKHR(*(*surface.value));
+          if (surfaceFormats.size() == 1 && surfaceFormats.front() == vk::Format::eUndefined) {
+            surfaceFormat = surfaceFormats.front();
+          } else {
+            for (const vk::SurfaceFormatKHR& f : surfaceFormats) {
+              if (vk::Format::eB8G8R8A8Srgb == f.format && vk::ColorSpaceKHR::eSrgbNonlinear == f.colorSpace) {
+                surfaceFormat = f;
+                break;
+              }
+            }
+          }
+
+          std::vector<vk::PresentModeKHR> surfacePresentModes = physicalDevice.value->getSurfacePresentModesKHR(*(*surface.value));
+          surfacePresentMode = vk::PresentModeKHR::eFifo;
+          for (const vk::PresentModeKHR& p : surfacePresentModes) {
+            if (vk::PresentModeKHR::eMailbox == p) {
+              surfacePresentMode = p;
+              break;
+            }
+          }
+
+          surfaceCapabilities = physicalDevice.value->getSurfaceCapabilitiesKHR(*(*surface.value));
+
+          if (surfaceCapabilities.value().currentExtent.width == std::numeric_limits<uint32_t>::max()) {
+            surfaceExtent = vk::Extent2D()
+                .setWidth(std::clamp(width, surfaceCapabilities.value().minImageExtent.width, surfaceCapabilities.value().maxImageExtent.width))
+                .setHeight(std::clamp(height, surfaceCapabilities.value().minImageExtent.height, surfaceCapabilities.value().maxImageExtent.height));
+          } else {
+            surfaceExtent = surfaceCapabilities.value().currentExtent;
+          }
+
+          if (surfaceCapabilities.value().supportedTransforms & vk::SurfaceTransformFlagBitsKHR::eIdentity) {
+            surfaceTransform = vk::SurfaceTransformFlagBitsKHR::eIdentity;
+          } else {
+            surfaceTransform = surfaceCapabilities.value().currentTransform;
+          }
+
+          if (surfaceCapabilities.value().supportedCompositeAlpha & vk::CompositeAlphaFlagBitsKHR::ePreMultiplied) {
+            surfaceCompositeAlpha = vk::CompositeAlphaFlagBitsKHR::ePreMultiplied;
+          } else if (surfaceCapabilities.value().supportedCompositeAlpha & vk::CompositeAlphaFlagBitsKHR::ePostMultiplied) {
+            surfaceCompositeAlpha = vk::CompositeAlphaFlagBitsKHR::ePostMultiplied;
+          } else if (surfaceCapabilities.value().supportedCompositeAlpha & vk::CompositeAlphaFlagBitsKHR::eInherit) {
+            surfaceCompositeAlpha = vk::CompositeAlphaFlagBitsKHR::eInherit;
+          } else {
+            surfaceCompositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
+          }
+
+          return vk::SwapchainCreateInfoKHR()
+              .setFlags({})
+              .setSurface(*(*surface.value))
+              .setMinImageCount(surfaceCapabilities.value().minImageCount)
+              .setImageFormat(surfaceFormat.value().format)
+              .setImageColorSpace(surfaceFormat.value().colorSpace)
+              .setImageExtent(surfaceExtent.value())
+              .setImageArrayLayers(1)
+              .setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
+              .setImageSharingMode(vk::SharingMode::eExclusive)
+              .setQueueFamilyIndices({})
+              .setPreTransform(surfaceTransform.value())
+              .setCompositeAlpha(surfaceCompositeAlpha.value())
+              .setPresentMode(surfacePresentMode.value())
+              .setClipped(true)
+              .setOldSwapchain({});
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }

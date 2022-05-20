@@ -50,6 +50,7 @@ namespace exqudens::vulkan {
           std::shared_ptr<Surface> surface = {};
           std::shared_ptr<PhysicalDevice> physicalDevice = {};
           std::shared_ptr<Device> device = {};
+          std::shared_ptr<SwapChain> swapChain = {};
 
         public:
 
@@ -105,8 +106,8 @@ namespace exqudens::vulkan {
 
               messenger = environment->createMessenger(
                   std::cout,
-                  {},
-                  vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
+                  vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
+                  vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose,
                   {}
               );
 
@@ -149,6 +150,11 @@ namespace exqudens::vulkan {
                       .setPEnabledLayerNames(context->createInfo.enabledLayerNames)
               );
 
+              swapChain = environment->createSwapChain(
+                  *device,
+                  environment->swapChainCreateInfo(*physicalDevice, *surface, width, height)
+              );
+
               std::cout << std::format("context->createInfo.environmentVariables['VK_LAYER_PATH']: '{}'", context->createInfo.environmentVariables["VK_LAYER_PATH"]) << std::endl;
               std::cout << std::format("context->id: '{}'", context->id) << std::endl;
               std::cout << std::format("instance->id: '{}'", instance->id) << std::endl;
@@ -157,6 +163,7 @@ namespace exqudens::vulkan {
               std::cout << std::format("surface->id: '{}'", surface->id) << std::endl;
               std::cout << std::format("physicalDevice->id: '{}'", physicalDevice->id) << std::endl;
               std::cout << std::format("device->id: '{}'", device->id) << std::endl;
+              std::cout << std::format("swapChain->id: '{}'", swapChain->id) << std::endl;
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
             }

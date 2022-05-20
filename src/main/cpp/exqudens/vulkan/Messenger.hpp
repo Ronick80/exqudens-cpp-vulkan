@@ -25,8 +25,12 @@ namespace exqudens::vulkan {
         std::string formatted = vk::to_string(severity) + " " + vk::to_string(type) + ": " + message;
 
         if (data != nullptr) {
+          Messenger* messenger = nullptr;
           try {
-            auto* messenger = reinterpret_cast<Messenger*>(data);
+            messenger = reinterpret_cast<Messenger*>(data);
+          } catch (...) {
+          }
+          if (messenger != nullptr) {
             if (messenger->toStringFunction) {
               formatted = messenger->toStringFunction(severity, type, message);
             }
@@ -42,11 +46,9 @@ namespace exqudens::vulkan {
                 return VK_FALSE;
               }
             }
-          } catch (...) {
           }
         }
 
-        std::cout << formatted << std::endl;
         return VK_FALSE;
       } catch (...) {
         std::throw_with_nested(std::runtime_error(CALL_INFO()));
