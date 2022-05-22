@@ -51,7 +51,7 @@ namespace exqudens::vulkan {
 
     public:
 
-      virtual std::shared_ptr<Context> createContext(
+      virtual Context createContext(
           const ContextCreateInfo& createInfo
       ) {
         try {
@@ -66,14 +66,14 @@ namespace exqudens::vulkan {
           auto* object = new vk::raii::Context;
 
           value->value = std::shared_ptr<vk::raii::Context>(object);
-
-          return contextMap[value->id] = std::shared_ptr<Context>(value);
+          contextMap[value->id] = std::shared_ptr<Context>(value);
+          return *contextMap[value->id];
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }
       }
 
-      virtual std::shared_ptr<Instance> createInstance(
+      virtual Instance createInstance(
           Context& context,
           const vk::ApplicationInfo& applicationInfo,
           const vk::InstanceCreateInfo& createInfo
@@ -89,13 +89,14 @@ namespace exqudens::vulkan {
               value->createInfo
           );
           value->value = std::shared_ptr<vk::raii::Instance>(object);
-          return instanceMap[value->id] = std::shared_ptr<Instance>(value);
+          instanceMap[value->id] = std::shared_ptr<Instance>(value);
+          return *instanceMap[value->id];
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }
       }
 
-      virtual std::shared_ptr<Messenger> createMessenger(
+      virtual Messenger createMessenger(
           std::ostream& out,
           const std::optional<vk::DebugUtilsMessageSeverityFlagsEXT>& exceptionSeverity,
           const std::optional<vk::DebugUtilsMessageSeverityFlagsEXT>& outSeverity,
@@ -129,13 +130,14 @@ namespace exqudens::vulkan {
             };
           }
           value->out = &out;
-          return messengerMap[value->id] = std::shared_ptr<Messenger>(value);
+          messengerMap[value->id] = std::shared_ptr<Messenger>(value);
+          return *messengerMap[value->id];
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }
       }
 
-      virtual std::shared_ptr<DebugUtilsMessenger> createDebugUtilsMessenger(
+      virtual DebugUtilsMessenger createDebugUtilsMessenger(
           Instance& instance,
           Messenger& messenger,
           const vk::DebugUtilsMessengerCreateInfoEXT& createInfo
@@ -149,13 +151,14 @@ namespace exqudens::vulkan {
               createInfo
           );
           value->value = std::shared_ptr<vk::raii::DebugUtilsMessengerEXT>(object);
-          return debugUtilsMessengerMap[value->id] = std::shared_ptr<DebugUtilsMessenger>(value);
+          debugUtilsMessengerMap[value->id] = std::shared_ptr<DebugUtilsMessenger>(value);
+          return *debugUtilsMessengerMap[value->id];
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }
       }
 
-      virtual std::shared_ptr<Surface> createSurface(
+      virtual Surface createSurface(
           Instance& instance,
           VkSurfaceKHR& vkSurface
       ) {
@@ -164,19 +167,20 @@ namespace exqudens::vulkan {
           value->id = surfaceId++;
           auto* object = new vk::raii::SurfaceKHR(*instance.value, vkSurface);
           value->value = std::shared_ptr<vk::raii::SurfaceKHR>(object);
-          return surfaceMap[value->id] = std::shared_ptr<Surface>(value);
+          surfaceMap[value->id] = std::shared_ptr<Surface>(value);
+          return *surfaceMap[value->id];
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }
       }
 
-      virtual std::shared_ptr<PhysicalDevice> createPhysicalDevice(
+      virtual PhysicalDevice createPhysicalDevice(
           Instance& instance,
           const std::vector<const char*>& enabledDeviceExtensionNames,
           const vk::PhysicalDeviceFeatures& features,
           const float& queuePriorities,
           const std::vector<vk::QueueFlagBits>& queueTypes,
-          const std::shared_ptr<Surface>& surface
+          const std::optional<Surface>& surface
       ) {
         try {
           auto* value = new PhysicalDevice;
@@ -293,13 +297,14 @@ namespace exqudens::vulkan {
               break;
             }
           }
-          return physicalDeviceMap[value->id] = std::shared_ptr<PhysicalDevice>(value);
+          physicalDeviceMap[value->id] = std::shared_ptr<PhysicalDevice>(value);
+          return *physicalDeviceMap[value->id];
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }
       }
 
-      virtual std::shared_ptr<Device> createDevice(
+      virtual Device createDevice(
           PhysicalDevice& physicalDevice,
           const vk::DeviceCreateInfo& createInfo
       ) {
@@ -312,13 +317,14 @@ namespace exqudens::vulkan {
               value->createInfo
           );
           value->value = std::shared_ptr<vk::raii::Device>(object);
-          return deviceMap[value->id] = std::shared_ptr<Device>(value);
+          deviceMap[value->id] = std::shared_ptr<Device>(value);
+          return *deviceMap[value->id];
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }
       }
 
-      virtual std::shared_ptr<SwapChain> createSwapChain(
+      virtual SwapChain createSwapChain(
           Device& device,
           const vk::SwapchainCreateInfoKHR& createInfo
       ) {
@@ -331,7 +337,8 @@ namespace exqudens::vulkan {
               value->createInfo
           );
           value->value = std::shared_ptr<vk::raii::SwapchainKHR>(object);
-          return swapChainMap[value->id] = std::shared_ptr<SwapChain>(value);
+          swapChainMap[value->id] = std::shared_ptr<SwapChain>(value);
+          return *swapChainMap[value->id];
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }

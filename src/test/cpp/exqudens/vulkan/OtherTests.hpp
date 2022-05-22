@@ -3,12 +3,12 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <map>
 #include <memory>
 #include <iostream>
 #include <format>
 
 #include <gtest/gtest.h>
-#include <vulkan/vulkan_raii.hpp>
 
 #include "TestUtils.hpp"
 
@@ -18,8 +18,8 @@ namespace exqudens::vulkan {
 
     private:
 
-      inline static int currentId = 1;
-      int id = -1;
+      inline static unsigned int currentId = 1;
+      unsigned int id = 0;
 
     public:
 
@@ -29,17 +29,38 @@ namespace exqudens::vulkan {
         currentId++;
       }
 
-      MyClassA& setId(const int& id) {
+      MyClassA& setId(const unsigned int& id) {
         this->id = id;
         return *this;
       }
 
-      int getId() {
+      unsigned int getId() {
         return id;
       }
 
       ~MyClassA() {
         std::cout << std::format("{}", CALL_INFO()) << std::endl;
+      }
+
+  };
+
+  class MyEnvironment {
+
+    private:
+
+      unsigned int instanceId = 1;
+
+      std::map<unsigned int, std::shared_ptr<MyClassA>> instanceMap = {};
+
+    public:
+
+      MyClassA& createInstance() {
+        auto* instance = new MyClassA();
+        std::cout << "AAA" << std::endl;
+        instance->setId(instanceId++);
+        instanceMap[instance->getId()] = std::shared_ptr<MyClassA>(instance);
+        std::cout << "BBB" << std::endl;
+        return *instanceMap[instance->getId()];
       }
 
   };
@@ -56,12 +77,6 @@ namespace exqudens::vulkan {
         }
       }
 
-      MyClassA* create() {
-        std::cout << std::format("{}", CALL_INFO()) << std::endl;
-        auto* a = new MyClassA;
-        return a;
-      }
-
       void TearDown() override {
         try {
           std::cout << std::format("{}", CALL_INFO()) << std::endl;
@@ -74,30 +89,12 @@ namespace exqudens::vulkan {
 
   TEST_F(OtherTests, test1) {
     try {
-      /*std::shared_ptr<MyClassA> obj1 = {};
-      obj1 = std::shared_ptr<MyClassA>(create()); // std::make_shared<MyClassA>(MyClassA());
-      std::shared_ptr<MyClassA> obj2 = obj1;
+      MyEnvironment environment;
 
-      if (obj1) {
-        std::cout << obj1->getId() << std::endl;
-      }
+      MyClassA& instance = environment.createInstance();
+      std::cout << "CCC" << std::endl;
 
-      ASSERT_EQ(1, obj1->getId());
-      ASSERT_EQ(1, obj2->getId());
-
-      obj1->setId(11);
-
-      ASSERT_EQ(11, obj1->getId());
-      ASSERT_EQ(11, obj2->getId());*/
-
-      std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos = {
-          vk::DeviceQueueCreateInfo(),
-          vk::DeviceQueueCreateInfo()
-      };
-      vk::DeviceCreateInfo deviceCreateInfo = vk::DeviceCreateInfo()
-          .setQueueCreateInfos(queueCreateInfos);
-
-      ASSERT_EQ(2, deviceCreateInfo.queueCreateInfoCount);
+      ASSERT_EQ(1, instance.getId());
     } catch (const std::exception& e) {
       FAIL() << TestUtils::toString(e);
     }

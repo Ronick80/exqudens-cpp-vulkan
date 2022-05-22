@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstring>
-#include <memory>
 #include <string>
 #include <optional>
 #include <vector>
@@ -42,15 +41,15 @@ namespace exqudens::vulkan {
           std::vector<Vertex> vertices = {};
           std::vector<uint16_t> indices = {};
 
-          std::shared_ptr<Environment> environment = {};
-          std::shared_ptr<Context> context = {};
-          std::shared_ptr<Instance> instance = {};
-          std::shared_ptr<Messenger> messenger = {};
-          std::shared_ptr<DebugUtilsMessenger> debugUtilsMessenger = {};
-          std::shared_ptr<Surface> surface = {};
-          std::shared_ptr<PhysicalDevice> physicalDevice = {};
-          std::shared_ptr<Device> device = {};
-          std::shared_ptr<SwapChain> swapChain = {};
+          Environment environment = {};
+          Context context = {};
+          Instance instance = {};
+          Messenger messenger = {};
+          DebugUtilsMessenger debugUtilsMessenger = {};
+          Surface surface = {};
+          PhysicalDevice physicalDevice = {};
+          Device device = {};
+          SwapChain swapChain = {};
 
         public:
 
@@ -73,9 +72,9 @@ namespace exqudens::vulkan {
                   4, 5, 6, 6, 7, 4
               };
 
-              environment = std::make_shared<Environment>();
+              environment = Environment();
 
-              context = environment->createContext(
+              context = environment.createContext(
                   ContextCreateInfo()
                       .setEnvironmentVariables({{"VK_LAYER_PATH", arguments.front().c_str()}})
                       .setEnabledLayerNames({"VK_LAYER_KHRONOS_validation"})
@@ -88,11 +87,11 @@ namespace exqudens::vulkan {
               glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
               std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
               for (const char*& extension : extensions) {
-                context->createInfo.enabledExtensionNames.emplace_back(extension);
+                context.createInfo.enabledExtensionNames.emplace_back(extension);
               }
 
-              instance = environment->createInstance(
-                  *context,
+              instance = environment.createInstance(
+                  context,
                   vk::ApplicationInfo()
                       .setPApplicationName("Exqudens Application")
                       .setApplicationVersion(VK_MAKE_VERSION(1, 0, 0))
@@ -100,70 +99,70 @@ namespace exqudens::vulkan {
                       .setEngineVersion(VK_MAKE_VERSION(1, 0, 0))
                       .setApiVersion(VK_API_VERSION_1_0),
                   vk::InstanceCreateInfo()
-                      .setPEnabledExtensionNames(context->createInfo.enabledExtensionNames)
-                      .setPEnabledLayerNames(context->createInfo.enabledLayerNames)
+                      .setPEnabledExtensionNames(context.createInfo.enabledExtensionNames)
+                      .setPEnabledLayerNames(context.createInfo.enabledLayerNames)
               );
 
-              messenger = environment->createMessenger(
+              messenger = environment.createMessenger(
                   std::cout,
                   vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
                   vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose,
                   {}
               );
 
-              debugUtilsMessenger = environment->createDebugUtilsMessenger(
-                  *instance,
-                  *messenger,
+              debugUtilsMessenger = environment.createDebugUtilsMessenger(
+                  instance,
+                  messenger,
                   vk::DebugUtilsMessengerCreateInfoEXT()
-                      .setPUserData(messenger.get())
+                      .setPUserData(&messenger)
                       .setPfnUserCallback(&Messenger::callback)
                       .setMessageSeverity(vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError)
                       .setMessageType(vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance)
               );
 
               VkSurfaceKHR vkSurface = nullptr;
-              auto vkInstance = static_cast<VkInstance>(*(*instance->value));
+              auto vkInstance = static_cast<VkInstance>(*(*instance.value));
               if (glfwCreateWindowSurface(vkInstance, window, nullptr, &vkSurface) != VK_SUCCESS) {
                 throw std::runtime_error(CALL_INFO() + ": failed to create surface!");
               }
               if (vkSurface == nullptr) {
                 throw std::runtime_error(CALL_INFO() + ": surface is null!");
               }
-              surface = environment->createSurface(*instance, vkSurface);
+              surface = environment.createSurface(instance, vkSurface);
 
-              physicalDevice = environment->createPhysicalDevice(
-                  *instance,
-                  context->createInfo.enabledDeviceExtensionNames,
+              physicalDevice = environment.createPhysicalDevice(
+                  instance,
+                  context.createInfo.enabledDeviceExtensionNames,
                   vk::PhysicalDeviceFeatures()
-                    .setSamplerAnisotropy(context->createInfo.samplerAnisotropy),
+                    .setSamplerAnisotropy(context.createInfo.samplerAnisotropy),
                   1.0f,
                   {vk::QueueFlagBits::eCompute, vk::QueueFlagBits::eTransfer, vk::QueueFlagBits::eGraphics},
                   surface
               );
 
-              device = environment->createDevice(
-                  *physicalDevice,
+              device = environment.createDevice(
+                  physicalDevice,
                   vk::DeviceCreateInfo()
-                      .setQueueCreateInfos(physicalDevice->uniqueQueueCreateInfos)
-                      .setPEnabledFeatures(&physicalDevice->features)
-                      .setPEnabledExtensionNames(context->createInfo.enabledDeviceExtensionNames)
-                      .setPEnabledLayerNames(context->createInfo.enabledLayerNames)
+                      .setQueueCreateInfos(physicalDevice.uniqueQueueCreateInfos)
+                      .setPEnabledFeatures(&physicalDevice.features)
+                      .setPEnabledExtensionNames(context.createInfo.enabledDeviceExtensionNames)
+                      .setPEnabledLayerNames(context.createInfo.enabledLayerNames)
               );
 
-              swapChain = environment->createSwapChain(
-                  *device,
-                  environment->swapChainCreateInfo(*physicalDevice, *surface, width, height)
+              swapChain = environment.createSwapChain(
+                  device,
+                  environment.swapChainCreateInfo(physicalDevice, surface, width, height)
               );
 
-              std::cout << std::format("context->createInfo.environmentVariables['VK_LAYER_PATH']: '{}'", context->createInfo.environmentVariables["VK_LAYER_PATH"]) << std::endl;
-              std::cout << std::format("context->id: '{}'", context->id) << std::endl;
-              std::cout << std::format("instance->id: '{}'", instance->id) << std::endl;
-              std::cout << std::format("messenger->id: '{}'", messenger->id) << std::endl;
-              std::cout << std::format("debugUtilsMessenger->id: '{}'", debugUtilsMessenger->id) << std::endl;
-              std::cout << std::format("surface->id: '{}'", surface->id) << std::endl;
-              std::cout << std::format("physicalDevice->id: '{}'", physicalDevice->id) << std::endl;
-              std::cout << std::format("device->id: '{}'", device->id) << std::endl;
-              std::cout << std::format("swapChain->id: '{}'", swapChain->id) << std::endl;
+              std::cout << std::format("context->createInfo.environmentVariables['VK_LAYER_PATH']: '{}'", context.createInfo.environmentVariables["VK_LAYER_PATH"]) << std::endl;
+              std::cout << std::format("context->id: '{}'", context.id) << std::endl;
+              std::cout << std::format("instance->id: '{}'", instance.id) << std::endl;
+              std::cout << std::format("messenger->id: '{}'", messenger.id) << std::endl;
+              std::cout << std::format("debugUtilsMessenger->id: '{}'", debugUtilsMessenger.id) << std::endl;
+              std::cout << std::format("surface->id: '{}'", surface.id) << std::endl;
+              std::cout << std::format("physicalDevice->id: '{}'", physicalDevice.id) << std::endl;
+              std::cout << std::format("device->id: '{}'", device.id) << std::endl;
+              std::cout << std::format("swapChain->id: '{}'", swapChain.id) << std::endl;
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
             }
