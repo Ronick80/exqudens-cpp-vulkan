@@ -184,6 +184,7 @@ namespace exqudens::vulkan {
           value->id = physicalDeviceId++;
           value->queuePriorities = queuePriorities;
           value->features = features;
+          value->value = nullptr;
           physicalDevices = vk::raii::PhysicalDevices(*instance.value);
           for (vk::raii::PhysicalDevice& physicalDevice : physicalDevices) {
 
@@ -245,7 +246,7 @@ namespace exqudens::vulkan {
               }
             }
             if (!queueFamilyIndicesAdequate) {
-              break;
+              continue;
             }
 
             std::vector<vk::ExtensionProperties> extensionProperties = physicalDevice.enumerateDeviceExtensionProperties(nullptr);
@@ -256,7 +257,7 @@ namespace exqudens::vulkan {
             }
             deviceExtensionAdequate = requiredExtensions.empty();
             if (!deviceExtensionAdequate) {
-              break;
+              continue;
             }
 
             if (surface) {
@@ -265,7 +266,7 @@ namespace exqudens::vulkan {
               swapChainAdequate = !formats.empty() && !presentModes.empty();
             }
             if (!swapChainAdequate) {
-              break;
+              continue;
             }
 
             if (features.samplerAnisotropy) {
@@ -273,7 +274,7 @@ namespace exqudens::vulkan {
               anisotropyAdequate = physicalDeviceFeatures.samplerAnisotropy;
             }
             if (!anisotropyAdequate) {
-              break;
+              continue;
             }
 
             if (
@@ -294,6 +295,9 @@ namespace exqudens::vulkan {
               value->value = &physicalDevice;
               break;
             }
+          }
+          if (value->value == nullptr) {
+            throw std::runtime_error(CALL_INFO() + ": failed to create physical device!");
           }
           physicalDeviceMap[value->id] = std::shared_ptr<PhysicalDevice>(value);
           return *physicalDeviceMap[value->id];

@@ -155,6 +155,11 @@ namespace exqudens::vulkan {
               swapChain = environment.createSwapChain(
                   device,
                   environment.swapChainCreateInfo(physicalDevice, surface, width, height)
+                      .setImageSharingMode(
+                          physicalDevice.graphicsQueueCreateInfos.front() == physicalDevice.presentQueueCreateInfos.front()
+                          ? vk::SharingMode::eExclusive
+                          : vk::SharingMode::eConcurrent
+                      )
               );
 
               transferQueue = environment.createQueue(
@@ -172,6 +177,8 @@ namespace exqudens::vulkan {
                   physicalDevice.presentQueueCreateInfos.front().queueFamilyIndex,
                   0
               );
+
+              //swapChain.value->getImages();
 
               std::cout << std::format("context.createInfo.environmentVariables['VK_LAYER_PATH']: '{}'", context.createInfo.environmentVariables["VK_LAYER_PATH"]) << std::endl;
               std::cout << std::format("context.id: '{}'", context.id) << std::endl;
