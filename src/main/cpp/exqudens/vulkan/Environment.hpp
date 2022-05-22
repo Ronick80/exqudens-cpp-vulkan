@@ -22,6 +22,7 @@
 #include "exqudens/vulkan/PhysicalDevice.hpp"
 #include "exqudens/vulkan/Device.hpp"
 #include "exqudens/vulkan/SwapChain.hpp"
+#include "exqudens/vulkan/Queue.hpp"
 
 namespace exqudens::vulkan {
 
@@ -37,6 +38,7 @@ namespace exqudens::vulkan {
       unsigned int physicalDeviceId = 1;
       unsigned int deviceId = 1;
       unsigned int swapChainId = 1;
+      unsigned int queueId = 1;
 
       std::vector<vk::raii::PhysicalDevice> physicalDevices = {};
 
@@ -48,6 +50,7 @@ namespace exqudens::vulkan {
       std::map<unsigned int, std::shared_ptr<PhysicalDevice>> physicalDeviceMap = {};
       std::map<unsigned int, std::shared_ptr<Device>> deviceMap = {};
       std::map<unsigned int, std::shared_ptr<SwapChain>> swapChainMap = {};
+      std::map<unsigned int, std::shared_ptr<Queue>> queueMap = {};
 
     public:
 
@@ -62,10 +65,7 @@ namespace exqudens::vulkan {
           auto* value = new Context;
           value->id = contextId++;
           value->createInfo = createInfo;
-
-          auto* object = new vk::raii::Context;
-
-          value->value = std::shared_ptr<vk::raii::Context>(object);
+          value->value = std::make_shared<vk::raii::Context>();
           contextMap[value->id] = std::shared_ptr<Context>(value);
           return *contextMap[value->id];
         } catch (...) {
@@ -84,11 +84,10 @@ namespace exqudens::vulkan {
           value->applicationInfo = applicationInfo;
           value->createInfo = createInfo;
           value->createInfo.pApplicationInfo = &value->applicationInfo;
-          auto* object = new vk::raii::Instance(
+          value->value = std::make_shared<vk::raii::Instance>(
               *context.value,
               value->createInfo
           );
-          value->value = std::shared_ptr<vk::raii::Instance>(object);
           instanceMap[value->id] = std::shared_ptr<Instance>(value);
           return *instanceMap[value->id];
         } catch (...) {
@@ -146,11 +145,10 @@ namespace exqudens::vulkan {
           auto* value = new DebugUtilsMessenger;
           value->id = debugUtilsMessengerId++;
           value->createInfo = createInfo;
-          auto* object = new vk::raii::DebugUtilsMessengerEXT(
+          value->value = std::make_shared<vk::raii::DebugUtilsMessengerEXT>(
               *instance.value,
               createInfo
           );
-          value->value = std::shared_ptr<vk::raii::DebugUtilsMessengerEXT>(object);
           debugUtilsMessengerMap[value->id] = std::shared_ptr<DebugUtilsMessenger>(value);
           return *debugUtilsMessengerMap[value->id];
         } catch (...) {
@@ -165,8 +163,7 @@ namespace exqudens::vulkan {
         try {
           auto* value = new Surface;
           value->id = surfaceId++;
-          auto* object = new vk::raii::SurfaceKHR(*instance.value, vkSurface);
-          value->value = std::shared_ptr<vk::raii::SurfaceKHR>(object);
+          value->value = std::make_shared<vk::raii::SurfaceKHR>(*instance.value, vkSurface);
           surfaceMap[value->id] = std::shared_ptr<Surface>(value);
           return *surfaceMap[value->id];
         } catch (...) {
@@ -242,8 +239,9 @@ namespace exqudens::vulkan {
                 }
               }
               if (queueCreateInfos.empty()) {
-                presentQueueCreateInfos = queueCreateInfos;
                 queueFamilyIndicesAdequate = false;
+              } else {
+                presentQueueCreateInfos = queueCreateInfos;
               }
             }
             if (!queueFamilyIndicesAdequate) {
@@ -312,11 +310,10 @@ namespace exqudens::vulkan {
           auto* value = new Device;
           value->id = deviceId++;
           value->createInfo = createInfo;
-          auto* object = new vk::raii::Device(
+          value->value = std::make_shared<vk::raii::Device>(
               *physicalDevice.value,
               value->createInfo
           );
-          value->value = std::shared_ptr<vk::raii::Device>(object);
           deviceMap[value->id] = std::shared_ptr<Device>(value);
           return *deviceMap[value->id];
         } catch (...) {
@@ -332,13 +329,34 @@ namespace exqudens::vulkan {
           auto* value = new SwapChain;
           value->id = swapChainId++;
           value->createInfo = createInfo;
-          auto* object = new vk::raii::SwapchainKHR(
+          value->value = std::make_shared<vk::raii::SwapchainKHR>(
               *device.value,
               value->createInfo
           );
-          value->value = std::shared_ptr<vk::raii::SwapchainKHR>(object);
           swapChainMap[value->id] = std::shared_ptr<SwapChain>(value);
           return *swapChainMap[value->id];
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      Queue createQueue(
+          Device& device,
+          const uint32_t& queueFamilyIndex,
+          const uint32_t& queueIndex
+      ) {
+        try {
+          auto* value = new Queue;
+          value->id = queueId++;
+          value->familyIndex = queueFamilyIndex;
+          value->index = queueIndex;
+          value->value = std::make_shared<vk::raii::Queue>(
+              *device.value,
+              value->familyIndex,
+              value->index
+          );
+          queueMap[value->id] = std::shared_ptr<Queue>(value);
+          return *queueMap[value->id];
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }

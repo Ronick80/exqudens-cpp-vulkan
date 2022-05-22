@@ -50,6 +50,9 @@ namespace exqudens::vulkan {
           PhysicalDevice physicalDevice = {};
           Device device = {};
           SwapChain swapChain = {};
+          Queue transferQueue = {};
+          Queue graphicsQueue = {};
+          Queue presentQueue = {};
 
         public:
 
@@ -154,15 +157,34 @@ namespace exqudens::vulkan {
                   environment.swapChainCreateInfo(physicalDevice, surface, width, height)
               );
 
-              std::cout << std::format("context->createInfo.environmentVariables['VK_LAYER_PATH']: '{}'", context.createInfo.environmentVariables["VK_LAYER_PATH"]) << std::endl;
-              std::cout << std::format("context->id: '{}'", context.id) << std::endl;
-              std::cout << std::format("instance->id: '{}'", instance.id) << std::endl;
-              std::cout << std::format("messenger->id: '{}'", messenger.id) << std::endl;
-              std::cout << std::format("debugUtilsMessenger->id: '{}'", debugUtilsMessenger.id) << std::endl;
-              std::cout << std::format("surface->id: '{}'", surface.id) << std::endl;
-              std::cout << std::format("physicalDevice->id: '{}'", physicalDevice.id) << std::endl;
-              std::cout << std::format("device->id: '{}'", device.id) << std::endl;
-              std::cout << std::format("swapChain->id: '{}'", swapChain.id) << std::endl;
+              transferQueue = environment.createQueue(
+                  device,
+                  physicalDevice.transferQueueCreateInfos.front().queueFamilyIndex,
+                  0
+              );
+              graphicsQueue = environment.createQueue(
+                  device,
+                  physicalDevice.graphicsQueueCreateInfos.front().queueFamilyIndex,
+                  0
+              );
+              presentQueue = environment.createQueue(
+                  device,
+                  physicalDevice.presentQueueCreateInfos.front().queueFamilyIndex,
+                  0
+              );
+
+              std::cout << std::format("context.createInfo.environmentVariables['VK_LAYER_PATH']: '{}'", context.createInfo.environmentVariables["VK_LAYER_PATH"]) << std::endl;
+              std::cout << std::format("context.id: '{}'", context.id) << std::endl;
+              std::cout << std::format("instance.id: '{}'", instance.id) << std::endl;
+              std::cout << std::format("messenger.id: '{}'", messenger.id) << std::endl;
+              std::cout << std::format("debugUtilsMessenger.id: '{}'", debugUtilsMessenger.id) << std::endl;
+              std::cout << std::format("surface.id: '{}'", surface.id) << std::endl;
+              std::cout << std::format("physicalDevice.id: '{}'", physicalDevice.id) << std::endl;
+              std::cout << std::format("device.id: '{}'", device.id) << std::endl;
+              std::cout << std::format("swapChain.id: '{}'", swapChain.id) << std::endl;
+              std::cout << std::format("transferQueue.id: '{}'", swapChain.id) << std::endl;
+              std::cout << std::format("graphicsQueue.id: '{}'", swapChain.id) << std::endl;
+              std::cout << std::format("presentQueue.id: '{}'", swapChain.id) << std::endl;
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
             }
