@@ -23,6 +23,8 @@
 #include "exqudens/vulkan/Device.hpp"
 #include "exqudens/vulkan/SwapChain.hpp"
 #include "exqudens/vulkan/Queue.hpp"
+#include "exqudens/vulkan/Image.hpp"
+#include "exqudens/vulkan/ImageView.hpp"
 
 namespace exqudens::vulkan {
 
@@ -34,11 +36,13 @@ namespace exqudens::vulkan {
       unsigned int instanceId = 1;
       unsigned int messengerId = 1;
       unsigned int debugUtilsMessengerId = 1;
-      unsigned int surfaceId = 1;
       unsigned int physicalDeviceId = 1;
       unsigned int deviceId = 1;
-      unsigned int swapChainId = 1;
       unsigned int queueId = 1;
+      unsigned int imageId = 1;
+      unsigned int imageViewId = 1;
+      unsigned int surfaceId = 1;
+      unsigned int swapChainId = 1;
 
       std::vector<vk::raii::PhysicalDevice> physicalDevices = {};
 
@@ -46,11 +50,13 @@ namespace exqudens::vulkan {
       std::map<unsigned int, std::shared_ptr<Instance>> instanceMap = {};
       std::map<unsigned int, std::shared_ptr<Messenger>> messengerMap = {};
       std::map<unsigned int, std::shared_ptr<DebugUtilsMessenger>> debugUtilsMessengerMap = {};
-      std::map<unsigned int, std::shared_ptr<Surface>> surfaceMap = {};
       std::map<unsigned int, std::shared_ptr<PhysicalDevice>> physicalDeviceMap = {};
       std::map<unsigned int, std::shared_ptr<Device>> deviceMap = {};
-      std::map<unsigned int, std::shared_ptr<SwapChain>> swapChainMap = {};
       std::map<unsigned int, std::shared_ptr<Queue>> queueMap = {};
+      std::map<unsigned int, std::shared_ptr<Image>> imageMap = {};
+      std::map<unsigned int, std::shared_ptr<ImageView>> imageViewMap = {};
+      std::map<unsigned int, std::shared_ptr<Surface>> surfaceMap = {};
+      std::map<unsigned int, std::shared_ptr<SwapChain>> swapChainMap = {};
 
     public:
 
@@ -151,21 +157,6 @@ namespace exqudens::vulkan {
           );
           debugUtilsMessengerMap[value->id] = std::shared_ptr<DebugUtilsMessenger>(value);
           return *debugUtilsMessengerMap[value->id];
-        } catch (...) {
-          std::throw_with_nested(std::runtime_error(CALL_INFO()));
-        }
-      }
-
-      virtual Surface createSurface(
-          Instance& instance,
-          VkSurfaceKHR& vkSurface
-      ) {
-        try {
-          auto* value = new Surface;
-          value->id = surfaceId++;
-          value->value = std::make_shared<vk::raii::SurfaceKHR>(*instance.value, vkSurface);
-          surfaceMap[value->id] = std::shared_ptr<Surface>(value);
-          return *surfaceMap[value->id];
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }
@@ -325,6 +316,74 @@ namespace exqudens::vulkan {
         }
       }
 
+      virtual Queue createQueue(
+          Device& device,
+          const uint32_t& queueFamilyIndex,
+          const uint32_t& queueIndex
+      ) {
+        try {
+          auto* value = new Queue;
+          value->id = queueId++;
+          value->familyIndex = queueFamilyIndex;
+          value->index = queueIndex;
+          value->value = std::make_shared<vk::raii::Queue>(
+              *device.value,
+              value->familyIndex,
+              value->index
+          );
+          queueMap[value->id] = std::shared_ptr<Queue>(value);
+          return *queueMap[value->id];
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      virtual Image createImage() {
+        try {
+          auto* value = new Image;
+          value->id = imageId++;
+          //value->value = std::make_shared<vk::raii::Image>();
+          imageMap[value->id] = std::shared_ptr<Image>(value);
+          return *imageMap[value->id];
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      virtual ImageView createImageView(
+          Device& device,
+          const vk::ImageViewCreateInfo& createInfo
+      ) {
+        try {
+          auto* value = new ImageView;
+          value->id = imageViewId++;
+          value->createInfo = createInfo;
+          value->value = std::make_shared<vk::raii::ImageView>(
+              *device.value,
+              value->createInfo
+          );
+          imageViewMap[value->id] = std::shared_ptr<ImageView>(value);
+          return *imageViewMap[value->id];
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      virtual Surface createSurface(
+          Instance& instance,
+          VkSurfaceKHR& vkSurface
+      ) {
+        try {
+          auto* value = new Surface;
+          value->id = surfaceId++;
+          value->value = std::make_shared<vk::raii::SurfaceKHR>(*instance.value, vkSurface);
+          surfaceMap[value->id] = std::shared_ptr<Surface>(value);
+          return *surfaceMap[value->id];
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
       virtual SwapChain createSwapChain(
           Device& device,
           const vk::SwapchainCreateInfoKHR& createInfo
@@ -344,23 +403,31 @@ namespace exqudens::vulkan {
         }
       }
 
-      Queue createQueue(
+      virtual std::vector<ImageView> createSwapChainImageViews(
           Device& device,
-          const uint32_t& queueFamilyIndex,
-          const uint32_t& queueIndex
+          SwapChain& swapChain
       ) {
         try {
-          auto* value = new Queue;
-          value->id = queueId++;
-          value->familyIndex = queueFamilyIndex;
-          value->index = queueIndex;
-          value->value = std::make_shared<vk::raii::Queue>(
-              *device.value,
-              value->familyIndex,
-              value->index
-          );
-          queueMap[value->id] = std::shared_ptr<Queue>(value);
-          return *queueMap[value->id];
+          std::vector<ImageView> values;
+          for (VkImage vkImage : swapChain.value->getImages()) {
+            vk::ImageViewCreateInfo createInfo = vk::ImageViewCreateInfo()
+                .setFlags({})
+                .setImage(static_cast<vk::Image>(vkImage))
+                .setViewType(vk::ImageViewType::e2D)
+                .setFormat(swapChain.createInfo.imageFormat)
+                .setComponents({})
+                .setSubresourceRange(
+                    vk::ImageSubresourceRange()
+                        .setAspectMask(vk::ImageAspectFlagBits::eColor)
+                        .setBaseMipLevel(0)
+                        .setLevelCount(1)
+                        .setBaseArrayLayer(0)
+                        .setLayerCount(1)
+                );
+            ImageView imageView = createImageView(device, createInfo);
+            values.emplace_back(imageView);
+          }
+          return values;
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }

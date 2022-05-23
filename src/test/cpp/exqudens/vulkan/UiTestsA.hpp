@@ -46,13 +46,14 @@ namespace exqudens::vulkan {
           Instance instance = {};
           Messenger messenger = {};
           DebugUtilsMessenger debugUtilsMessenger = {};
-          Surface surface = {};
           PhysicalDevice physicalDevice = {};
           Device device = {};
-          SwapChain swapChain = {};
           Queue transferQueue = {};
           Queue graphicsQueue = {};
           Queue presentQueue = {};
+          Surface surface = {};
+          SwapChain swapChain = {};
+          std::vector<ImageView> swapChainImageViews = {};
 
         public:
 
@@ -152,16 +153,6 @@ namespace exqudens::vulkan {
                       .setPEnabledLayerNames(context.createInfo.enabledLayerNames)
               );
 
-              swapChain = environment.createSwapChain(
-                  device,
-                  environment.swapChainCreateInfo(physicalDevice, surface, width, height)
-                      .setImageSharingMode(
-                          physicalDevice.graphicsQueueCreateInfos.front() == physicalDevice.presentQueueCreateInfos.front()
-                          ? vk::SharingMode::eExclusive
-                          : vk::SharingMode::eConcurrent
-                      )
-              );
-
               transferQueue = environment.createQueue(
                   device,
                   physicalDevice.transferQueueCreateInfos.front().queueFamilyIndex,
@@ -178,7 +169,23 @@ namespace exqudens::vulkan {
                   0
               );
 
-              //swapChain.value->getImages();
+              swapChain = environment.createSwapChain(
+                  device,
+                  environment.swapChainCreateInfo(physicalDevice, surface, width, height)
+                      .setImageSharingMode(
+                          physicalDevice.graphicsQueueCreateInfos.front() == physicalDevice.presentQueueCreateInfos.front()
+                          ? vk::SharingMode::eExclusive
+                          : vk::SharingMode::eConcurrent
+                      )
+              );
+
+              swapChainImageViews = environment.createSwapChainImageViews(
+                  device,
+                  swapChain
+              );
+
+              //vk::raii::Image image1 = vk::raii::Image(*device.value, swapChain.value->getImages().front());
+              //vk::raii::Image image2 = vk::raii::Image(*device.value, vk::ImageCreateInfo());
 
               std::cout << std::format("context.createInfo.environmentVariables['VK_LAYER_PATH']: '{}'", context.createInfo.environmentVariables["VK_LAYER_PATH"]) << std::endl;
               std::cout << std::format("context.id: '{}'", context.id) << std::endl;
@@ -192,6 +199,7 @@ namespace exqudens::vulkan {
               std::cout << std::format("transferQueue.id: '{}'", swapChain.id) << std::endl;
               std::cout << std::format("graphicsQueue.id: '{}'", swapChain.id) << std::endl;
               std::cout << std::format("presentQueue.id: '{}'", swapChain.id) << std::endl;
+              std::ranges::for_each(swapChainImageViews, [](const auto& swapChainImageView) {std::cout << std::format("swapChainImageView.id: '{}'", swapChainImageView.id) << std::endl;});
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
             }

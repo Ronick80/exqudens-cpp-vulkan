@@ -133,6 +133,8 @@ add_library("${PROJECT_NAME}" INTERFACE
     "src/main/cpp/exqudens/vulkan/Device.hpp"
     "src/main/cpp/exqudens/vulkan/SwapChain.hpp"
     "src/main/cpp/exqudens/vulkan/Queue.hpp"
+    "src/main/cpp/exqudens/vulkan/Image.hpp"
+    "src/main/cpp/exqudens/vulkan/ImageView.hpp"
 
     "src/main/cpp/exqudens/vulkan/Macros.hpp"
     "src/main/cpp/exqudens/vulkan/Environment.hpp"
