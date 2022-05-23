@@ -51,6 +51,7 @@ namespace exqudens::vulkan {
           Queue transferQueue = {};
           Queue graphicsQueue = {};
           Queue presentQueue = {};
+          Image imageDepth = {};
           Surface surface = {};
           SwapChain swapChain = {};
           std::vector<ImageView> swapChainImageViews = {};
@@ -179,13 +180,34 @@ namespace exqudens::vulkan {
                       )
               );
 
+              imageDepth = environment.createImage(
+                  physicalDevice,
+                  device,
+                  vk::ImageCreateInfo()
+                      .setFlags({})
+                      .setImageType(vk::ImageType::e2D)
+                      .setFormat(environment.imageDepthFormat(physicalDevice))
+                      .setExtent(
+                          vk::Extent3D()
+                              .setWidth(swapChain.createInfo.imageExtent.width)
+                              .setHeight(swapChain.createInfo.imageExtent.height)
+                              .setDepth(1)
+                      )
+                      .setMipLevels(1)
+                      .setArrayLayers(1)
+                      .setSamples(vk::SampleCountFlagBits::e1)
+                      .setTiling(vk::ImageTiling::eOptimal)
+                      .setUsage(vk::ImageUsageFlagBits::eDepthStencilAttachment)
+                      .setSharingMode(vk::SharingMode::eExclusive)
+                      .setQueueFamilyIndices({})
+                      .setInitialLayout(vk::ImageLayout::eUndefined),
+                  vk::MemoryPropertyFlagBits::eDeviceLocal
+              );
+
               swapChainImageViews = environment.createSwapChainImageViews(
                   device,
                   swapChain
               );
-
-              //vk::raii::Image image1 = vk::raii::Image(*device.value, swapChain.value->getImages().front());
-              //vk::raii::Image image2 = vk::raii::Image(*device.value, vk::ImageCreateInfo());
 
               std::cout << std::format("context.createInfo.environmentVariables['VK_LAYER_PATH']: '{}'", context.createInfo.environmentVariables["VK_LAYER_PATH"]) << std::endl;
               std::cout << std::format("context.id: '{}'", context.id) << std::endl;
@@ -195,10 +217,11 @@ namespace exqudens::vulkan {
               std::cout << std::format("surface.id: '{}'", surface.id) << std::endl;
               std::cout << std::format("physicalDevice.id: '{}'", physicalDevice.id) << std::endl;
               std::cout << std::format("device.id: '{}'", device.id) << std::endl;
+              std::cout << std::format("transferQueue.id: '{}'", transferQueue.id) << std::endl;
+              std::cout << std::format("graphicsQueue.id: '{}'", graphicsQueue.id) << std::endl;
+              std::cout << std::format("presentQueue.id: '{}'", presentQueue.id) << std::endl;
               std::cout << std::format("swapChain.id: '{}'", swapChain.id) << std::endl;
-              std::cout << std::format("transferQueue.id: '{}'", swapChain.id) << std::endl;
-              std::cout << std::format("graphicsQueue.id: '{}'", swapChain.id) << std::endl;
-              std::cout << std::format("presentQueue.id: '{}'", swapChain.id) << std::endl;
+              std::cout << std::format("imageDepth.id: '{}'", imageDepth.id) << std::endl;
               std::ranges::for_each(swapChainImageViews, [](const auto& swapChainImageView) {std::cout << std::format("swapChainImageView.id: '{}'", swapChainImageView.id) << std::endl;});
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));

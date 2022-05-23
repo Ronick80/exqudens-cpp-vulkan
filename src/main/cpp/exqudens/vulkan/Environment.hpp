@@ -338,11 +338,28 @@ namespace exqudens::vulkan {
         }
       }
 
-      virtual Image createImage() {
+      virtual Image createImage(
+          PhysicalDevice& physicalDevice,
+          Device& device,
+          const vk::ImageCreateInfo& createInfo,
+          const vk::MemoryPropertyFlags& properties
+      ) {
         try {
           auto* value = new Image;
           value->id = imageId++;
-          //value->value = std::make_shared<vk::raii::Image>();
+          value->createInfo = createInfo;
+          value->value = std::make_shared<vk::raii::Image>(*device.value, value->createInfo);
+          vk::Device cppDevice = *(*device.value);
+          vk::MemoryRequirements memoryRequirements = cppDevice.getImageMemoryRequirements(*(*value->value));
+          uint32_t memoryType = memoryTypeIndex(physicalDevice, memoryRequirements.memoryTypeBits, properties);
+          value->size = memoryRequirements.size;
+          value->memory = std::make_shared<vk::raii::DeviceMemory>(
+              *device.value,
+              vk::MemoryAllocateInfo()
+                  .setAllocationSize(memoryRequirements.size)
+                  .setMemoryTypeIndex(memoryType)
+          );
+          cppDevice.bindImageMemory(*(*value->value), *(*value->memory), 0);
           imageMap[value->id] = std::shared_ptr<Image>(value);
           return *imageMap[value->id];
         } catch (...) {
@@ -554,6 +571,63 @@ namespace exqudens::vulkan {
               .setPresentMode(surfacePresentMode.value())
               .setClipped(true)
               .setOldSwapchain({});
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      virtual vk::Format imageDepthFormat(
+          PhysicalDevice& physicalDevice,
+          const std::vector<vk::Format>& formats,
+          const vk::ImageTiling& tiling,
+          const vk::FormatFeatureFlags& features
+      ) {
+        try {
+          for (const vk::Format& format : formats) {
+            vk::FormatProperties properties = physicalDevice.value->getFormatProperties(format);
+            if (vk::ImageTiling::eLinear ==  tiling && (properties.linearTilingFeatures & features) == features) {
+              return format;
+            } else if (vk::ImageTiling::eOptimal == tiling && (properties.optimalTilingFeatures & features) == features) {
+              return format;
+            }
+          }
+          throw std::runtime_error(CALL_INFO() + ": failed to find image depth format!");
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      virtual vk::Format imageDepthFormat(
+          PhysicalDevice& physicalDevice
+      ) {
+        try {
+          return imageDepthFormat(
+              physicalDevice,
+              {vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint},
+              vk::ImageTiling::eOptimal,
+              vk::FormatFeatureFlagBits::eDepthStencilAttachment
+          );
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      virtual uint32_t memoryTypeIndex(
+          PhysicalDevice& physicalDevice,
+          const uint32_t& typeBits,
+          const vk::MemoryPropertyFlags& requirementsMask
+      ) {
+        try {
+          vk::PhysicalDeviceMemoryProperties memoryProperties = physicalDevice.value->getMemoryProperties();
+          for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++) {
+            if (
+                (typeBits & 1)
+                && ((memoryProperties.memoryTypes[i].propertyFlags & requirementsMask) == requirementsMask)
+            ) {
+              return i;
+            }
+          }
+          throw std::runtime_error(CALL_INFO() + ": failed to find memory type index!");
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }
