@@ -217,6 +217,9 @@ namespace exqudens::vulkan {
                 }
               }
             }
+            if (!queueFamilyIndicesAdequate) {
+              continue;
+            }
             if (surface) {
               std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos = {};
               for (std::size_t i = 0; i < queueFamilyProperties.size(); i++) {
@@ -268,24 +271,17 @@ namespace exqudens::vulkan {
               continue;
             }
 
-            if (
-                queueFamilyIndicesAdequate
-                && deviceExtensionAdequate
-                && swapChainAdequate
-                && anisotropyAdequate
-            ) {
-              value->computeQueueCreateInfos = computeQueueCreateInfos;
-              value->transferQueueCreateInfos = transferQueueCreateInfos;
-              value->graphicsQueueCreateInfos = graphicsQueueCreateInfos;
-              value->presentQueueCreateInfos = presentQueueCreateInfos;
-              std::vector<vk::DeviceQueueCreateInfo> uniqueQueueCreateInfos;
-              for (const auto& [k, v] : queueCreateInfoMap) {
-                uniqueQueueCreateInfos.emplace_back(v);
-              }
-              value->uniqueQueueCreateInfos = uniqueQueueCreateInfos;
-              value->value = &physicalDevice;
-              break;
+            value->computeQueueCreateInfos = computeQueueCreateInfos;
+            value->transferQueueCreateInfos = transferQueueCreateInfos;
+            value->graphicsQueueCreateInfos = graphicsQueueCreateInfos;
+            value->presentQueueCreateInfos = presentQueueCreateInfos;
+            std::vector<vk::DeviceQueueCreateInfo> uniqueQueueCreateInfos;
+            for (const auto& [k, v] : queueCreateInfoMap) {
+              uniqueQueueCreateInfos.emplace_back(v);
             }
+            value->uniqueQueueCreateInfos = uniqueQueueCreateInfos;
+            value->value = &physicalDevice;
+            break;
           }
           if (value->value == nullptr) {
             throw std::runtime_error(CALL_INFO() + ": failed to create physical device!");
