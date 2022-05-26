@@ -345,8 +345,7 @@ namespace exqudens::vulkan {
           value->id = imageId++;
           value->createInfo = createInfo;
           value->value = std::make_shared<vk::raii::Image>(*device.value, value->createInfo);
-          vk::Device cppDevice = *(*device.value);
-          vk::MemoryRequirements memoryRequirements = cppDevice.getImageMemoryRequirements(*(*value->value));
+          vk::MemoryRequirements memoryRequirements = value->value->getMemoryRequirements();
           uint32_t memoryType = memoryTypeIndex(physicalDevice, memoryRequirements.memoryTypeBits, properties);
           value->size = memoryRequirements.size;
           value->memory = std::make_shared<vk::raii::DeviceMemory>(
@@ -355,7 +354,7 @@ namespace exqudens::vulkan {
                   .setAllocationSize(memoryRequirements.size)
                   .setMemoryTypeIndex(memoryType)
           );
-          cppDevice.bindImageMemory(*(*value->value), *(*value->memory), 0);
+          value->value->bindMemory(*(*value->memory), 0);
           imageMap[value->id] = std::shared_ptr<Image>(value);
           return *imageMap[value->id];
         } catch (...) {
