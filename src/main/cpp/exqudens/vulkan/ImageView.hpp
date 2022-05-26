@@ -1,16 +1,14 @@
 #pragma once
 
-#include <memory>
-
 #include <vulkan/vulkan_raii.hpp>
+
+#include "exqudens/vulkan/Resource.hpp"
 
 namespace exqudens::vulkan {
 
-  struct ImageView {
+  struct ImageView: Resource<vk::raii::ImageView> {
 
-    unsigned int id;
     vk::ImageViewCreateInfo createInfo;
-    std::shared_ptr<vk::raii::ImageView> value;
 
   };
 

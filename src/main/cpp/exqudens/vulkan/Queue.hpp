@@ -1,17 +1,15 @@
 #pragma once
 
-#include <memory>
-
 #include <vulkan/vulkan_raii.hpp>
+
+#include "exqudens/vulkan/Resource.hpp"
 
 namespace exqudens::vulkan {
 
-  struct Queue {
+  struct Queue: Resource<vk::raii::Queue> {
 
-    unsigned int id;
     uint32_t familyIndex;
     uint32_t index;
-    std::shared_ptr<vk::raii::Queue> value;
 
   };
 

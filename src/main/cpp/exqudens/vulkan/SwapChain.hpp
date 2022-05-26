@@ -1,16 +1,14 @@
 #pragma once
 
-#include <memory>
-
 #include <vulkan/vulkan_raii.hpp>
+
+#include "exqudens/vulkan/Resource.hpp"
 
 namespace exqudens::vulkan {
 
-  struct SwapChain {
+  struct SwapChain: Resource<vk::raii::SwapchainKHR> {
 
-    unsigned int id;
     vk::SwapchainCreateInfoKHR createInfo;
-    std::shared_ptr<vk::raii::SwapchainKHR> value;
 
   };
 

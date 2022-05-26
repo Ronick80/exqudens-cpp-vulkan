@@ -1,18 +1,15 @@
 #pragma once
 
-#include <memory>
-
 #include <vulkan/vulkan_raii.hpp>
+
+#include "exqudens/vulkan/MemoryResource.hpp"
 
 namespace exqudens::vulkan {
 
-  struct Image {
+  struct Image: MemoryResource<vk::raii::Image, vk::raii::DeviceMemory> {
 
-    unsigned int id;
     vk::ImageCreateInfo createInfo;
-    std::shared_ptr<vk::raii::Image> value;
     vk::DeviceSize size;
-    std::shared_ptr<vk::raii::DeviceMemory> memory;
 
   };
 

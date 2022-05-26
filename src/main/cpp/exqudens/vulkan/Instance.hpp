@@ -1,17 +1,15 @@
 #pragma once
 
-#include <memory>
-
 #include <vulkan/vulkan_raii.hpp>
+
+#include "exqudens/vulkan/Resource.hpp"
 
 namespace exqudens::vulkan {
 
-  struct Instance {
+  struct Instance: Resource<vk::raii::Instance> {
 
-    unsigned int id;
     vk::ApplicationInfo applicationInfo;
     vk::InstanceCreateInfo createInfo;
-    std::shared_ptr<vk::raii::Instance> value;
 
   };
 

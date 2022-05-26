@@ -1,15 +1,12 @@
 #pragma once
 
-#include <memory>
-
 #include <vulkan/vulkan_raii.hpp>
+
+#include "exqudens/vulkan/Resource.hpp"
 
 namespace exqudens::vulkan {
 
-  struct Surface {
-
-    unsigned int id;
-    std::shared_ptr<vk::raii::SurfaceKHR> value;
+  struct Surface: Resource<vk::raii::SurfaceKHR> {
 
   };
 

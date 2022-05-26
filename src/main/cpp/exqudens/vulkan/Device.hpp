@@ -1,16 +1,14 @@
 #pragma once
 
-#include <memory>
-
 #include <vulkan/vulkan_raii.hpp>
+
+#include "exqudens/vulkan/Resource.hpp"
 
 namespace exqudens::vulkan {
 
-  struct Device {
+  struct Device: Resource<vk::raii::Device> {
 
-    unsigned int id;
     vk::DeviceCreateInfo createInfo;
-    std::shared_ptr<vk::raii::Device> value;
 
   };
 

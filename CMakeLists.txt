@@ -123,6 +123,8 @@ add_library("${PROJECT_NAME}" INTERFACE
     "src/main/cpp/exqudens/vulkan/raii/Utility.hpp"
     "src/main/cpp/exqudens/vulkan/raii/Factory.hpp"
 
+    "src/main/cpp/exqudens/vulkan/Resource.hpp"
+    "src/main/cpp/exqudens/vulkan/MemoryResource.hpp"
     "src/main/cpp/exqudens/vulkan/ContextCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/Context.hpp"
     "src/main/cpp/exqudens/vulkan/Instance.hpp"

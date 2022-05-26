@@ -1,16 +1,14 @@
 #pragma once
 
-#include <memory>
-
 #include <vulkan/vulkan_raii.hpp>
+
+#include "exqudens/vulkan/Resource.hpp"
 
 namespace exqudens::vulkan {
 
-  struct DebugUtilsMessenger {
+  struct DebugUtilsMessenger: Resource<vk::raii::DebugUtilsMessengerEXT> {
 
-    unsigned int id;
     vk::DebugUtilsMessengerCreateInfoEXT createInfo;
-    std::shared_ptr<vk::raii::DebugUtilsMessengerEXT> value;
 
   };
 
