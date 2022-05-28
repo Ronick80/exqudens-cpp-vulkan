@@ -43,19 +43,19 @@ namespace exqudens::vulkan {
           Instance instance = {};
           Messenger messenger = {};
           DebugUtilsMessenger debugUtilsMessenger = {};
+          Surface surface = {};
           PhysicalDevice physicalDevice = {};
           Device device = {};
-          Queue queueTransfer = {};
-          Queue queueGraphics = {};
-          Queue queuePresent = {};
+          SwapChain swapChain = {};
           Image imageDepth = {};
           ImageView imageViewDepth = {};
           Buffer imageStagingTexture = {};
-          //Image imageTexture = {};
-          //ImageView imageViewTexture = {};
-          Surface surface = {};
-          SwapChain swapChain = {};
-          std::vector<ImageView> swapChainImageViews = {};
+          Image imageTexture = {};
+          ImageView imageViewTexture = {};
+          //Queue queueTransfer = {};
+          //Queue queueGraphics = {};
+          //Queue queuePresent = {};
+          //std::vector<ImageView> swapChainImageViews = {};
 
         public:
 
@@ -155,22 +155,6 @@ namespace exqudens::vulkan {
                       .setPEnabledLayerNames(context.createInfo.enabledLayerNames)
               );
 
-              queueTransfer = environment.createQueue(
-                  device,
-                  physicalDevice.transferQueueCreateInfos.front().queueFamilyIndex,
-                  0
-              );
-              queueGraphics = environment.createQueue(
-                  device,
-                  physicalDevice.graphicsQueueCreateInfos.front().queueFamilyIndex,
-                  0
-              );
-              queuePresent = environment.createQueue(
-                  device,
-                  physicalDevice.presentQueueCreateInfos.front().queueFamilyIndex,
-                  0
-              );
-
               swapChain = environment.createSwapChain(
                   device,
                   environment.swapChainCreateInfo(physicalDevice, surface, width, height)
@@ -185,7 +169,6 @@ namespace exqudens::vulkan {
                   physicalDevice,
                   device,
                   vk::ImageCreateInfo()
-                      .setFlags({})
                       .setImageType(vk::ImageType::e2D)
                       .setFormat(environment.imageDepthFormat(physicalDevice))
                       .setExtent(
@@ -243,17 +226,69 @@ namespace exqudens::vulkan {
                       .setFlags({}),
                   vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
               );
-
               void* tmpData = imageStagingTexture.memoryReference().mapMemory(0, imageStagingTexture.size);
               std::memcpy(tmpData, tmpImageData.data(), static_cast<size_t>(imageStagingTexture.size));
               imageStagingTexture.memoryReference().unmapMemory();
-
-              swapChainImageViews = environment.createSwapChainImageViews(
+              imageTexture = environment.createImage(
+                  physicalDevice,
                   device,
-                  swapChain
+                  vk::ImageCreateInfo()
+                      .setImageType(vk::ImageType::e2D)
+                      .setFormat(vk::Format::eR8G8B8A8Srgb)
+                      .setExtent(
+                          vk::Extent3D()
+                              .setWidth(tmpImageWidth)
+                              .setHeight(tmpImageHeight)
+                              .setDepth(1)
+                      )
+                      .setMipLevels(1)
+                      .setArrayLayers(1)
+                      .setSamples(vk::SampleCountFlagBits::e1)
+                      .setTiling(vk::ImageTiling::eOptimal)
+                      .setUsage(vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled)
+                      .setSharingMode(vk::SharingMode::eExclusive)
+                      .setQueueFamilyIndices({})
+                      .setInitialLayout(vk::ImageLayout::eUndefined),
+                  vk::MemoryPropertyFlagBits::eDeviceLocal
+              );
+              imageViewTexture = environment.createImageView(
+                  device,
+                  vk::ImageViewCreateInfo()
+                      .setImage(*imageTexture.reference())
+                      .setFormat(imageTexture.createInfo.format)
+                      .setViewType(vk::ImageViewType::e2D)
+                      .setFlags({})
+                      .setComponents({})
+                      .setSubresourceRange(
+                          vk::ImageSubresourceRange()
+                              .setAspectMask(vk::ImageAspectFlagBits::eColor)
+                              .setBaseMipLevel(0)
+                              .setLevelCount(1)
+                              .setBaseArrayLayer(0)
+                              .setLayerCount(1)
+                      )
               );
 
-              //vk::raii::Buffer b;
+              /*queueTransfer = environment.createQueue(
+                  device,
+                  physicalDevice.transferQueueCreateInfos.front().queueFamilyIndex,
+                  0
+              );
+              queueGraphics = environment.createQueue(
+                  device,
+                  physicalDevice.graphicsQueueCreateInfos.front().queueFamilyIndex,
+                  0
+              );
+              queuePresent = environment.createQueue(
+                  device,
+                  physicalDevice.presentQueueCreateInfos.front().queueFamilyIndex,
+                  0
+              );*/
+
+              /*swapChainImageViews = environment.createSwapChainImageViews(
+                  device,
+                  swapChain
+              );*/
 
               std::cout << std::format("context.createInfo.environmentVariables['VK_LAYER_PATH']: '{}'", context.createInfo.environmentVariables["VK_LAYER_PATH"]) << std::endl;
               std::cout << std::format("context.id: '{}'", context.id) << std::endl;
@@ -263,14 +298,16 @@ namespace exqudens::vulkan {
               std::cout << std::format("surface.id: '{}'", surface.id) << std::endl;
               std::cout << std::format("physicalDevice.id: '{}'", physicalDevice.id) << std::endl;
               std::cout << std::format("device.id: '{}'", device.id) << std::endl;
-              std::cout << std::format("queueTransfer.id: '{}'", queueTransfer.id) << std::endl;
-              std::cout << std::format("queueGraphics.id: '{}'", queueGraphics.id) << std::endl;
-              std::cout << std::format("queuePresent.id: '{}'", queuePresent.id) << std::endl;
               std::cout << std::format("swapChain.id: '{}'", swapChain.id) << std::endl;
               std::cout << std::format("imageDepth.id: '{}'", imageDepth.id) << std::endl;
               std::cout << std::format("imageViewDepth.id: '{}'", imageViewDepth.id) << std::endl;
               std::cout << std::format("imageStagingTexture.id: '{}'", imageStagingTexture.id) << std::endl;
-              std::ranges::for_each(swapChainImageViews, [](const auto& swapChainImageView) {std::cout << std::format("swapChainImageView.id: '{}'", swapChainImageView.id) << std::endl;});
+              std::cout << std::format("imageTexture.id: '{}'", imageTexture.id) << std::endl;
+              std::cout << std::format("imageViewTexture.id: '{}'", imageViewTexture.id) << std::endl;
+              //std::cout << std::format("queueTransfer.id: '{}'", queueTransfer.id) << std::endl;
+              //std::cout << std::format("queueGraphics.id: '{}'", queueGraphics.id) << std::endl;
+              //std::cout << std::format("queuePresent.id: '{}'", queuePresent.id) << std::endl;
+              //std::ranges::for_each(swapChainImageViews, [](const auto& swapChainImageView) {std::cout << std::format("swapChainImageView.id: '{}'", swapChainImageView.id) << std::endl;});
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
             }
