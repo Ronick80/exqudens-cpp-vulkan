@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstring>
 #include <string>
 #include <optional>
@@ -49,6 +50,9 @@ namespace exqudens::vulkan {
           Queue queuePresent = {};
           Image imageDepth = {};
           ImageView imageViewDepth = {};
+          Buffer imageStagingTexture = {};
+          //Image imageTexture = {};
+          //ImageView imageViewTexture = {};
           Surface surface = {};
           SwapChain swapChain = {};
           std::vector<ImageView> swapChainImageViews = {};
@@ -219,10 +223,37 @@ namespace exqudens::vulkan {
                       )
               );
 
+              unsigned int tmpImageWidth, tmpImageHeight, tmpImageDepth;
+              std::vector<unsigned char> tmpImageData;
+              TestUtils::readPng(
+                  std::filesystem::path().append("resources").append("png").append("texture.png").make_preferred().string(),
+                  tmpImageWidth,
+                  tmpImageHeight,
+                  tmpImageDepth,
+                  tmpImageData
+              );
+
+              imageStagingTexture = environment.createBuffer(
+                  physicalDevice,
+                  device,
+                  vk::BufferCreateInfo()
+                      .setSize(tmpImageWidth * tmpImageHeight * tmpImageDepth)
+                      .setUsage(vk::BufferUsageFlagBits::eTransferSrc)
+                      .setSharingMode(vk::SharingMode::eExclusive)
+                      .setFlags({}),
+                  vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
+              );
+
+              void* tmpData = imageStagingTexture.memoryReference().mapMemory(0, imageStagingTexture.size);
+              std::memcpy(tmpData, tmpImageData.data(), static_cast<size_t>(imageStagingTexture.size));
+              imageStagingTexture.memoryReference().unmapMemory();
+
               swapChainImageViews = environment.createSwapChainImageViews(
                   device,
                   swapChain
               );
+
+              //vk::raii::Buffer b;
 
               std::cout << std::format("context.createInfo.environmentVariables['VK_LAYER_PATH']: '{}'", context.createInfo.environmentVariables["VK_LAYER_PATH"]) << std::endl;
               std::cout << std::format("context.id: '{}'", context.id) << std::endl;
@@ -238,6 +269,7 @@ namespace exqudens::vulkan {
               std::cout << std::format("swapChain.id: '{}'", swapChain.id) << std::endl;
               std::cout << std::format("imageDepth.id: '{}'", imageDepth.id) << std::endl;
               std::cout << std::format("imageViewDepth.id: '{}'", imageViewDepth.id) << std::endl;
+              std::cout << std::format("imageStagingTexture.id: '{}'", imageStagingTexture.id) << std::endl;
               std::ranges::for_each(swapChainImageViews, [](const auto& swapChainImageView) {std::cout << std::format("swapChainImageView.id: '{}'", swapChainImageView.id) << std::endl;});
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));

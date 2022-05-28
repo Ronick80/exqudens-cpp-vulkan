@@ -25,6 +25,7 @@
 #include "exqudens/vulkan/Queue.hpp"
 #include "exqudens/vulkan/Image.hpp"
 #include "exqudens/vulkan/ImageView.hpp"
+#include "exqudens/vulkan/Buffer.hpp"
 
 namespace exqudens::vulkan {
 
@@ -41,6 +42,7 @@ namespace exqudens::vulkan {
       unsigned int queueId = 1;
       unsigned int imageId = 1;
       unsigned int imageViewId = 1;
+      unsigned int bufferId = 1;
       unsigned int surfaceId = 1;
       unsigned int swapChainId = 1;
 
@@ -55,6 +57,7 @@ namespace exqudens::vulkan {
       std::map<unsigned int, std::shared_ptr<Queue>> queueMap = {};
       std::map<unsigned int, std::shared_ptr<Image>> imageMap = {};
       std::map<unsigned int, std::shared_ptr<ImageView>> imageViewMap = {};
+      std::map<unsigned int, std::shared_ptr<Buffer>> bufferMap = {};
       std::map<unsigned int, std::shared_ptr<Surface>> surfaceMap = {};
       std::map<unsigned int, std::shared_ptr<SwapChain>> swapChainMap = {};
 
@@ -91,7 +94,7 @@ namespace exqudens::vulkan {
           value->createInfo = createInfo;
           value->createInfo.pApplicationInfo = &value->applicationInfo;
           value->value = std::make_shared<vk::raii::Instance>(
-              *context.value,
+              context.reference(),
               value->createInfo
           );
           instanceMap[value->id] = std::shared_ptr<Instance>(value);
@@ -152,7 +155,7 @@ namespace exqudens::vulkan {
           value->id = debugUtilsMessengerId++;
           value->createInfo = createInfo;
           value->value = std::make_shared<vk::raii::DebugUtilsMessengerEXT>(
-              *instance.value,
+              instance.reference(),
               createInfo
           );
           debugUtilsMessengerMap[value->id] = std::shared_ptr<DebugUtilsMessenger>(value);
@@ -302,7 +305,7 @@ namespace exqudens::vulkan {
           value->id = deviceId++;
           value->createInfo = createInfo;
           value->value = std::make_shared<vk::raii::Device>(
-              *physicalDevice.value,
+              physicalDevice.reference(),
               value->createInfo
           );
           deviceMap[value->id] = std::shared_ptr<Device>(value);
@@ -323,7 +326,7 @@ namespace exqudens::vulkan {
           value->familyIndex = queueFamilyIndex;
           value->index = queueIndex;
           value->value = std::make_shared<vk::raii::Queue>(
-              *device.value,
+              device.reference(),
               value->familyIndex,
               value->index
           );
@@ -344,14 +347,17 @@ namespace exqudens::vulkan {
           auto* value = new Image;
           value->id = imageId++;
           value->createInfo = createInfo;
-          value->value = std::make_shared<vk::raii::Image>(*device.value, value->createInfo);
+          value->value = std::make_shared<vk::raii::Image>(
+              device.reference(),
+              value->createInfo
+          );
           vk::MemoryRequirements memoryRequirements = value->value->getMemoryRequirements();
           uint32_t memoryType = memoryTypeIndex(physicalDevice, memoryRequirements.memoryTypeBits, properties);
           value->size = memoryRequirements.size;
           value->memory = std::make_shared<vk::raii::DeviceMemory>(
-              *device.value,
+              device.reference(),
               vk::MemoryAllocateInfo()
-                  .setAllocationSize(memoryRequirements.size)
+                  .setAllocationSize(value->size)
                   .setMemoryTypeIndex(memoryType)
           );
           value->value->bindMemory(*(*value->memory), 0);
@@ -371,11 +377,42 @@ namespace exqudens::vulkan {
           value->id = imageViewId++;
           value->createInfo = createInfo;
           value->value = std::make_shared<vk::raii::ImageView>(
-              *device.value,
+              device.reference(),
               value->createInfo
           );
           imageViewMap[value->id] = std::shared_ptr<ImageView>(value);
           return *imageViewMap[value->id];
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      virtual Buffer createBuffer(
+          PhysicalDevice& physicalDevice,
+          Device& device,
+          const vk::BufferCreateInfo& createInfo,
+          const vk::MemoryPropertyFlags& properties
+      ) {
+        try {
+          auto* value = new Buffer;
+          value->id = bufferId++;
+          value->createInfo = createInfo;
+          value->value = std::make_shared<vk::raii::Buffer>(
+              device.reference(),
+              value->createInfo
+          );
+          vk::MemoryRequirements memoryRequirements = value->value->getMemoryRequirements();
+          uint32_t memoryType = memoryTypeIndex(physicalDevice, memoryRequirements.memoryTypeBits, properties);
+          value->size = memoryRequirements.size;
+          value->memory = std::make_shared<vk::raii::DeviceMemory>(
+              device.reference(),
+              vk::MemoryAllocateInfo()
+                  .setAllocationSize(value->size)
+                  .setMemoryTypeIndex(memoryType)
+          );
+          value->value->bindMemory(*(*value->memory), 0);
+          bufferMap[value->id] = std::shared_ptr<Buffer>(value);
+          return *bufferMap[value->id];
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }
