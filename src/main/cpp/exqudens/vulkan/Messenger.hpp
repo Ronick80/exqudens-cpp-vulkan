@@ -50,6 +50,8 @@ namespace exqudens::vulkan {
         }
 
         return VK_FALSE;
+      } catch (const std::exception& e) {
+        std::throw_with_nested(std::runtime_error(CALL_INFO() + ": " + e.what()));
       } catch (...) {
         std::throw_with_nested(std::runtime_error(CALL_INFO()));
       }

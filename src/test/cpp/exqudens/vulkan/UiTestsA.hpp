@@ -32,10 +32,6 @@ namespace exqudens::vulkan {
 
       class Renderer {
 
-        public:
-
-          bool resized = false;
-
         private:
 
           std::vector<Vertex> vertices = {};
@@ -48,10 +44,11 @@ namespace exqudens::vulkan {
           DebugUtilsMessenger debugUtilsMessenger = {};
           PhysicalDevice physicalDevice = {};
           Device device = {};
-          Queue transferQueue = {};
-          Queue graphicsQueue = {};
-          Queue presentQueue = {};
+          Queue queueTransfer = {};
+          Queue queueGraphics = {};
+          Queue queuePresent = {};
           Image imageDepth = {};
+          ImageView imageViewDepth = {};
           Surface surface = {};
           SwapChain swapChain = {};
           std::vector<ImageView> swapChainImageViews = {};
@@ -154,17 +151,17 @@ namespace exqudens::vulkan {
                       .setPEnabledLayerNames(context.createInfo.enabledLayerNames)
               );
 
-              transferQueue = environment.createQueue(
+              queueTransfer = environment.createQueue(
                   device,
                   physicalDevice.transferQueueCreateInfos.front().queueFamilyIndex,
                   0
               );
-              graphicsQueue = environment.createQueue(
+              queueGraphics = environment.createQueue(
                   device,
                   physicalDevice.graphicsQueueCreateInfos.front().queueFamilyIndex,
                   0
               );
-              presentQueue = environment.createQueue(
+              queuePresent = environment.createQueue(
                   device,
                   physicalDevice.presentQueueCreateInfos.front().queueFamilyIndex,
                   0
@@ -204,6 +201,24 @@ namespace exqudens::vulkan {
                   vk::MemoryPropertyFlagBits::eDeviceLocal
               );
 
+              imageViewDepth = environment.createImageView(
+                  device,
+                  vk::ImageViewCreateInfo()
+                      .setImage(*imageDepth.reference())
+                      .setFormat(imageDepth.createInfo.format)
+                      .setViewType(vk::ImageViewType::e2D)
+                      .setFlags({})
+                      .setComponents({})
+                      .setSubresourceRange(
+                          vk::ImageSubresourceRange()
+                              .setAspectMask(vk::ImageAspectFlagBits::eDepth)
+                              .setBaseMipLevel(0)
+                              .setLevelCount(1)
+                              .setBaseArrayLayer(0)
+                              .setLayerCount(1)
+                      )
+              );
+
               swapChainImageViews = environment.createSwapChainImageViews(
                   device,
                   swapChain
@@ -217,11 +232,12 @@ namespace exqudens::vulkan {
               std::cout << std::format("surface.id: '{}'", surface.id) << std::endl;
               std::cout << std::format("physicalDevice.id: '{}'", physicalDevice.id) << std::endl;
               std::cout << std::format("device.id: '{}'", device.id) << std::endl;
-              std::cout << std::format("transferQueue.id: '{}'", transferQueue.id) << std::endl;
-              std::cout << std::format("graphicsQueue.id: '{}'", graphicsQueue.id) << std::endl;
-              std::cout << std::format("presentQueue.id: '{}'", presentQueue.id) << std::endl;
+              std::cout << std::format("queueTransfer.id: '{}'", queueTransfer.id) << std::endl;
+              std::cout << std::format("queueGraphics.id: '{}'", queueGraphics.id) << std::endl;
+              std::cout << std::format("queuePresent.id: '{}'", queuePresent.id) << std::endl;
               std::cout << std::format("swapChain.id: '{}'", swapChain.id) << std::endl;
               std::cout << std::format("imageDepth.id: '{}'", imageDepth.id) << std::endl;
+              std::cout << std::format("imageViewDepth.id: '{}'", imageViewDepth.id) << std::endl;
               std::ranges::for_each(swapChainImageViews, [](const auto& swapChainImageView) {std::cout << std::format("swapChainImageView.id: '{}'", swapChainImageView.id) << std::endl;});
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
@@ -283,8 +299,8 @@ namespace exqudens::vulkan {
 
               GLFWwindow* window = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
 
-              glfwSetWindowUserPointer(window, this);
-              glfwSetFramebufferSizeCallback(window, frameBufferResizeCallback);
+              //glfwSetWindowUserPointer(window, this);
+              //glfwSetFramebufferSizeCallback(window, frameBufferResizeCallback);
 
               renderer = new Renderer();
               renderer->create(arguments, window, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
@@ -311,16 +327,14 @@ namespace exqudens::vulkan {
             }
           }
 
-        private:
-
-          static void frameBufferResizeCallback(GLFWwindow* window, int width, int height) {
+          /*static void frameBufferResizeCallback(GLFWwindow* window, int width, int height) {
             try {
               auto* app = reinterpret_cast<TestUiApplication*>(glfwGetWindowUserPointer(window));
               app->renderer->resized = true;
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
             }
-          }
+          }*/
 
       };
 
