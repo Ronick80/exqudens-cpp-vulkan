@@ -138,6 +138,7 @@ add_library("${PROJECT_NAME}" INTERFACE
     "src/main/cpp/exqudens/vulkan/Image.hpp"
     "src/main/cpp/exqudens/vulkan/ImageView.hpp"
     "src/main/cpp/exqudens/vulkan/Buffer.hpp"
+    "src/main/cpp/exqudens/vulkan/Sampler.hpp"
 
     "src/main/cpp/exqudens/vulkan/Macros.hpp"
     "src/main/cpp/exqudens/vulkan/Utility.hpp"

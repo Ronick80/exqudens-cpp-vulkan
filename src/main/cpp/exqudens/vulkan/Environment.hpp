@@ -27,6 +27,7 @@
 #include "exqudens/vulkan/Image.hpp"
 #include "exqudens/vulkan/ImageView.hpp"
 #include "exqudens/vulkan/Buffer.hpp"
+#include "exqudens/vulkan/Sampler.hpp"
 
 namespace exqudens::vulkan {
 
@@ -44,6 +45,7 @@ namespace exqudens::vulkan {
       unsigned int imageId = 1;
       unsigned int imageViewId = 1;
       unsigned int bufferId = 1;
+      unsigned int samplerId = 1;
       unsigned int surfaceId = 1;
       unsigned int swapChainId = 1;
 
@@ -59,6 +61,7 @@ namespace exqudens::vulkan {
       std::map<unsigned int, std::shared_ptr<Image>> imageMap = {};
       std::map<unsigned int, std::shared_ptr<ImageView>> imageViewMap = {};
       std::map<unsigned int, std::shared_ptr<Buffer>> bufferMap = {};
+      std::map<unsigned int, std::shared_ptr<Sampler>> samplerMap = {};
       std::map<unsigned int, std::shared_ptr<Surface>> surfaceMap = {};
       std::map<unsigned int, std::shared_ptr<SwapChain>> swapChainMap = {};
 
@@ -414,6 +417,25 @@ namespace exqudens::vulkan {
           value->value->bindMemory(*(*value->memory), 0);
           bufferMap[value->id] = std::shared_ptr<Buffer>(value);
           return *bufferMap[value->id];
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      virtual Sampler createSampler(
+          Device& device,
+          const vk::SamplerCreateInfo& createInfo
+      ) {
+        try {
+          auto* value = new Sampler;
+          value->id = samplerId++;
+          value->createInfo = createInfo;
+          value->value = std::make_shared<vk::raii::Sampler>(
+              device.reference(),
+              value->createInfo
+          );
+          samplerMap[value->id] = std::shared_ptr<Sampler>(value);
+          return *samplerMap[value->id];
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }

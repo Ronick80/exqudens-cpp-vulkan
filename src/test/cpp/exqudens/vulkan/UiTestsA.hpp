@@ -58,6 +58,7 @@ namespace exqudens::vulkan {
           Buffer indexStagingBuffer = {};
           Buffer indexBuffer = {};
           std::vector<Buffer> uniformBuffers = std::vector<Buffer>(MAX_FRAMES_IN_FLIGHT);
+          Sampler sampler = {};
           //Queue transferQueue = {};
           //Queue graphicsQueue = {};
           //Queue presentQueue = {};
@@ -330,6 +331,23 @@ namespace exqudens::vulkan {
                 );
               });
 
+              sampler = environment.createSampler(
+                  device,
+                  vk::SamplerCreateInfo()
+                      .setMagFilter(vk::Filter::eLinear)
+                      .setMinFilter(vk::Filter::eLinear)
+                      .setMipmapMode(vk::SamplerMipmapMode::eLinear)
+                      .setAddressModeU(vk::SamplerAddressMode::eRepeat)
+                      .setAddressModeV(vk::SamplerAddressMode::eRepeat)
+                      .setAddressModeW(vk::SamplerAddressMode::eRepeat)
+                      .setCompareOp(vk::CompareOp::eAlways)
+                      .setBorderColor(vk::BorderColor::eIntOpaqueBlack)
+                      .setUnnormalizedCoordinates(false)
+                      .setCompareEnable(false)
+                      .setAnisotropyEnable(context.createInfo.samplerAnisotropy)
+                      .setMaxAnisotropy(context.createInfo.samplerAnisotropy ? physicalDevice.reference().getProperties().limits.maxSamplerAnisotropy : 0)
+              );
+
               /*transferQueue = environment.createQueue(
                   device,
                   physicalDevice.transferQueueCreateInfos.front().queueFamilyIndex,
@@ -370,6 +388,7 @@ namespace exqudens::vulkan {
               std::cout << std::format("indexStagingBuffer.id: '{}'", indexStagingBuffer.id) << std::endl;
               std::cout << std::format("indexBuffer.id: '{}'", indexBuffer.id) << std::endl;
               std::ranges::for_each(uniformBuffers, [](auto& o1) {std::cout << std::format("uniformBuffer.id: '{}'", o1.id) << std::endl;});
+              std::cout << std::format("sampler.id: '{}'", sampler.id) << std::endl;
               //std::cout << std::format("transferQueue.id: '{}'", transferQueue.id) << std::endl;
               //std::cout << std::format("graphicsQueue.id: '{}'", graphicsQueue.id) << std::endl;
               //std::cout << std::format("presentQueue.id: '{}'", presentQueue.id) << std::endl;
