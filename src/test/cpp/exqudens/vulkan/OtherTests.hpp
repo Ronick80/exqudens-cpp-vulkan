@@ -1,10 +1,11 @@
 #pragma once
 
-#include <memory>
 #include <string>
+#include <array>
 #include <vector>
 #include <map>
 #include <memory>
+#include <algorithm>
 #include <iostream>
 #include <format>
 
@@ -89,12 +90,25 @@ namespace exqudens::vulkan {
 
   TEST_F(OtherTests, test1) {
     try {
+      GTEST_SKIP() << "Skipping test: '" << __FUNCTION__ << "'";
       MyEnvironment environment;
 
       MyClassA& instance = environment.createInstance();
       std::cout << "CCC" << std::endl;
 
       ASSERT_EQ(1, instance.getId());
+    } catch (const std::exception& e) {
+      FAIL() << TestUtils::toString(e);
+    }
+  }
+
+  TEST_F(OtherTests, test2) {
+    try {
+      //GTEST_SKIP() << "Skipping test: '" << __FUNCTION__ << "'";
+      unsigned int index = 1;
+      std::vector<std::string> names = std::vector<std::string>(5);
+      std::generate_n(names.begin(), names.size(), [&index]() { return std::string("aaa: ") + std::to_string(index++); });
+      std::ranges::for_each(names, [](auto && o1) { std::cout << o1 << std::endl; });
     } catch (const std::exception& e) {
       FAIL() << TestUtils::toString(e);
     }
