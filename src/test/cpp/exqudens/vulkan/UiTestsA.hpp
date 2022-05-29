@@ -35,8 +35,8 @@ namespace exqudens::vulkan {
 
         private:
 
-          std::vector<Vertex> vertices = {};
-          std::vector<uint16_t> indices = {};
+          std::vector<Vertex> vertexVector = {};
+          std::vector<uint16_t> indexVector = {};
 
           Environment environment = {};
           Context context = {};
@@ -47,21 +47,25 @@ namespace exqudens::vulkan {
           PhysicalDevice physicalDevice = {};
           Device device = {};
           SwapChain swapChain = {};
-          Image imageDepth = {};
-          ImageView imageViewDepth = {};
-          Buffer imageStagingTexture = {};
-          Image imageTexture = {};
-          ImageView imageViewTexture = {};
-          //Queue queueTransfer = {};
-          //Queue queueGraphics = {};
-          //Queue queuePresent = {};
+          Image depthImage = {};
+          ImageView depthImageView = {};
+          Buffer textureBuffer = {};
+          Image textureImage = {};
+          ImageView textureImageView = {};
+          Buffer vertexStagingBuffer = {};
+          Buffer vertexBuffer = {};
+          Buffer indexStagingBuffer = {};
+          Buffer indexBuffer = {};
+          //Queue transferQueue = {};
+          //Queue graphicsQueue = {};
+          //Queue presentQueue = {};
           //std::vector<ImageView> swapChainImageViews = {};
 
         public:
 
           void create(const std::vector<std::string>& arguments, GLFWwindow* window, uint32_t width, uint32_t height) {
             try {
-              vertices = {
+              vertexVector = {
                   {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
                   {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
                   {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
@@ -73,7 +77,7 @@ namespace exqudens::vulkan {
                   {{-0.5f, 0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
               };
 
-              indices = {
+              indexVector = {
                   0, 1, 2, 2, 3, 0,
                   4, 5, 6, 6, 7, 4
               };
@@ -165,7 +169,7 @@ namespace exqudens::vulkan {
                       )
               );
 
-              imageDepth = environment.createImage(
+              depthImage = environment.createImage(
                   physicalDevice,
                   device,
                   vk::ImageCreateInfo()
@@ -188,11 +192,11 @@ namespace exqudens::vulkan {
                   vk::MemoryPropertyFlagBits::eDeviceLocal
               );
 
-              imageViewDepth = environment.createImageView(
+              depthImageView = environment.createImageView(
                   device,
                   vk::ImageViewCreateInfo()
-                      .setImage(*imageDepth.reference())
-                      .setFormat(imageDepth.createInfo.format)
+                      .setImage(*depthImage.reference())
+                      .setFormat(depthImage.createInfo.format)
                       .setViewType(vk::ImageViewType::e2D)
                       .setFlags({})
                       .setComponents({})
@@ -216,7 +220,7 @@ namespace exqudens::vulkan {
                   tmpImageData
               );
 
-              imageStagingTexture = environment.createBuffer(
+              textureBuffer = environment.createBuffer(
                   physicalDevice,
                   device,
                   vk::BufferCreateInfo()
@@ -226,10 +230,10 @@ namespace exqudens::vulkan {
                       .setFlags({}),
                   vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
               );
-              void* tmpData = imageStagingTexture.memoryReference().mapMemory(0, imageStagingTexture.size);
-              std::memcpy(tmpData, tmpImageData.data(), static_cast<size_t>(imageStagingTexture.size));
-              imageStagingTexture.memoryReference().unmapMemory();
-              imageTexture = environment.createImage(
+              void* tmpData = textureBuffer.memoryReference().mapMemory(0, textureBuffer.size);
+              std::memcpy(tmpData, tmpImageData.data(), static_cast<size_t>(textureBuffer.size));
+              textureBuffer.memoryReference().unmapMemory();
+              textureImage = environment.createImage(
                   physicalDevice,
                   device,
                   vk::ImageCreateInfo()
@@ -251,11 +255,11 @@ namespace exqudens::vulkan {
                       .setInitialLayout(vk::ImageLayout::eUndefined),
                   vk::MemoryPropertyFlagBits::eDeviceLocal
               );
-              imageViewTexture = environment.createImageView(
+              textureImageView = environment.createImageView(
                   device,
                   vk::ImageViewCreateInfo()
-                      .setImage(*imageTexture.reference())
-                      .setFormat(imageTexture.createInfo.format)
+                      .setImage(*textureImage.reference())
+                      .setFormat(textureImage.createInfo.format)
                       .setViewType(vk::ImageViewType::e2D)
                       .setFlags({})
                       .setComponents({})
@@ -269,17 +273,24 @@ namespace exqudens::vulkan {
                       )
               );
 
-              /*queueTransfer = environment.createQueue(
+              /*vertexStagingBuffer = environment.createBuffer(
+                  physicalDevice,
+                  device,
+                  vk::BufferCreateInfo(),
+                  vk::MemoryPropertyFlagBits::eDeviceLocal
+              );*/
+
+              /*transferQueue = environment.createQueue(
                   device,
                   physicalDevice.transferQueueCreateInfos.front().queueFamilyIndex,
                   0
               );
-              queueGraphics = environment.createQueue(
+              graphicsQueue = environment.createQueue(
                   device,
                   physicalDevice.graphicsQueueCreateInfos.front().queueFamilyIndex,
                   0
               );
-              queuePresent = environment.createQueue(
+              presentQueue = environment.createQueue(
                   device,
                   physicalDevice.presentQueueCreateInfos.front().queueFamilyIndex,
                   0
@@ -299,14 +310,14 @@ namespace exqudens::vulkan {
               std::cout << std::format("physicalDevice.id: '{}'", physicalDevice.id) << std::endl;
               std::cout << std::format("device.id: '{}'", device.id) << std::endl;
               std::cout << std::format("swapChain.id: '{}'", swapChain.id) << std::endl;
-              std::cout << std::format("imageDepth.id: '{}'", imageDepth.id) << std::endl;
-              std::cout << std::format("imageViewDepth.id: '{}'", imageViewDepth.id) << std::endl;
-              std::cout << std::format("imageStagingTexture.id: '{}'", imageStagingTexture.id) << std::endl;
-              std::cout << std::format("imageTexture.id: '{}'", imageTexture.id) << std::endl;
-              std::cout << std::format("imageViewTexture.id: '{}'", imageViewTexture.id) << std::endl;
-              //std::cout << std::format("queueTransfer.id: '{}'", queueTransfer.id) << std::endl;
-              //std::cout << std::format("queueGraphics.id: '{}'", queueGraphics.id) << std::endl;
-              //std::cout << std::format("queuePresent.id: '{}'", queuePresent.id) << std::endl;
+              std::cout << std::format("depthImage.id: '{}'", depthImage.id) << std::endl;
+              std::cout << std::format("depthImageView.id: '{}'", depthImageView.id) << std::endl;
+              std::cout << std::format("textureBuffer.id: '{}'", textureBuffer.id) << std::endl;
+              std::cout << std::format("textureImage.id: '{}'", textureImage.id) << std::endl;
+              std::cout << std::format("textureImageView.id: '{}'", textureImageView.id) << std::endl;
+              //std::cout << std::format("transferQueue.id: '{}'", transferQueue.id) << std::endl;
+              //std::cout << std::format("graphicsQueue.id: '{}'", graphicsQueue.id) << std::endl;
+              //std::cout << std::format("presentQueue.id: '{}'", presentQueue.id) << std::endl;
               //std::ranges::for_each(swapChainImageViews, [](const auto& swapChainImageView) {std::cout << std::format("swapChainImageView.id: '{}'", swapChainImageView.id) << std::endl;});
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
