@@ -226,8 +226,7 @@ namespace exqudens::vulkan {
                   vk::BufferCreateInfo()
                       .setSize(tmpImageWidth * tmpImageHeight * tmpImageDepth)
                       .setUsage(vk::BufferUsageFlagBits::eTransferSrc)
-                      .setSharingMode(vk::SharingMode::eExclusive)
-                      .setFlags({}),
+                      .setSharingMode(vk::SharingMode::eExclusive),
                   vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
               );
               void* tmpData = textureBuffer.memoryReference().mapMemory(0, textureBuffer.size);
@@ -273,12 +272,49 @@ namespace exqudens::vulkan {
                       )
               );
 
-              /*vertexStagingBuffer = environment.createBuffer(
+              vertexStagingBuffer = environment.createBuffer(
                   physicalDevice,
                   device,
-                  vk::BufferCreateInfo(),
+                  vk::BufferCreateInfo()
+                      .setSize(sizeof(vertexVector[0]) * vertexVector.size())
+                      .setUsage(vk::BufferUsageFlagBits::eTransferSrc)
+                      .setSharingMode(vk::SharingMode::eExclusive),
+                  vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
+              );
+              tmpData = vertexStagingBuffer.memoryReference().mapMemory(0, vertexStagingBuffer.size);
+              std::memcpy(tmpData, vertexVector.data(), static_cast<size_t>(vertexStagingBuffer.size));
+              vertexStagingBuffer.memoryReference().unmapMemory();
+              vertexBuffer = environment.createBuffer(
+                  physicalDevice,
+                  device,
+                  vk::BufferCreateInfo()
+                      .setSize(vertexStagingBuffer.size)
+                      .setUsage(vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer)
+                      .setSharingMode(vk::SharingMode::eExclusive),
                   vk::MemoryPropertyFlagBits::eDeviceLocal
-              );*/
+              );
+
+              indexStagingBuffer = environment.createBuffer(
+                  physicalDevice,
+                  device,
+                  vk::BufferCreateInfo()
+                      .setSize(sizeof(indexVector[0]) * indexVector.size())
+                      .setUsage(vk::BufferUsageFlagBits::eTransferSrc)
+                      .setSharingMode(vk::SharingMode::eExclusive),
+                  vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
+              );
+              tmpData = indexStagingBuffer.memoryReference().mapMemory(0, indexStagingBuffer.size);
+              std::memcpy(tmpData, indexVector.data(), static_cast<size_t>(indexStagingBuffer.size));
+              indexStagingBuffer.memoryReference().unmapMemory();
+              indexBuffer = environment.createBuffer(
+                  physicalDevice,
+                  device,
+                  vk::BufferCreateInfo()
+                      .setSize(indexStagingBuffer.size)
+                      .setUsage(vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer)
+                      .setSharingMode(vk::SharingMode::eExclusive),
+                  vk::MemoryPropertyFlagBits::eDeviceLocal
+              );
 
               /*transferQueue = environment.createQueue(
                   device,
@@ -315,6 +351,10 @@ namespace exqudens::vulkan {
               std::cout << std::format("textureBuffer.id: '{}'", textureBuffer.id) << std::endl;
               std::cout << std::format("textureImage.id: '{}'", textureImage.id) << std::endl;
               std::cout << std::format("textureImageView.id: '{}'", textureImageView.id) << std::endl;
+              std::cout << std::format("vertexStagingBuffer.id: '{}'", vertexStagingBuffer.id) << std::endl;
+              std::cout << std::format("vertexBuffer.id: '{}'", vertexBuffer.id) << std::endl;
+              std::cout << std::format("indexStagingBuffer.id: '{}'", indexStagingBuffer.id) << std::endl;
+              std::cout << std::format("indexBuffer.id: '{}'", indexBuffer.id) << std::endl;
               //std::cout << std::format("transferQueue.id: '{}'", transferQueue.id) << std::endl;
               //std::cout << std::format("graphicsQueue.id: '{}'", graphicsQueue.id) << std::endl;
               //std::cout << std::format("presentQueue.id: '{}'", presentQueue.id) << std::endl;
