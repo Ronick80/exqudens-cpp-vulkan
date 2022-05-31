@@ -30,6 +30,7 @@
 #include "exqudens/vulkan/Sampler.hpp"
 #include "exqudens/vulkan/Semaphore.hpp"
 #include "exqudens/vulkan/Fence.hpp"
+#include "exqudens/vulkan/RenderPass.hpp"
 
 namespace exqudens::vulkan {
 
@@ -50,6 +51,7 @@ namespace exqudens::vulkan {
       unsigned int samplerId = 1;
       unsigned int semaphoreId = 1;
       unsigned int fenceId = 1;
+      unsigned int renderPassId = 1;
       unsigned int surfaceId = 1;
       unsigned int swapChainId = 1;
 
@@ -68,6 +70,7 @@ namespace exqudens::vulkan {
       std::map<unsigned int, std::shared_ptr<Sampler>> samplerMap = {};
       std::map<unsigned int, std::shared_ptr<Semaphore>> semaphoreMap = {};
       std::map<unsigned int, std::shared_ptr<Fence>> fenceMap = {};
+      std::map<unsigned int, std::shared_ptr<RenderPass>> renderPassMap = {};
       std::map<unsigned int, std::shared_ptr<Surface>> surfaceMap = {};
       std::map<unsigned int, std::shared_ptr<SwapChain>> swapChainMap = {};
 
@@ -94,15 +97,16 @@ namespace exqudens::vulkan {
 
       virtual Instance createInstance(
           Context& context,
-          const vk::ApplicationInfo& applicationInfo,
-          const vk::InstanceCreateInfo& createInfo
+          const vk::ApplicationInfo& applicationInfo
       ) {
         try {
           auto* value = new Instance;
           value->id = instanceId++;
           value->applicationInfo = applicationInfo;
-          value->createInfo = createInfo;
-          value->createInfo.pApplicationInfo = &value->applicationInfo;
+          value->createInfo = vk::InstanceCreateInfo()
+              .setPApplicationInfo(&value->applicationInfo)
+              .setPEnabledExtensionNames(context.createInfo.enabledExtensionNames)
+              .setPEnabledLayerNames(context.createInfo.enabledLayerNames);
           value->value = std::make_shared<vk::raii::Instance>(
               context.reference(),
               value->createInfo
@@ -479,6 +483,28 @@ namespace exqudens::vulkan {
           );
           fenceMap[value->id] = std::shared_ptr<Fence>(value);
           return *fenceMap[value->id];
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      virtual RenderPass createRenderPass(
+          Device& device,
+          const RenderPassCreateInfo& createInfo
+      ) {
+        try {
+          auto* value = new RenderPass;
+          value->id = renderPassId++;
+          value->createInfo = createInfo;
+          value->value = std::make_shared<vk::raii::RenderPass>(
+              device.reference(),
+              vk::RenderPassCreateInfo()
+                  .setAttachments(value->createInfo.attachments)
+                  .setSubpasses(value->createInfo.subPasses)
+                  .setDependencies(value->createInfo.dependencies)
+          );
+          renderPassMap[value->id] = std::shared_ptr<RenderPass>(value);
+          return *renderPassMap[value->id];
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }

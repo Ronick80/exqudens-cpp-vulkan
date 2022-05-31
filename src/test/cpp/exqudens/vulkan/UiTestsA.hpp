@@ -62,6 +62,7 @@ namespace exqudens::vulkan {
           std::vector<Semaphore> imageAvailableSemaphores = std::vector<Semaphore>(MAX_FRAMES_IN_FLIGHT);
           std::vector<Semaphore> renderFinishedSemaphores = std::vector<Semaphore>(MAX_FRAMES_IN_FLIGHT);
           std::vector<Fence> inFlightFences = std::vector<Fence>(MAX_FRAMES_IN_FLIGHT);
+          RenderPass renderPass = {};
           //Queue transferQueue = {};
           //Queue graphicsQueue = {};
           //Queue presentQueue = {};
@@ -113,10 +114,7 @@ namespace exqudens::vulkan {
                       .setApplicationVersion(VK_MAKE_VERSION(1, 0, 0))
                       .setPEngineName("Exqudens Engine")
                       .setEngineVersion(VK_MAKE_VERSION(1, 0, 0))
-                      .setApiVersion(VK_API_VERSION_1_0),
-                  vk::InstanceCreateInfo()
-                      .setPEnabledExtensionNames(context.createInfo.enabledExtensionNames)
-                      .setPEnabledLayerNames(context.createInfo.enabledLayerNames)
+                      .setApiVersion(VK_API_VERSION_1_0)
               );
 
               messenger = environment.createMessenger(
@@ -372,6 +370,54 @@ namespace exqudens::vulkan {
                 );
               });
 
+              renderPass = environment.createRenderPass(
+                  device,
+                  RenderPassCreateInfo()
+                      .setAttachments({
+                          vk::AttachmentDescription()
+                              .setFormat(swapChain.createInfo.imageFormat)
+                              .setSamples(vk::SampleCountFlagBits::e1)
+                              .setLoadOp(vk::AttachmentLoadOp::eClear)
+                              .setStencilLoadOp(vk::AttachmentLoadOp::eClear)
+                              .setStoreOp(vk::AttachmentStoreOp::eDontCare)
+                              .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+                              .setInitialLayout(vk::ImageLayout::eUndefined)
+                              .setFinalLayout(vk::ImageLayout::ePresentSrcKHR),
+                          vk::AttachmentDescription()
+                              .setFormat(depthImage.createInfo.format)
+                              .setSamples(vk::SampleCountFlagBits::e1)
+                              .setLoadOp(vk::AttachmentLoadOp::eClear)
+                              .setStencilLoadOp(vk::AttachmentLoadOp::eClear)
+                              .setStoreOp(vk::AttachmentStoreOp::eDontCare)
+                              .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+                              .setInitialLayout(vk::ImageLayout::eUndefined)
+                              .setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
+                      })
+                      .setSubPasses({
+                          SubPassDescription()
+                              .setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
+                              .setColorAttachments({
+                                  vk::AttachmentReference()
+                                      .setAttachment(0)
+                                      .setLayout(vk::ImageLayout::eColorAttachmentOptimal)
+                              })
+                              .setDepthStencilAttachment(
+                                  vk::AttachmentReference()
+                                      .setAttachment(1)
+                                      .setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
+                              )
+                      })
+                      .setDependencies({
+                          vk::SubpassDependency()
+                              .setSrcSubpass(VK_SUBPASS_EXTERNAL)
+                              .setDstSubpass(0)
+                              .setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests)
+                              .setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests)
+                              .setSrcAccessMask(vk::AccessFlagBits::eNoneKHR)
+                              .setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite)
+                      })
+              );
+
               /*transferQueue = environment.createQueue(
                   device,
                   physicalDevice.transferQueueCreateInfos.front().queueFamilyIndex,
@@ -416,6 +462,7 @@ namespace exqudens::vulkan {
               std::ranges::for_each(imageAvailableSemaphores, [](auto& o1) {std::cout << std::format("imageAvailableSemaphore.id: '{}'", o1.id) << std::endl;});
               std::ranges::for_each(renderFinishedSemaphores, [](auto& o1) {std::cout << std::format("renderFinishedSemaphore.id: '{}'", o1.id) << std::endl;});
               std::ranges::for_each(inFlightFences, [](auto& o1) {std::cout << std::format("inFlightFence.id: '{}'", o1.id) << std::endl;});
+              std::cout << std::format("renderPass.id: '{}'", renderPass.id) << std::endl;
               //std::cout << std::format("transferQueue.id: '{}'", transferQueue.id) << std::endl;
               //std::cout << std::format("graphicsQueue.id: '{}'", graphicsQueue.id) << std::endl;
               //std::cout << std::format("presentQueue.id: '{}'", presentQueue.id) << std::endl;
