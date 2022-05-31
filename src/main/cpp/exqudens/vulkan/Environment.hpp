@@ -28,6 +28,8 @@
 #include "exqudens/vulkan/ImageView.hpp"
 #include "exqudens/vulkan/Buffer.hpp"
 #include "exqudens/vulkan/Sampler.hpp"
+#include "exqudens/vulkan/Semaphore.hpp"
+#include "exqudens/vulkan/Fence.hpp"
 
 namespace exqudens::vulkan {
 
@@ -46,6 +48,8 @@ namespace exqudens::vulkan {
       unsigned int imageViewId = 1;
       unsigned int bufferId = 1;
       unsigned int samplerId = 1;
+      unsigned int semaphoreId = 1;
+      unsigned int fenceId = 1;
       unsigned int surfaceId = 1;
       unsigned int swapChainId = 1;
 
@@ -62,6 +66,8 @@ namespace exqudens::vulkan {
       std::map<unsigned int, std::shared_ptr<ImageView>> imageViewMap = {};
       std::map<unsigned int, std::shared_ptr<Buffer>> bufferMap = {};
       std::map<unsigned int, std::shared_ptr<Sampler>> samplerMap = {};
+      std::map<unsigned int, std::shared_ptr<Semaphore>> semaphoreMap = {};
+      std::map<unsigned int, std::shared_ptr<Fence>> fenceMap = {};
       std::map<unsigned int, std::shared_ptr<Surface>> surfaceMap = {};
       std::map<unsigned int, std::shared_ptr<SwapChain>> swapChainMap = {};
 
@@ -436,6 +442,43 @@ namespace exqudens::vulkan {
           );
           samplerMap[value->id] = std::shared_ptr<Sampler>(value);
           return *samplerMap[value->id];
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      virtual Semaphore createSemaphore(
+          Device& device,
+          const vk::SemaphoreCreateInfo& createInfo
+          ) {
+        try {
+          auto* value = new Semaphore;
+          value->id = semaphoreId++;
+          value->createInfo = createInfo;
+          value->value = std::make_shared<vk::raii::Semaphore>(
+              device.reference(),
+              value->createInfo
+          );
+          semaphoreMap[value->id] = std::shared_ptr<Semaphore>(value);
+          return *semaphoreMap[value->id];
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      virtual Fence createFence(
+          Device& device,
+          const vk::FenceCreateInfo& createInfo
+      ) {
+        try {
+          auto* value = new Fence;
+          value->id = fenceId++;
+          value->value = std::make_shared<vk::raii::Fence>(
+              device.reference(),
+              value->createInfo
+          );
+          fenceMap[value->id] = std::shared_ptr<Fence>(value);
+          return *fenceMap[value->id];
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }

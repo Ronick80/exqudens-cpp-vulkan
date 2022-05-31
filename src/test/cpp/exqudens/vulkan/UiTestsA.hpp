@@ -59,6 +59,9 @@ namespace exqudens::vulkan {
           Buffer indexBuffer = {};
           std::vector<Buffer> uniformBuffers = std::vector<Buffer>(MAX_FRAMES_IN_FLIGHT);
           Sampler sampler = {};
+          std::vector<Semaphore> imageAvailableSemaphores = std::vector<Semaphore>(MAX_FRAMES_IN_FLIGHT);
+          std::vector<Semaphore> renderFinishedSemaphores = std::vector<Semaphore>(MAX_FRAMES_IN_FLIGHT);
+          std::vector<Fence> inFlightFences = std::vector<Fence>(MAX_FRAMES_IN_FLIGHT);
           //Queue transferQueue = {};
           //Queue graphicsQueue = {};
           //Queue presentQueue = {};
@@ -348,6 +351,27 @@ namespace exqudens::vulkan {
                       .setMaxAnisotropy(context.createInfo.samplerAnisotropy ? physicalDevice.reference().getProperties().limits.maxSamplerAnisotropy : 0)
               );
 
+              std::generate_n(imageAvailableSemaphores.begin(), imageAvailableSemaphores.size(), [this]() {
+                return environment.createSemaphore(
+                    device,
+                    vk::SemaphoreCreateInfo()
+                );
+              });
+
+              std::generate_n(renderFinishedSemaphores.begin(), renderFinishedSemaphores.size(), [this]() {
+                return environment.createSemaphore(
+                    device,
+                    vk::SemaphoreCreateInfo()
+                );
+              });
+
+              std::generate_n(inFlightFences.begin(), inFlightFences.size(), [this]() {
+                return environment.createFence(
+                    device,
+                    vk::FenceCreateInfo()
+                );
+              });
+
               /*transferQueue = environment.createQueue(
                   device,
                   physicalDevice.transferQueueCreateInfos.front().queueFamilyIndex,
@@ -389,6 +413,9 @@ namespace exqudens::vulkan {
               std::cout << std::format("indexBuffer.id: '{}'", indexBuffer.id) << std::endl;
               std::ranges::for_each(uniformBuffers, [](auto& o1) {std::cout << std::format("uniformBuffer.id: '{}'", o1.id) << std::endl;});
               std::cout << std::format("sampler.id: '{}'", sampler.id) << std::endl;
+              std::ranges::for_each(imageAvailableSemaphores, [](auto& o1) {std::cout << std::format("imageAvailableSemaphore.id: '{}'", o1.id) << std::endl;});
+              std::ranges::for_each(renderFinishedSemaphores, [](auto& o1) {std::cout << std::format("renderFinishedSemaphore.id: '{}'", o1.id) << std::endl;});
+              std::ranges::for_each(inFlightFences, [](auto& o1) {std::cout << std::format("inFlightFence.id: '{}'", o1.id) << std::endl;});
               //std::cout << std::format("transferQueue.id: '{}'", transferQueue.id) << std::endl;
               //std::cout << std::format("graphicsQueue.id: '{}'", graphicsQueue.id) << std::endl;
               //std::cout << std::format("presentQueue.id: '{}'", presentQueue.id) << std::endl;
