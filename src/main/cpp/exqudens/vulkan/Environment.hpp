@@ -31,6 +31,7 @@
 #include "exqudens/vulkan/Semaphore.hpp"
 #include "exqudens/vulkan/Fence.hpp"
 #include "exqudens/vulkan/RenderPass.hpp"
+#include "exqudens/vulkan/DescriptorSetLayout.hpp"
 
 namespace exqudens::vulkan {
 
@@ -52,6 +53,7 @@ namespace exqudens::vulkan {
       unsigned int semaphoreId = 1;
       unsigned int fenceId = 1;
       unsigned int renderPassId = 1;
+      unsigned int descriptorSetLayoutId = 1;
       unsigned int surfaceId = 1;
       unsigned int swapChainId = 1;
 
@@ -71,6 +73,7 @@ namespace exqudens::vulkan {
       std::map<unsigned int, std::shared_ptr<Semaphore>> semaphoreMap = {};
       std::map<unsigned int, std::shared_ptr<Fence>> fenceMap = {};
       std::map<unsigned int, std::shared_ptr<RenderPass>> renderPassMap = {};
+      std::map<unsigned int, std::shared_ptr<DescriptorSetLayout>> descriptorSetLayoutMap = {};
       std::map<unsigned int, std::shared_ptr<Surface>> surfaceMap = {};
       std::map<unsigned int, std::shared_ptr<SwapChain>> swapChainMap = {};
 
@@ -496,15 +499,50 @@ namespace exqudens::vulkan {
           auto* value = new RenderPass;
           value->id = renderPassId++;
           value->createInfo = createInfo;
+          std::vector<vk::SubpassDescription> subPasses;
+          for (const SubPassDescription& s : value->createInfo.subPasses) {
+            subPasses.emplace_back(
+                vk::SubpassDescription()
+                    .setFlags(s.flags)
+                    .setPipelineBindPoint(s.pipelineBindPoint)
+                    .setInputAttachments(s.inputAttachments)
+                    .setColorAttachments(s.colorAttachments)
+                    .setResolveAttachments(s.resolveAttachments)
+                    .setPDepthStencilAttachment(&s.depthStencilAttachment)
+                    .setPreserveAttachments(s.preserveAttachments)
+            );
+          }
           value->value = std::make_shared<vk::raii::RenderPass>(
               device.reference(),
               vk::RenderPassCreateInfo()
                   .setAttachments(value->createInfo.attachments)
-                  .setSubpasses(value->createInfo.subPasses)
+                  .setSubpasses(subPasses)
                   .setDependencies(value->createInfo.dependencies)
           );
           renderPassMap[value->id] = std::shared_ptr<RenderPass>(value);
           return *renderPassMap[value->id];
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      virtual DescriptorSetLayout createDescriptorSetLayout(
+          Device& device,
+          const vk::DescriptorSetLayoutCreateFlags& flags,
+          const std::vector<vk::DescriptorSetLayoutBinding>& bindings
+      ) {
+        try {
+          auto* value = new DescriptorSetLayout;
+          value->id = descriptorSetLayoutId++;
+          value->createInfo = vk::DescriptorSetLayoutCreateInfo()
+              .setFlags(value->flags)
+              .setBindings(value->bindings);
+          value->value = std::make_shared<vk::raii::DescriptorSetLayout>(
+              device.reference(),
+              value->createInfo
+          );
+          descriptorSetLayoutMap[value->id] = std::shared_ptr<DescriptorSetLayout>(value);
+          return *descriptorSetLayoutMap[value->id];
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }

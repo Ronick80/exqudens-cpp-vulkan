@@ -144,6 +144,7 @@ add_library("${PROJECT_NAME}" INTERFACE
     "src/main/cpp/exqudens/vulkan/SubPassDescription.hpp"
     "src/main/cpp/exqudens/vulkan/RenderPassCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/RenderPass.hpp"
+    "src/main/cpp/exqudens/vulkan/DescriptorSetLayout.hpp"
 
     "src/main/cpp/exqudens/vulkan/Macros.hpp"
     "src/main/cpp/exqudens/vulkan/Utility.hpp"

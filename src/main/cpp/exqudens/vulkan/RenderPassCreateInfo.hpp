@@ -11,9 +11,8 @@ namespace exqudens::vulkan {
   struct RenderPassCreateInfo {
 
     std::vector<vk::AttachmentDescription> attachments;
-    std::vector<SubPassDescription> subPassesHolder;
+    std::vector<SubPassDescription> subPasses;
     std::vector<vk::SubpassDependency> dependencies;
-    std::vector<vk::SubpassDescription> subPasses;
 
     RenderPassCreateInfo& setAttachments(const std::vector<vk::AttachmentDescription>& values) {
       attachments = values;
@@ -21,20 +20,7 @@ namespace exqudens::vulkan {
     }
 
     RenderPassCreateInfo& setSubPasses(const std::vector<SubPassDescription>& values) {
-      subPassesHolder = values;
-      subPasses = {};
-      for (const SubPassDescription& s : subPassesHolder) {
-        subPasses.emplace_back(
-            vk::SubpassDescription()
-                .setFlags(s.flags)
-                .setPipelineBindPoint(s.pipelineBindPoint)
-                .setInputAttachments(s.inputAttachments)
-                .setColorAttachments(s.colorAttachments)
-                .setResolveAttachments(s.resolveAttachments)
-                .setPDepthStencilAttachment(&s.depthStencilAttachment)
-                .setPreserveAttachments(s.preserveAttachments)
-        );
-      }
+      subPasses = values;
       return *this;
     }
 

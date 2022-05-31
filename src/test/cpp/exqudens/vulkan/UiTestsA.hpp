@@ -63,6 +63,7 @@ namespace exqudens::vulkan {
           std::vector<Semaphore> renderFinishedSemaphores = std::vector<Semaphore>(MAX_FRAMES_IN_FLIGHT);
           std::vector<Fence> inFlightFences = std::vector<Fence>(MAX_FRAMES_IN_FLIGHT);
           RenderPass renderPass = {};
+          DescriptorSetLayout descriptorSetLayout = {};
           //Queue transferQueue = {};
           //Queue graphicsQueue = {};
           //Queue presentQueue = {};
@@ -418,6 +419,23 @@ namespace exqudens::vulkan {
                       })
               );
 
+              descriptorSetLayout = environment.createDescriptorSetLayout(
+                  device,
+                  {},
+                  {
+                    vk::DescriptorSetLayoutBinding()
+                        .setBinding(0)
+                        .setDescriptorType(vk::DescriptorType::eUniformBuffer)
+                        .setDescriptorCount(1)
+                        .setStageFlags(vk::ShaderStageFlagBits::eVertex),
+                    vk::DescriptorSetLayoutBinding()
+                        .setBinding(1)
+                        .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
+                        .setDescriptorCount(1)
+                        .setStageFlags(vk::ShaderStageFlagBits::eFragment)
+                  }
+              );
+
               /*transferQueue = environment.createQueue(
                   device,
                   physicalDevice.transferQueueCreateInfos.front().queueFamilyIndex,
@@ -463,6 +481,7 @@ namespace exqudens::vulkan {
               std::ranges::for_each(renderFinishedSemaphores, [](auto& o1) {std::cout << std::format("renderFinishedSemaphore.id: '{}'", o1.id) << std::endl;});
               std::ranges::for_each(inFlightFences, [](auto& o1) {std::cout << std::format("inFlightFence.id: '{}'", o1.id) << std::endl;});
               std::cout << std::format("renderPass.id: '{}'", renderPass.id) << std::endl;
+              std::cout << std::format("descriptorSetLayout.id: '{}'", descriptorSetLayout.id) << std::endl;
               //std::cout << std::format("transferQueue.id: '{}'", transferQueue.id) << std::endl;
               //std::cout << std::format("graphicsQueue.id: '{}'", graphicsQueue.id) << std::endl;
               //std::cout << std::format("presentQueue.id: '{}'", presentQueue.id) << std::endl;
