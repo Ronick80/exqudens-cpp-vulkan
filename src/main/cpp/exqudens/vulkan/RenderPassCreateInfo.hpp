@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include <vulkan/vulkan_raii.hpp>
+#include <vulkan/vulkan_structs.hpp>
 
 #include "exqudens/vulkan/SubPassDescription.hpp"
 

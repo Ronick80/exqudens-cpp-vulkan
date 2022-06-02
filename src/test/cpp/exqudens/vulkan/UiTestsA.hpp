@@ -64,6 +64,7 @@ namespace exqudens::vulkan {
           std::vector<Fence> inFlightFences = std::vector<Fence>(MAX_FRAMES_IN_FLIGHT);
           RenderPass renderPass = {};
           DescriptorSetLayout descriptorSetLayout = {};
+          Pipeline pipeline = {};
           //Queue transferQueue = {};
           //Queue graphicsQueue = {};
           //Queue presentQueue = {};
@@ -435,6 +436,14 @@ namespace exqudens::vulkan {
                         .setStageFlags(vk::ShaderStageFlagBits::eFragment)
                   }
               );
+
+              /*pipeline = environment.createPipeline(
+                  device,
+                  vk::PipelineCacheCreateInfo(),
+                  vk::PipelineLayoutCreateInfo(),
+                  GraphicsPipelineCreateInfo()
+                      .setFlags({})
+              );*/
 
               /*transferQueue = environment.createQueue(
                   device,

@@ -32,6 +32,7 @@
 #include "exqudens/vulkan/Fence.hpp"
 #include "exqudens/vulkan/RenderPass.hpp"
 #include "exqudens/vulkan/DescriptorSetLayout.hpp"
+#include "exqudens/vulkan/Pipeline.hpp"
 
 namespace exqudens::vulkan {
 
@@ -54,6 +55,7 @@ namespace exqudens::vulkan {
       unsigned int fenceId = 1;
       unsigned int renderPassId = 1;
       unsigned int descriptorSetLayoutId = 1;
+      unsigned int pipelineId = 1;
       unsigned int surfaceId = 1;
       unsigned int swapChainId = 1;
 
@@ -74,6 +76,7 @@ namespace exqudens::vulkan {
       std::map<unsigned int, std::shared_ptr<Fence>> fenceMap = {};
       std::map<unsigned int, std::shared_ptr<RenderPass>> renderPassMap = {};
       std::map<unsigned int, std::shared_ptr<DescriptorSetLayout>> descriptorSetLayoutMap = {};
+      std::map<unsigned int, std::shared_ptr<Pipeline>> pipelineMap = {};
       std::map<unsigned int, std::shared_ptr<Surface>> surfaceMap = {};
       std::map<unsigned int, std::shared_ptr<SwapChain>> swapChainMap = {};
 
@@ -543,6 +546,77 @@ namespace exqudens::vulkan {
           );
           descriptorSetLayoutMap[value->id] = std::shared_ptr<DescriptorSetLayout>(value);
           return *descriptorSetLayoutMap[value->id];
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      virtual Pipeline createPipeline(
+          Device& device,
+          const vk::PipelineCacheCreateInfo& cacheCreateInfo,
+          const vk::PipelineLayoutCreateInfo& layoutCreateInfo,
+          const GraphicsPipelineCreateInfo& createInfo
+      ) {
+        try {
+          auto* value = new Pipeline;
+          value->id = pipelineId++;
+
+          //vk::raii::ShaderModule aaa = vk::raii::ShaderModule(device.reference(), vk::ShaderModuleCreateInfo());
+
+          value->cacheCreateInfo = cacheCreateInfo;
+          value->cache = std::make_shared<vk::raii::PipelineCache>(
+              device.reference(),
+              value->cacheCreateInfo
+          );
+          value->layoutCreateInfo = layoutCreateInfo;
+          value->layout = std::make_shared<vk::raii::PipelineLayout>(
+              device.reference(),
+              value->layoutCreateInfo
+          );
+          vk::GraphicsPipelineCreateInfo tmpCreateInfo = vk::GraphicsPipelineCreateInfo();
+          tmpCreateInfo.setFlags(value->graphicsPipelineCreateInfo->flags);
+          tmpCreateInfo.setStages(value->graphicsPipelineCreateInfo->stages);
+          if (value->graphicsPipelineCreateInfo->vertexInputState) {
+            tmpCreateInfo.setPVertexInputState(&value->graphicsPipelineCreateInfo->vertexInputState.value());
+          }
+          if (value->graphicsPipelineCreateInfo->inputAssemblyState) {
+            tmpCreateInfo.setPInputAssemblyState(&value->graphicsPipelineCreateInfo->inputAssemblyState.value());
+          }
+          if (value->graphicsPipelineCreateInfo->tessellationState) {
+            tmpCreateInfo.setPTessellationState(&value->graphicsPipelineCreateInfo->tessellationState.value());
+          }
+          if (value->graphicsPipelineCreateInfo->viewportState) {
+            tmpCreateInfo.setPViewportState(&value->graphicsPipelineCreateInfo->viewportState.value());
+          }
+          if (value->graphicsPipelineCreateInfo->rasterizationState) {
+            tmpCreateInfo.setPRasterizationState(&value->graphicsPipelineCreateInfo->rasterizationState.value());
+          }
+          if (value->graphicsPipelineCreateInfo->multisampleState) {
+            tmpCreateInfo.setPMultisampleState(&value->graphicsPipelineCreateInfo->multisampleState.value());
+          }
+          if (value->graphicsPipelineCreateInfo->depthStencilState) {
+            tmpCreateInfo.setPDepthStencilState(&value->graphicsPipelineCreateInfo->depthStencilState.value());
+          }
+          if (value->graphicsPipelineCreateInfo->colorBlendState) {
+            tmpCreateInfo.setPColorBlendState(&value->graphicsPipelineCreateInfo->colorBlendState.value());
+          }
+          if (value->graphicsPipelineCreateInfo->dynamicState) {
+            tmpCreateInfo.setPDynamicState(&value->graphicsPipelineCreateInfo->dynamicState.value());
+          }
+          tmpCreateInfo.setLayout(*value->layoutReference());
+          tmpCreateInfo.setRenderPass(value->graphicsPipelineCreateInfo->renderPass);
+          tmpCreateInfo.setSubpass(value->graphicsPipelineCreateInfo->subpass);
+          tmpCreateInfo.setBasePipelineHandle(value->graphicsPipelineCreateInfo->basePipelineHandle);
+          tmpCreateInfo.setBasePipelineIndex(value->graphicsPipelineCreateInfo->basePipelineIndex);
+          value->value = std::make_shared<vk::raii::Pipeline>(
+              device.reference(),
+              value->cacheReference(),
+              //vk::ComputePipelineCreateInfo()
+              tmpCreateInfo
+              //vk::RayTracingPipelineCreateInfoNV()
+          );
+          pipelineMap[value->id] = std::shared_ptr<Pipeline>(value);
+          return *pipelineMap[value->id];
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }

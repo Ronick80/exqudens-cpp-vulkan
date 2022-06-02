@@ -40,7 +40,7 @@ namespace exqudens::vulkan {
       }
 
       ~MyClassA() {
-        std::cout << std::format("{}", CALL_INFO()) << std::endl;
+        std::cout << std::format("{}: id: '{}'", CALL_INFO(), id) << std::endl;
       }
 
   };
@@ -104,11 +104,28 @@ namespace exqudens::vulkan {
 
   TEST_F(OtherTests, test2) {
     try {
-      //GTEST_SKIP() << "Skipping test: '" << __FUNCTION__ << "'";
+      GTEST_SKIP() << "Skipping test: '" << __FUNCTION__ << "'";
       unsigned int index = 1;
       std::vector<std::string> names = std::vector<std::string>(5);
       std::generate_n(names.begin(), names.size(), [&index]() { return std::string("aaa: ") + std::to_string(index++); });
       std::ranges::for_each(names, [](auto && o1) { std::cout << o1 << std::endl; });
+    } catch (const std::exception& e) {
+      FAIL() << TestUtils::toString(e);
+    }
+  }
+
+  TEST_F(OtherTests, test3) {
+    try {
+      //GTEST_SKIP() << "Skipping test: '" << __FUNCTION__ << "'";
+      std::shared_ptr<MyClassA> a;
+      a = std::make_shared<MyClassA>();
+      std::cout << std::format("a.id: '{}'", a->getId()) << std::endl;
+      a.reset();
+      std::cout << std::format("deleted") << std::endl;
+      a = std::make_shared<MyClassA>();
+      std::cout << std::format("a.id: '{}'", a->getId()) << std::endl;
+      a.reset();
+      std::cout << std::format("deleted") << std::endl;
     } catch (const std::exception& e) {
       FAIL() << TestUtils::toString(e);
     }
