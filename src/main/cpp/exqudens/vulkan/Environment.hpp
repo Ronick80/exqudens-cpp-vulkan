@@ -103,16 +103,12 @@ namespace exqudens::vulkan {
 
       virtual Instance createInstance(
           Context& context,
-          const vk::ApplicationInfo& applicationInfo
+          const InstanceCreateInfo& createInfo
       ) {
         try {
           auto* value = new Instance;
           value->id = instanceId++;
-          value->applicationInfo = applicationInfo;
-          value->createInfo = vk::InstanceCreateInfo()
-              .setPApplicationInfo(&value->applicationInfo)
-              .setPEnabledExtensionNames(context.createInfo.enabledExtensionNames)
-              .setPEnabledLayerNames(context.createInfo.enabledLayerNames);
+          value->createInfo = createInfo;
           value->value = std::make_shared<vk::raii::Instance>(
               context.reference(),
               value->createInfo
@@ -187,17 +183,12 @@ namespace exqudens::vulkan {
 
       virtual PhysicalDevice createPhysicalDevice(
           Instance& instance,
-          const std::vector<const char*>& enabledDeviceExtensionNames,
-          const vk::PhysicalDeviceFeatures& features,
-          const float& queuePriorities,
-          const std::vector<vk::QueueFlagBits>& queueTypes,
-          const std::optional<Surface>& surface
+          const PhysicalDeviceCreateInfo& createInfo
       ) {
         try {
           auto* value = new PhysicalDevice;
           value->id = physicalDeviceId++;
-          value->queuePriorities = queuePriorities;
-          value->features = features;
+          value->createInfo = createInfo;
           value->value = nullptr;
           physicalDevices = vk::raii::PhysicalDevices(*instance.value);
           for (vk::raii::PhysicalDevice& physicalDevice : physicalDevices) {
@@ -214,7 +205,7 @@ namespace exqudens::vulkan {
             std::map<uint32_t, vk::DeviceQueueCreateInfo> queueCreateInfoMap = {};
 
             std::vector<vk::QueueFamilyProperties> queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
-            for (const vk::QueueFlagBits& queueType : queueTypes) {
+            for (const vk::QueueFlagBits& queueType : value->createInfo.queueTypes) {
               std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos = {};
               for (std::size_t i = 0; i < queueFamilyProperties.size(); i++) {
                 if (queueFamilyProperties[i].queueFlags & queueType) {
@@ -222,7 +213,7 @@ namespace exqudens::vulkan {
                       .setQueueFamilyIndex(static_cast<uint32_t>(i))
                       .setQueueCount(queueFamilyProperties[i].queueCount)
                       .setFlags({})
-                      .setQueuePriorities(value->queuePriorities);
+                      .setQueuePriorities(value->createInfo.queuePriorities);
                   queueCreateInfos.emplace_back(queueCreateInfo);
                   queueCreateInfoMap.try_emplace(queueCreateInfo.queueFamilyIndex, queueCreateInfo);
                 }
@@ -243,15 +234,15 @@ namespace exqudens::vulkan {
             if (!queueFamilyIndicesAdequate) {
               continue;
             }
-            if (surface) {
+            if (value->createInfo.surface) {
               std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos = {};
               for (std::size_t i = 0; i < queueFamilyProperties.size(); i++) {
-                if (physicalDevice.getSurfaceSupportKHR(static_cast<uint32_t>(i), *(*surface->value))) {
+                if (physicalDevice.getSurfaceSupportKHR(static_cast<uint32_t>(i), value->createInfo.surface.value())) {
                   vk::DeviceQueueCreateInfo queueCreateInfo = vk::DeviceQueueCreateInfo()
                       .setQueueFamilyIndex(static_cast<uint32_t>(i))
                       .setQueueCount(queueFamilyProperties[i].queueCount)
                       .setFlags({})
-                      .setQueuePriorities(value->queuePriorities);
+                      .setQueuePriorities(value->createInfo.queuePriorities);
                   queueCreateInfos.emplace_back(queueCreateInfo);
                   queueCreateInfoMap.try_emplace(queueCreateInfo.queueFamilyIndex, queueCreateInfo);
                 }
@@ -267,7 +258,7 @@ namespace exqudens::vulkan {
             }
 
             std::vector<vk::ExtensionProperties> extensionProperties = physicalDevice.enumerateDeviceExtensionProperties(nullptr);
-            std::set<std::string> requiredExtensions(enabledDeviceExtensionNames.begin(), enabledDeviceExtensionNames.end());
+            std::set<std::string> requiredExtensions(value->createInfo.enabledExtensionNames.begin(), value->createInfo.enabledExtensionNames.end());
             for (const auto& extension : extensionProperties) {
               std::string name = std::string(extension.extensionName.data());
               requiredExtensions.erase(name);
@@ -277,16 +268,16 @@ namespace exqudens::vulkan {
               continue;
             }
 
-            if (surface) {
-              std::vector<vk::SurfaceFormatKHR> formats = physicalDevice.getSurfaceFormatsKHR(*(*surface->value));
-              std::vector<vk::PresentModeKHR> presentModes = physicalDevice.getSurfacePresentModesKHR(*(*surface->value));
+            if (value->createInfo.surface) {
+              std::vector<vk::SurfaceFormatKHR> formats = physicalDevice.getSurfaceFormatsKHR(value->createInfo.surface.value());
+              std::vector<vk::PresentModeKHR> presentModes = physicalDevice.getSurfacePresentModesKHR(value->createInfo.surface.value());
               swapChainAdequate = !formats.empty() && !presentModes.empty();
             }
             if (!swapChainAdequate) {
               continue;
             }
 
-            if (features.samplerAnisotropy) {
+            if (value->createInfo.features.samplerAnisotropy) {
               vk::PhysicalDeviceFeatures physicalDeviceFeatures = physicalDevice.getFeatures();
               anisotropyAdequate = physicalDeviceFeatures.samplerAnisotropy;
             }

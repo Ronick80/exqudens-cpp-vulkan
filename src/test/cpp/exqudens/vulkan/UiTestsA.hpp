@@ -72,7 +72,13 @@ namespace exqudens::vulkan {
 
         public:
 
-          void create(const std::vector<std::string>& arguments, GLFWwindow* window, uint32_t width, uint32_t height) {
+          void create(
+              const std::vector<std::string>& arguments,
+              const std::vector<const char*>& glfwInstanceRequiredExtensions,
+              GLFWwindow* window,
+              uint32_t width,
+              uint32_t height
+          ) {
             try {
               vertexVector = {
                   {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
@@ -96,27 +102,24 @@ namespace exqudens::vulkan {
               context = environment.createContext(
                   ContextCreateInfo()
                       .setEnvironmentVariables({{"VK_LAYER_PATH", arguments.front().c_str()}})
-                      .setEnabledLayerNames({"VK_LAYER_KHRONOS_validation"})
-                      .setEnabledExtensionNames({VK_EXT_DEBUG_UTILS_EXTENSION_NAME})
-                      .setEnabledDeviceExtensionNames({VK_KHR_SWAPCHAIN_EXTENSION_NAME})
               );
 
-              uint32_t glfwExtensionCount = 0;
-              const char** glfwExtensions;
-              glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-              std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-              for (const char*& extension : extensions) {
-                context.createInfo.enabledExtensionNames.emplace_back(extension);
-              }
+              std::vector<const char*> enabledExtensionNames = glfwInstanceRequiredExtensions;
+              enabledExtensionNames.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
               instance = environment.createInstance(
                   context,
-                  vk::ApplicationInfo()
-                      .setPApplicationName("Exqudens Application")
-                      .setApplicationVersion(VK_MAKE_VERSION(1, 0, 0))
-                      .setPEngineName("Exqudens Engine")
-                      .setEngineVersion(VK_MAKE_VERSION(1, 0, 0))
-                      .setApiVersion(VK_API_VERSION_1_0)
+                  InstanceCreateInfo()
+                      .setEnabledLayerNames({"VK_LAYER_KHRONOS_validation"})
+                      .setEnabledExtensionNames(enabledExtensionNames)
+                      .setApplicationInfo(
+                          vk::ApplicationInfo()
+                              .setPApplicationName("Exqudens Application")
+                              .setApplicationVersion(VK_MAKE_VERSION(1, 0, 0))
+                              .setPEngineName("Exqudens Engine")
+                              .setEngineVersion(VK_MAKE_VERSION(1, 0, 0))
+                              .setApiVersion(VK_API_VERSION_1_0)
+                      )
               );
 
               messenger = environment.createMessenger(
@@ -148,21 +151,21 @@ namespace exqudens::vulkan {
 
               physicalDevice = environment.createPhysicalDevice(
                   instance,
-                  context.createInfo.enabledDeviceExtensionNames,
-                  vk::PhysicalDeviceFeatures()
-                    .setSamplerAnisotropy(context.createInfo.samplerAnisotropy),
-                  1.0f,
-                  {vk::QueueFlagBits::eCompute, vk::QueueFlagBits::eTransfer, vk::QueueFlagBits::eGraphics},
-                  surface
+                  PhysicalDeviceCreateInfo()
+                      .setEnabledExtensionNames({VK_KHR_SWAPCHAIN_EXTENSION_NAME})
+                      .setFeatures(vk::PhysicalDeviceFeatures().setSamplerAnisotropy(true))
+                      .setQueueTypes({vk::QueueFlagBits::eCompute, vk::QueueFlagBits::eTransfer, vk::QueueFlagBits::eGraphics})
+                      .setSurface(*surface.reference())
+                      .setQueuePriorities(1.0f)
               );
 
               device = environment.createDevice(
                   physicalDevice,
                   vk::DeviceCreateInfo()
                       .setQueueCreateInfos(physicalDevice.uniqueQueueCreateInfos)
-                      .setPEnabledFeatures(&physicalDevice.features)
-                      .setPEnabledExtensionNames(context.createInfo.enabledDeviceExtensionNames)
-                      .setPEnabledLayerNames(context.createInfo.enabledLayerNames)
+                      .setPEnabledFeatures(&physicalDevice.createInfo.features)
+                      .setPEnabledExtensionNames(physicalDevice.createInfo.enabledExtensionNames)
+                      .setPEnabledLayerNames(instance.createInfo.enabledLayerNames)
               );
 
               swapChain = environment.createSwapChain(
@@ -347,8 +350,8 @@ namespace exqudens::vulkan {
                       .setBorderColor(vk::BorderColor::eIntOpaqueBlack)
                       .setUnnormalizedCoordinates(false)
                       .setCompareEnable(false)
-                      .setAnisotropyEnable(context.createInfo.samplerAnisotropy)
-                      .setMaxAnisotropy(context.createInfo.samplerAnisotropy ? physicalDevice.reference().getProperties().limits.maxSamplerAnisotropy : 0)
+                      .setAnisotropyEnable(physicalDevice.createInfo.features.samplerAnisotropy)
+                      .setMaxAnisotropy(physicalDevice.createInfo.features.samplerAnisotropy ? physicalDevice.reference().getProperties().limits.maxSamplerAnisotropy : 0)
               );
 
               std::generate_n(imageAvailableSemaphores.begin(), imageAvailableSemaphores.size(), [this]() {
@@ -558,8 +561,19 @@ namespace exqudens::vulkan {
               //glfwSetWindowUserPointer(window, this);
               //glfwSetFramebufferSizeCallback(window, frameBufferResizeCallback);
 
+              uint32_t glfwExtensionCount = 0;
+              const char** glfwExtensions;
+              glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+              std::vector<const char*> glfwInstanceRequiredExtensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+
               renderer = new Renderer();
-              renderer->create(arguments, window, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
+              renderer->create(
+                  arguments,
+                  glfwInstanceRequiredExtensions,
+                  window,
+                  static_cast<uint32_t>(width),
+                  static_cast<uint32_t>(height)
+              );
 
               while (!glfwWindowShouldClose(window)) {
                 glfwPollEvents();

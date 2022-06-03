@@ -8,19 +8,20 @@
 #include <vulkan/vulkan_raii.hpp>
 
 #include "exqudens/vulkan/Macros.hpp"
+#include "exqudens/vulkan/PhysicalDeviceCreateInfo.hpp"
 
 namespace exqudens::vulkan {
 
   struct PhysicalDevice {
 
     unsigned int id;
-    float queuePriorities;
+    PhysicalDeviceCreateInfo createInfo;
+    //float queuePriorities;
     std::vector<vk::DeviceQueueCreateInfo> computeQueueCreateInfos;
     std::vector<vk::DeviceQueueCreateInfo> transferQueueCreateInfos;
     std::vector<vk::DeviceQueueCreateInfo> graphicsQueueCreateInfos;
     std::vector<vk::DeviceQueueCreateInfo> presentQueueCreateInfos;
     std::vector<vk::DeviceQueueCreateInfo> uniqueQueueCreateInfos;
-    vk::PhysicalDeviceFeatures features;
     vk::raii::PhysicalDevice* value;
 
     vk::raii::PhysicalDevice& reference() {
