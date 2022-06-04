@@ -4,44 +4,39 @@
 #include <cstddef>
 
 #include <glm/glm.hpp>
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_structs.hpp>
 
 namespace exqudens::vulkan {
 
   struct Vertex {
 
-    static VkVertexInputBindingDescription getBindingDescription() {
-      return {
-        .binding = 0,
-        .stride = sizeof(Vertex),
-        .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
-      };
+    static vk::VertexInputBindingDescription getBindingDescription() {
+      return vk::VertexInputBindingDescription()
+          .setBinding(0)
+          .setStride(sizeof(Vertex))
+          .setInputRate(vk::VertexInputRate::eVertex);
     }
 
-    static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions() {
+    static std::vector<vk::VertexInputAttributeDescription> getAttributeDescriptions() {
       uint32_t posOffset = offsetof(Vertex, pos);
       uint32_t colorOffset = offsetof(Vertex, color);
       uint32_t texCoordOffset = offsetof(Vertex, texCoord);
-
       return {
-          VkVertexInputAttributeDescription {
-              .location = 0,
-              .binding = 0,
-              .format = VK_FORMAT_R32G32B32_SFLOAT,
-              .offset = posOffset
-          },
-          VkVertexInputAttributeDescription {
-              .location = 1,
-              .binding = 0,
-              .format = VK_FORMAT_R32G32B32_SFLOAT,
-              .offset = colorOffset
-          },
-          VkVertexInputAttributeDescription {
-              .location = 2,
-              .binding = 0,
-              .format = VK_FORMAT_R32G32_SFLOAT,
-              .offset = texCoordOffset
-          }
+          vk::VertexInputAttributeDescription()
+              .setBinding(0)
+              .setLocation(0)
+              .setFormat(vk::Format::eR32G32B32Sfloat)
+              .setOffset(posOffset),
+          vk::VertexInputAttributeDescription()
+              .setBinding(0)
+              .setLocation(1)
+              .setFormat(vk::Format::eR32G32B32Sfloat)
+              .setOffset(colorOffset),
+          vk::VertexInputAttributeDescription()
+              .setBinding(0)
+              .setLocation(2)
+              .setFormat(vk::Format::eR32G32Sfloat)
+              .setOffset(texCoordOffset)
       };
     }
 

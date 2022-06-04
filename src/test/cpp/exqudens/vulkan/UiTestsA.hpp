@@ -444,8 +444,26 @@ namespace exqudens::vulkan {
                   device,
                   vk::PipelineCacheCreateInfo(),
                   vk::PipelineLayoutCreateInfo(),
+                  {"resources/shader/shader-4.vert.spv", "resources/shader/shader-4.frag.spv"},
                   GraphicsPipelineCreateInfo()
-                      .setFlags({})
+                      .setVertexInputState(
+                          PipelineVertexInputStateCreateInfo()
+                              .setVertexBindingDescriptions({Vertex::getBindingDescription()})
+                              .setVertexAttributeDescriptions(Vertex::getAttributeDescriptions())
+                      )
+                      .setInputAssemblyState(
+                          vk::PipelineInputAssemblyStateCreateInfo()
+                              .setTopology(vk::PrimitiveTopology::eTriangleList)
+                              .setPrimitiveRestartEnable(false)
+                      )
+                      .setViewportState(vk::PipelineViewportStateCreateInfo())
+                      .setRasterizationState(vk::PipelineRasterizationStateCreateInfo())
+                      .setMultisampleState(vk::PipelineMultisampleStateCreateInfo())
+                      .setDepthStencilState(vk::PipelineDepthStencilStateCreateInfo())
+                      .setColorBlendState(vk::PipelineColorBlendStateCreateInfo())
+                      .setDynamicState(vk::PipelineDynamicStateCreateInfo())
+                      .setRenderPass(*renderPass.reference())
+                      .setSubpass(0)
               );*/
 
               /*transferQueue = environment.createQueue(
@@ -494,6 +512,7 @@ namespace exqudens::vulkan {
               std::ranges::for_each(inFlightFences, [](auto& o1) {std::cout << std::format("inFlightFence.id: '{}'", o1.id) << std::endl;});
               std::cout << std::format("renderPass.id: '{}'", renderPass.id) << std::endl;
               std::cout << std::format("descriptorSetLayout.id: '{}'", descriptorSetLayout.id) << std::endl;
+              std::cout << std::format("pipeline.id: '{}'", pipeline.id) << std::endl;
               //std::cout << std::format("transferQueue.id: '{}'", transferQueue.id) << std::endl;
               //std::cout << std::format("graphicsQueue.id: '{}'", graphicsQueue.id) << std::endl;
               //std::cout << std::format("presentQueue.id: '{}'", presentQueue.id) << std::endl;

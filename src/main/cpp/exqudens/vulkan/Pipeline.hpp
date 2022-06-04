@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <map>
 
 #include <vulkan/vulkan_raii.hpp>
 
@@ -11,12 +12,16 @@ namespace exqudens::vulkan {
 
   struct Pipeline: Resource<vk::raii::Pipeline> {
 
+    std::map<std::string, std::pair<vk::ShaderModuleCreateInfo, std::shared_ptr<vk::raii::ShaderModule>>> shaders;
+
     vk::PipelineCacheCreateInfo cacheCreateInfo;
     std::shared_ptr<vk::raii::PipelineCache> cache;
+
     vk::PipelineLayoutCreateInfo layoutCreateInfo;
     std::shared_ptr<vk::raii::PipelineLayout> layout;
+
     std::optional<vk::ComputePipelineCreateInfo> computePipelineCreateInfo;
-    std::optional<GraphicsPipelineCreateInfo> graphicsPipelineCreateInfo;
+    std::optional<vk::GraphicsPipelineCreateInfo> graphicsPipelineCreateInfo;
     std::optional<vk::RayTracingPipelineCreateInfoNV> rayTracingPipelineCreateInfoNV;
 
     vk::raii::PipelineLayout& layoutReference() {

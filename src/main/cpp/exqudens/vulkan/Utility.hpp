@@ -6,6 +6,7 @@
 #include <string>
 #include <optional>
 #include <vector>
+#include <fstream>
 #include <stdexcept>
 
 #include <vulkan/vulkan.hpp>
@@ -57,6 +58,28 @@ namespace exqudens::vulkan {
       ) {
         try {
           return vk::to_string(severity) + " " + vk::to_string(type) + ": " + message;
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      virtual std::vector<char> readFile(const std::string& path) {
+        try {
+          std::ifstream file(path, std::ios::ate | std::ios::binary);
+
+          if (!file.is_open()) {
+            throw std::runtime_error(CALL_INFO() + ": failed to open file: '" + path + "'!");
+          }
+
+          std::streamsize fileSize = file.tellg();
+          std::vector<char> buffer(fileSize);
+
+          file.seekg(0);
+          file.read(buffer.data(), fileSize);
+
+          file.close();
+
+          return buffer;
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }

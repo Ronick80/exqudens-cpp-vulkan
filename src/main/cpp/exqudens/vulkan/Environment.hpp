@@ -530,14 +530,12 @@ namespace exqudens::vulkan {
           Device& device,
           const vk::PipelineCacheCreateInfo& cacheCreateInfo,
           const vk::PipelineLayoutCreateInfo& layoutCreateInfo,
-          const GraphicsPipelineCreateInfo& createInfo
+          const std::vector<std::string>& paths,
+          const vk::GraphicsPipelineCreateInfo& createInfo
       ) {
         try {
           auto* value = new Pipeline;
           value->id = pipelineId++;
-
-          //vk::raii::ShaderModule aaa = vk::raii::ShaderModule(device.reference(), vk::ShaderModuleCreateInfo());
-
           value->cacheCreateInfo = cacheCreateInfo;
           value->cache = std::make_shared<vk::raii::PipelineCache>(
               device.reference(),
@@ -548,46 +546,42 @@ namespace exqudens::vulkan {
               device.reference(),
               value->layoutCreateInfo
           );
-          vk::GraphicsPipelineCreateInfo tmpCreateInfo = vk::GraphicsPipelineCreateInfo();
-          tmpCreateInfo.setFlags(value->graphicsPipelineCreateInfo->flags);
-          tmpCreateInfo.setStages(value->graphicsPipelineCreateInfo->stages);
-          if (value->graphicsPipelineCreateInfo->vertexInputState) {
-            tmpCreateInfo.setPVertexInputState(&value->graphicsPipelineCreateInfo->vertexInputState.value());
+          value->graphicsPipelineCreateInfo = createInfo;
+
+          std::vector<vk::PipelineShaderStageCreateInfo> stages;
+          for (const std::string& path : paths) {
+            if (!value->shaders.contains(path)) {
+              std::vector<char> bytes = readFile(path);
+              if (bytes.empty()) {
+                throw std::runtime_error(CALL_INFO() + ": '" + path + "' failed to create shader module bytes is empty!");
+              }
+              vk::ShaderModuleCreateInfo shaderCreateInfo = vk::ShaderModuleCreateInfo()
+                  .setCodeSize(bytes.size())
+                  .setPCode(reinterpret_cast<const uint32_t*>(bytes.data()));
+              value->shaders[path] = std::make_pair(
+                  shaderCreateInfo,
+                  std::make_shared<vk::raii::ShaderModule>(device.reference(), shaderCreateInfo)
+              );
+              vk::PipelineShaderStageCreateInfo stage = vk::PipelineShaderStageCreateInfo();
+              stage.setPName("main");
+              stage.setModule(*(*value->shaders[path].second));
+              if (path.ends_with(".vert.spv")) {
+                stage.setStage(vk::ShaderStageFlagBits::eVertex);
+              } else if (path.ends_with(".frag.spv")) {
+                stage.setStage(vk::ShaderStageFlagBits::eFragment);
+              } else {
+                throw std::invalid_argument(CALL_INFO() + ": '" + path + "' failed to create shader!");
+              }
+              stages.emplace_back(stage);
+            }
           }
-          if (value->graphicsPipelineCreateInfo->inputAssemblyState) {
-            tmpCreateInfo.setPInputAssemblyState(&value->graphicsPipelineCreateInfo->inputAssemblyState.value());
-          }
-          if (value->graphicsPipelineCreateInfo->tessellationState) {
-            tmpCreateInfo.setPTessellationState(&value->graphicsPipelineCreateInfo->tessellationState.value());
-          }
-          if (value->graphicsPipelineCreateInfo->viewportState) {
-            tmpCreateInfo.setPViewportState(&value->graphicsPipelineCreateInfo->viewportState.value());
-          }
-          if (value->graphicsPipelineCreateInfo->rasterizationState) {
-            tmpCreateInfo.setPRasterizationState(&value->graphicsPipelineCreateInfo->rasterizationState.value());
-          }
-          if (value->graphicsPipelineCreateInfo->multisampleState) {
-            tmpCreateInfo.setPMultisampleState(&value->graphicsPipelineCreateInfo->multisampleState.value());
-          }
-          if (value->graphicsPipelineCreateInfo->depthStencilState) {
-            tmpCreateInfo.setPDepthStencilState(&value->graphicsPipelineCreateInfo->depthStencilState.value());
-          }
-          if (value->graphicsPipelineCreateInfo->colorBlendState) {
-            tmpCreateInfo.setPColorBlendState(&value->graphicsPipelineCreateInfo->colorBlendState.value());
-          }
-          if (value->graphicsPipelineCreateInfo->dynamicState) {
-            tmpCreateInfo.setPDynamicState(&value->graphicsPipelineCreateInfo->dynamicState.value());
-          }
-          tmpCreateInfo.setLayout(*value->layoutReference());
-          tmpCreateInfo.setRenderPass(value->graphicsPipelineCreateInfo->renderPass);
-          tmpCreateInfo.setSubpass(value->graphicsPipelineCreateInfo->subpass);
-          tmpCreateInfo.setBasePipelineHandle(value->graphicsPipelineCreateInfo->basePipelineHandle);
-          tmpCreateInfo.setBasePipelineIndex(value->graphicsPipelineCreateInfo->basePipelineIndex);
+          value->graphicsPipelineCreateInfo.value().setStages(stages);
+
           value->value = std::make_shared<vk::raii::Pipeline>(
               device.reference(),
               value->cacheReference(),
               //vk::ComputePipelineCreateInfo()
-              tmpCreateInfo
+              value->graphicsPipelineCreateInfo.value()
               //vk::RayTracingPipelineCreateInfoNV()
           );
           pipelineMap[value->id] = std::shared_ptr<Pipeline>(value);

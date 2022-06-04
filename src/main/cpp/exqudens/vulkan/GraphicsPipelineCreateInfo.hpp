@@ -2,17 +2,16 @@
 
 #include <cstdint>
 #include <optional>
-#include <vector>
 
 #include <vulkan/vulkan_structs.hpp>
 
+#include "exqudens/vulkan/PipelineVertexInputStateCreateInfo.hpp"
+
 namespace exqudens::vulkan {
 
-  struct GraphicsPipelineCreateInfo {
+  struct GraphicsPipelineCreateInfo: vk::GraphicsPipelineCreateInfo {
 
-    vk::PipelineCreateFlags flags;
-    std::vector<vk::PipelineShaderStageCreateInfo> stages;
-    std::optional<vk::PipelineVertexInputStateCreateInfo> vertexInputState;
+    std::optional<PipelineVertexInputStateCreateInfo> vertexInputState;
     std::optional<vk::PipelineInputAssemblyStateCreateInfo> inputAssemblyState;
     std::optional<vk::PipelineTessellationStateCreateInfo> tessellationState;
     std::optional<vk::PipelineViewportStateCreateInfo> viewportState;
@@ -21,89 +20,58 @@ namespace exqudens::vulkan {
     std::optional<vk::PipelineDepthStencilStateCreateInfo> depthStencilState;
     std::optional<vk::PipelineColorBlendStateCreateInfo> colorBlendState;
     std::optional<vk::PipelineDynamicStateCreateInfo> dynamicState;
-    vk::PipelineLayout layout;
-    vk::RenderPass renderPass;
-    uint32_t subpass;
-    vk::Pipeline basePipelineHandle;
-    int32_t basePipelineIndex;
 
-    GraphicsPipelineCreateInfo& setFlags(const vk::PipelineCreateFlags& value) {
-      flags = value;
-      return *this;
-    }
-
-    GraphicsPipelineCreateInfo& setStages(const std::vector<vk::PipelineShaderStageCreateInfo>& values) {
-      stages = values;
-      return *this;
-    }
-
-    GraphicsPipelineCreateInfo& setVertexInputState(const vk::PipelineVertexInputStateCreateInfo& value) {
+    GraphicsPipelineCreateInfo& setVertexInputState(const PipelineVertexInputStateCreateInfo& value) {
       vertexInputState = value;
+      vk::GraphicsPipelineCreateInfo::setPVertexInputState(&vertexInputState.value());
       return *this;
     }
 
     GraphicsPipelineCreateInfo& setInputAssemblyState(const vk::PipelineInputAssemblyStateCreateInfo& value) {
       inputAssemblyState = value;
+      vk::GraphicsPipelineCreateInfo::setPInputAssemblyState(&inputAssemblyState.value());
       return *this;
     }
 
     GraphicsPipelineCreateInfo& setTessellationState(const vk::PipelineTessellationStateCreateInfo& value) {
       tessellationState = value;
+      vk::GraphicsPipelineCreateInfo::setPTessellationState(&tessellationState.value());
       return *this;
     }
 
     GraphicsPipelineCreateInfo& setViewportState(const vk::PipelineViewportStateCreateInfo& value) {
       viewportState = value;
+      vk::GraphicsPipelineCreateInfo::setPViewportState(&viewportState.value());
       return *this;
     }
 
     GraphicsPipelineCreateInfo& setRasterizationState(const vk::PipelineRasterizationStateCreateInfo& value) {
       rasterizationState = value;
+      vk::GraphicsPipelineCreateInfo::setPRasterizationState(&rasterizationState.value());
       return *this;
     }
 
     GraphicsPipelineCreateInfo& setMultisampleState(const vk::PipelineMultisampleStateCreateInfo& value) {
       multisampleState = value;
+      vk::GraphicsPipelineCreateInfo::setPMultisampleState(&multisampleState.value());
       return *this;
     }
 
     GraphicsPipelineCreateInfo& setDepthStencilState(const vk::PipelineDepthStencilStateCreateInfo& value) {
       depthStencilState = value;
+      vk::GraphicsPipelineCreateInfo::setPDepthStencilState(&depthStencilState.value());
       return *this;
     }
 
     GraphicsPipelineCreateInfo& setColorBlendState(const vk::PipelineColorBlendStateCreateInfo& value) {
       colorBlendState = value;
+      vk::GraphicsPipelineCreateInfo::setPColorBlendState(&colorBlendState.value());
       return *this;
     }
 
     GraphicsPipelineCreateInfo& setDynamicState(const vk::PipelineDynamicStateCreateInfo& value) {
       dynamicState = value;
-      return *this;
-    }
-
-    GraphicsPipelineCreateInfo& setLayout(const vk::PipelineLayout& value) {
-      layout = value;
-      return *this;
-    }
-
-    GraphicsPipelineCreateInfo& setRenderPass(const vk::RenderPass& value) {
-      renderPass = value;
-      return *this;
-    }
-
-    GraphicsPipelineCreateInfo& setSubpass(uint32_t value) {
-      subpass = value;
-      return *this;
-    }
-
-    GraphicsPipelineCreateInfo& setBasePipelineHandle(const vk::Pipeline& value) {
-      basePipelineHandle = value;
-      return *this;
-    }
-
-    GraphicsPipelineCreateInfo& setBasePipelineIndex(int32_t value) {
-      basePipelineIndex = value;
+      vk::GraphicsPipelineCreateInfo::setPDynamicState(&dynamicState.value());
       return *this;
     }
 
