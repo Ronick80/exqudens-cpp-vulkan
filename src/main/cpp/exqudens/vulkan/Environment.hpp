@@ -493,25 +493,9 @@ namespace exqudens::vulkan {
           auto* value = new RenderPass;
           value->id = renderPassId++;
           value->createInfo = createInfo;
-          std::vector<vk::SubpassDescription> subPasses;
-          for (const SubPassDescription& s : value->createInfo.subPasses) {
-            subPasses.emplace_back(
-                vk::SubpassDescription()
-                    .setFlags(s.flags)
-                    .setPipelineBindPoint(s.pipelineBindPoint)
-                    .setInputAttachments(s.inputAttachments)
-                    .setColorAttachments(s.colorAttachments)
-                    .setResolveAttachments(s.resolveAttachments)
-                    .setPDepthStencilAttachment(&s.depthStencilAttachment)
-                    .setPreserveAttachments(s.preserveAttachments)
-            );
-          }
           value->value = std::make_shared<vk::raii::RenderPass>(
               device.reference(),
-              vk::RenderPassCreateInfo()
-                  .setAttachments(value->createInfo.attachments)
-                  .setSubpasses(subPasses)
-                  .setDependencies(value->createInfo.dependencies)
+              value->createInfo
           );
           renderPassMap[value->id] = std::shared_ptr<RenderPass>(value);
           return *renderPassMap[value->id];

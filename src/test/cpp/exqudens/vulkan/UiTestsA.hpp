@@ -398,9 +398,8 @@ namespace exqudens::vulkan {
                               .setInitialLayout(vk::ImageLayout::eUndefined)
                               .setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
                       })
-                      .setSubPasses({
-                          SubPassDescription()
-                              .setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
+                      .setSubpasses({
+                          SubpassDescription()
                               .setColorAttachments({
                                   vk::AttachmentReference()
                                       .setAttachment(0)
@@ -411,6 +410,7 @@ namespace exqudens::vulkan {
                                       .setAttachment(1)
                                       .setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
                               )
+                              .setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
                       })
                       .setDependencies({
                           vk::SubpassDependency()
