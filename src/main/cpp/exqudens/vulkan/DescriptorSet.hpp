@@ -13,7 +13,7 @@ namespace exqudens::vulkan {
   struct DescriptorSet: Resource<vk::raii::DescriptorSet> {
 
     DescriptorSetAllocateInfo createInfo;
-    //std::vector<WriteDescriptorSet> writes;
+    std::vector<WriteDescriptorSet> writes;
 
   };
 

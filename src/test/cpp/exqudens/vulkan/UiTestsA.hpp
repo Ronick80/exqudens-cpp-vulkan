@@ -327,8 +327,8 @@ namespace exqudens::vulkan {
                   vk::MemoryPropertyFlagBits::eDeviceLocal
               );
 
-              std::generate_n(uniformBuffers.begin(), uniformBuffers.size(), [this]() {
-                return environment.createBuffer(
+              for (auto& uniformBuffer : uniformBuffers) {
+                uniformBuffer = environment.createBuffer(
                     physicalDevice,
                     device,
                     vk::BufferCreateInfo()
@@ -337,7 +337,7 @@ namespace exqudens::vulkan {
                         .setSharingMode(vk::SharingMode::eExclusive),
                     vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
                 );
-              });
+              }
 
               sampler = environment.createSampler(
                   device,
@@ -356,26 +356,26 @@ namespace exqudens::vulkan {
                       .setMaxAnisotropy(physicalDevice.createInfo.features.samplerAnisotropy ? physicalDevice.reference().getProperties().limits.maxSamplerAnisotropy : 0)
               );
 
-              std::generate_n(imageAvailableSemaphores.begin(), imageAvailableSemaphores.size(), [this]() {
-                return environment.createSemaphore(
+              for (auto& imageAvailableSemaphore : imageAvailableSemaphores) {
+                imageAvailableSemaphore = environment.createSemaphore(
                     device,
                     vk::SemaphoreCreateInfo()
                 );
-              });
+              }
 
-              std::generate_n(renderFinishedSemaphores.begin(), renderFinishedSemaphores.size(), [this]() {
-                return environment.createSemaphore(
+              for (auto& renderFinishedSemaphore : renderFinishedSemaphores) {
+                renderFinishedSemaphore = environment.createSemaphore(
                     device,
                     vk::SemaphoreCreateInfo()
                 );
-              });
+              }
 
-              std::generate_n(inFlightFences.begin(), inFlightFences.size(), [this]() {
-                return environment.createFence(
+              for (auto& inFlightFence : inFlightFences) {
+                inFlightFence = environment.createFence(
                     device,
                     vk::FenceCreateInfo()
                 );
-              });
+              }
 
               renderPass = environment.createRenderPass(
                   device,
@@ -546,46 +546,38 @@ namespace exqudens::vulkan {
                       })
               );
 
-              for (auto& descriptorSet : descriptorSets) {
-                descriptorSet = environment.createDescriptorSet(
+              for (size_t i = 0 ; i < descriptorSets.size(); i++) {
+                descriptorSets[i] = environment.createDescriptorSet(
                     device,
                     DescriptorSetAllocateInfo()
                         .setDescriptorPool(*descriptorPool.reference())
                         .setSetLayouts({*descriptorSetLayout.reference()})
-                        .setDescriptorSetCount(1)
+                        .setDescriptorSetCount(1),
+                    {
+                        WriteDescriptorSet()
+                            .setDstBinding(0)
+                            .setDstArrayElement(0)
+                            .setDescriptorCount(1)
+                            .setDescriptorType(vk::DescriptorType::eUniformBuffer)
+                            .setBufferInfo({
+                                vk::DescriptorBufferInfo()
+                                    .setBuffer(*uniformBuffers[i].reference())
+                                    .setOffset(0)
+                                    .setRange(sizeof(UniformBufferObject))
+                            }),
+                        WriteDescriptorSet()
+                            .setDstBinding(1)
+                            .setDstArrayElement(0)
+                            .setDescriptorCount(1)
+                            .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
+                            .setImageInfo({
+                                vk::DescriptorImageInfo()
+                                    .setSampler(*sampler.reference())
+                                    .setImageView(*textureImageView.reference())
+                                    .setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+                            })
+                    }
                 );
-              }
-
-              for (size_t i = 0; i < descriptorSets.size(); i++) {
-                std::vector<vk::DescriptorBufferInfo> writeBufferInfo = {
-                    vk::DescriptorBufferInfo()
-                        .setBuffer(*uniformBuffers[i].reference())
-                        .setOffset(0)
-                        .setRange(sizeof(UniformBufferObject))
-                };
-                vk::WriteDescriptorSet writeBuffer = vk::WriteDescriptorSet()
-                    .setDstSet(*descriptorSets[i].reference())
-                    .setDstBinding(0)
-                    .setDstArrayElement(0)
-                    .setDescriptorCount(1)
-                    .setDescriptorType(vk::DescriptorType::eUniformBuffer)
-                    .setBufferInfo(writeBufferInfo);
-
-                std::vector<vk::DescriptorImageInfo> writeImageInfo = {
-                    vk::DescriptorImageInfo()
-                        .setSampler(*sampler.reference())
-                        .setImageView(*textureImageView.reference())
-                        .setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
-                };
-                vk::WriteDescriptorSet writeImage = vk::WriteDescriptorSet()
-                    .setDstSet(*descriptorSets[i].reference())
-                    .setDstBinding(1)
-                    .setDstArrayElement(0)
-                    .setDescriptorCount(1)
-                    .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
-                    .setImageInfo(writeImageInfo);
-
-                device.reference().updateDescriptorSets({writeBuffer, writeImage}, {});
               }
 
               /*transferQueue = environment.createQueue(
@@ -697,7 +689,7 @@ namespace exqudens::vulkan {
 
               glfwInit();
               glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-              //glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+              glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
               GLFWwindow* window = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
 

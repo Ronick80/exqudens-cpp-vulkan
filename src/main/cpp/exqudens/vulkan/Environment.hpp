@@ -604,6 +604,7 @@ namespace exqudens::vulkan {
           auto* value = new DescriptorPool;
           value->id = descriptorPoolId++;
           value->createInfo = createInfo;
+          //value->createInfo.setFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet);
           value->value = std::make_shared<vk::raii::DescriptorPool>(
               device.reference(),
               value->createInfo
@@ -617,7 +618,8 @@ namespace exqudens::vulkan {
 
       virtual DescriptorSet createDescriptorSet(
           Device& device,
-          const DescriptorSetAllocateInfo& createInfo
+          const DescriptorSetAllocateInfo& createInfo,
+          const std::vector<WriteDescriptorSet>& writes
       ) {
         try {
           auto* value = new DescriptorSet;
@@ -628,6 +630,13 @@ namespace exqudens::vulkan {
               value->createInfo
           );
           value->value = std::make_shared<vk::raii::DescriptorSet>(std::move(descriptorSets.front()));
+          value->writes = writes;
+          std::vector<vk::WriteDescriptorSet> tmpWrites;
+          for (WriteDescriptorSet& write : value->writes) {
+            write.setDstSet(*value->reference());
+            tmpWrites.emplace_back(write);
+          }
+          device.reference().updateDescriptorSets(tmpWrites, {});
           descriptorSetMap[value->id] = std::shared_ptr<DescriptorSet>(value);
           return *descriptorSetMap[value->id];
         } catch (...) {
