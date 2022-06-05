@@ -9,6 +9,16 @@ namespace exqudens::vulkan {
 
   struct SubpassDescription: vk::SubpassDescription {
 
+    SubpassDescription& setFlags(const vk::SubpassDescriptionFlags& value) {
+      vk::SubpassDescription::setFlags(value);
+      return *this;
+    }
+
+    SubpassDescription& setPipelineBindPoint(const vk::PipelineBindPoint& value) {
+      vk::SubpassDescription::setPipelineBindPoint(value);
+      return *this;
+    }
+
     std::vector<vk::AttachmentReference> inputAttachments;
     std::vector<vk::AttachmentReference> colorAttachments;
     std::vector<vk::AttachmentReference> resolveAttachments;

@@ -371,7 +371,7 @@ namespace exqudens::vulkan {
                   .setAllocationSize(value->size)
                   .setMemoryTypeIndex(memoryType)
           );
-          value->value->bindMemory(*(*value->memory), 0);
+          value->value->bindMemory(*value->memoryReference(), 0);
           imageMap[value->id] = std::shared_ptr<Image>(value);
           return *imageMap[value->id];
         } catch (...) {
@@ -421,7 +421,7 @@ namespace exqudens::vulkan {
                   .setAllocationSize(value->size)
                   .setMemoryTypeIndex(memoryType)
           );
-          value->value->bindMemory(*(*value->memory), 0);
+          value->value->bindMemory(*value->memoryReference(), 0);
           bufferMap[value->id] = std::shared_ptr<Buffer>(value);
           return *bufferMap[value->id];
         } catch (...) {
@@ -506,15 +506,12 @@ namespace exqudens::vulkan {
 
       virtual DescriptorSetLayout createDescriptorSetLayout(
           Device& device,
-          const vk::DescriptorSetLayoutCreateFlags& flags,
-          const std::vector<vk::DescriptorSetLayoutBinding>& bindings
+          const DescriptorSetLayoutCreateInfo& createInfo
       ) {
         try {
           auto* value = new DescriptorSetLayout;
           value->id = descriptorSetLayoutId++;
-          value->createInfo = vk::DescriptorSetLayoutCreateInfo()
-              .setFlags(value->flags)
-              .setBindings(value->bindings);
+          value->createInfo = createInfo;
           value->value = std::make_shared<vk::raii::DescriptorSetLayout>(
               device.reference(),
               value->createInfo
@@ -529,9 +526,9 @@ namespace exqudens::vulkan {
       virtual Pipeline createPipeline(
           Device& device,
           const vk::PipelineCacheCreateInfo& cacheCreateInfo,
-          const vk::PipelineLayoutCreateInfo& layoutCreateInfo,
+          const PipelineLayoutCreateInfo& layoutCreateInfo,
           const std::vector<std::string>& paths,
-          const vk::GraphicsPipelineCreateInfo& createInfo
+          const GraphicsPipelineCreateInfo& createInfo
       ) {
         try {
           auto* value = new Pipeline;
@@ -576,6 +573,8 @@ namespace exqudens::vulkan {
             }
           }
           value->graphicsPipelineCreateInfo.value().setStages(stages);
+
+          value->graphicsPipelineCreateInfo.value().setLayout(*value->layoutReference());
 
           value->value = std::make_shared<vk::raii::Pipeline>(
               device.reference(),

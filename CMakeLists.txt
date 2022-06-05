@@ -146,8 +146,12 @@ add_library("${PROJECT_NAME}" INTERFACE
     "src/main/cpp/exqudens/vulkan/SubpassDescription.hpp"
     "src/main/cpp/exqudens/vulkan/RenderPassCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/RenderPass.hpp"
+    "src/main/cpp/exqudens/vulkan/DescriptorSetLayoutCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/DescriptorSetLayout.hpp"
+    "src/main/cpp/exqudens/vulkan/PipelineLayoutCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/PipelineVertexInputStateCreateInfo.hpp"
+    "src/main/cpp/exqudens/vulkan/PipelineViewportStateCreateInfo.hpp"
+    "src/main/cpp/exqudens/vulkan/PipelineColorBlendStateCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/GraphicsPipelineCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/Pipeline.hpp"
 

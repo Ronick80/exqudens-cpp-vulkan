@@ -6,19 +6,46 @@
 #include <vulkan/vulkan_structs.hpp>
 
 #include "exqudens/vulkan/PipelineVertexInputStateCreateInfo.hpp"
+#include "exqudens/vulkan/PipelineViewportStateCreateInfo.hpp"
+#include "exqudens/vulkan/PipelineColorBlendStateCreateInfo.hpp"
 
 namespace exqudens::vulkan {
 
   struct GraphicsPipelineCreateInfo: vk::GraphicsPipelineCreateInfo {
 
+    GraphicsPipelineCreateInfo& setFlags(const vk::PipelineCreateFlags& value) {
+      vk::GraphicsPipelineCreateInfo::setFlags(value);
+      return *this;
+    }
+
+    GraphicsPipelineCreateInfo& setRenderPass(const vk::RenderPass& value) {
+      vk::GraphicsPipelineCreateInfo::setRenderPass(value);
+      return *this;
+    }
+
+    GraphicsPipelineCreateInfo& setSubpass(const uint32_t& value) {
+      vk::GraphicsPipelineCreateInfo::setSubpass(value);
+      return *this;
+    }
+
+    GraphicsPipelineCreateInfo& setBasePipelineIndex(const int32_t& value) {
+      vk::GraphicsPipelineCreateInfo::setBasePipelineIndex(value);
+      return *this;
+    }
+
+    GraphicsPipelineCreateInfo& setBasePipelineHandle(const vk::Pipeline& value) {
+      vk::GraphicsPipelineCreateInfo::setBasePipelineHandle(value);
+      return *this;
+    }
+
     std::optional<PipelineVertexInputStateCreateInfo> vertexInputState;
     std::optional<vk::PipelineInputAssemblyStateCreateInfo> inputAssemblyState;
     std::optional<vk::PipelineTessellationStateCreateInfo> tessellationState;
-    std::optional<vk::PipelineViewportStateCreateInfo> viewportState;
+    std::optional<PipelineViewportStateCreateInfo> viewportState;
     std::optional<vk::PipelineRasterizationStateCreateInfo> rasterizationState;
     std::optional<vk::PipelineMultisampleStateCreateInfo> multisampleState;
     std::optional<vk::PipelineDepthStencilStateCreateInfo> depthStencilState;
-    std::optional<vk::PipelineColorBlendStateCreateInfo> colorBlendState;
+    std::optional<PipelineColorBlendStateCreateInfo> colorBlendState;
     std::optional<vk::PipelineDynamicStateCreateInfo> dynamicState;
 
     GraphicsPipelineCreateInfo& setVertexInputState(const PipelineVertexInputStateCreateInfo& value) {
@@ -39,7 +66,7 @@ namespace exqudens::vulkan {
       return *this;
     }
 
-    GraphicsPipelineCreateInfo& setViewportState(const vk::PipelineViewportStateCreateInfo& value) {
+    GraphicsPipelineCreateInfo& setViewportState(const PipelineViewportStateCreateInfo& value) {
       viewportState = value;
       vk::GraphicsPipelineCreateInfo::setPViewportState(&viewportState.value());
       return *this;
@@ -63,7 +90,7 @@ namespace exqudens::vulkan {
       return *this;
     }
 
-    GraphicsPipelineCreateInfo& setColorBlendState(const vk::PipelineColorBlendStateCreateInfo& value) {
+    GraphicsPipelineCreateInfo& setColorBlendState(const PipelineColorBlendStateCreateInfo& value) {
       colorBlendState = value;
       vk::GraphicsPipelineCreateInfo::setPColorBlendState(&colorBlendState.value());
       return *this;

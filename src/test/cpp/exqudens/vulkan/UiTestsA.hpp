@@ -425,27 +425,32 @@ namespace exqudens::vulkan {
 
               descriptorSetLayout = environment.createDescriptorSetLayout(
                   device,
-                  {},
-                  {
-                    vk::DescriptorSetLayoutBinding()
-                        .setBinding(0)
-                        .setDescriptorType(vk::DescriptorType::eUniformBuffer)
-                        .setDescriptorCount(1)
-                        .setStageFlags(vk::ShaderStageFlagBits::eVertex),
-                    vk::DescriptorSetLayoutBinding()
-                        .setBinding(1)
-                        .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
-                        .setDescriptorCount(1)
-                        .setStageFlags(vk::ShaderStageFlagBits::eFragment)
-                  }
+                  DescriptorSetLayoutCreateInfo()
+                      .setBindings({
+                          vk::DescriptorSetLayoutBinding()
+                              .setBinding(0)
+                              .setDescriptorType(vk::DescriptorType::eUniformBuffer)
+                              .setDescriptorCount(1)
+                              .setStageFlags(vk::ShaderStageFlagBits::eVertex),
+                          vk::DescriptorSetLayoutBinding()
+                              .setBinding(1)
+                              .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
+                              .setDescriptorCount(1)
+                              .setStageFlags(vk::ShaderStageFlagBits::eFragment)
+                      })
               );
 
-              /*pipeline = environment.createPipeline(
+              pipeline = environment.createPipeline(
                   device,
                   vk::PipelineCacheCreateInfo(),
-                  vk::PipelineLayoutCreateInfo(),
+                  PipelineLayoutCreateInfo()
+                      .setSetLayouts({
+                          *descriptorSetLayout.reference()
+                      }),
                   {"resources/shader/shader-4.vert.spv", "resources/shader/shader-4.frag.spv"},
                   GraphicsPipelineCreateInfo()
+                      .setRenderPass(*renderPass.reference())
+                      .setSubpass(0)
                       .setVertexInputState(
                           PipelineVertexInputStateCreateInfo()
                               .setVertexBindingDescriptions({Vertex::getBindingDescription()})
@@ -456,15 +461,75 @@ namespace exqudens::vulkan {
                               .setTopology(vk::PrimitiveTopology::eTriangleList)
                               .setPrimitiveRestartEnable(false)
                       )
-                      .setViewportState(vk::PipelineViewportStateCreateInfo())
-                      .setRasterizationState(vk::PipelineRasterizationStateCreateInfo())
-                      .setMultisampleState(vk::PipelineMultisampleStateCreateInfo())
-                      .setDepthStencilState(vk::PipelineDepthStencilStateCreateInfo())
-                      .setColorBlendState(vk::PipelineColorBlendStateCreateInfo())
-                      .setDynamicState(vk::PipelineDynamicStateCreateInfo())
-                      .setRenderPass(*renderPass.reference())
-                      .setSubpass(0)
-              );*/
+                      .setViewportState(
+                          PipelineViewportStateCreateInfo()
+                              .setViewports({
+                                  vk::Viewport()
+                                      .setWidth((float) swapChain.createInfo.imageExtent.width)
+                                      .setHeight((float) swapChain.createInfo.imageExtent.height)
+                                      .setMinDepth(0.0)
+                                      .setMaxDepth(1.0)
+                                      .setX(0.0)
+                                      .setY(0.0)
+                              })
+                              .setScissors({
+                                  vk::Rect2D()
+                                      .setOffset({0, 0})
+                                      .setExtent(swapChain.createInfo.imageExtent)
+                              })
+                      )
+                      .setRasterizationState(
+                          vk::PipelineRasterizationStateCreateInfo()
+                              .setDepthClampEnable(false)
+                              .setRasterizerDiscardEnable(false)
+                              .setPolygonMode(vk::PolygonMode::eFill)
+                              .setCullMode(vk::CullModeFlagBits::eBack)
+                              .setFrontFace(vk::FrontFace::eCounterClockwise)
+                              .setLineWidth(1.0)
+                              .setDepthBiasEnable(false)
+                              .setDepthBiasConstantFactor(0.0)
+                              .setDepthBiasClamp(0.0)
+                              .setDepthBiasSlopeFactor(0.0)
+                      )
+                      .setMultisampleState(
+                          vk::PipelineMultisampleStateCreateInfo()
+                              .setRasterizationSamples(vk::SampleCountFlagBits::e1)
+                              .setSampleShadingEnable(false)
+                              .setMinSampleShading(1.0)
+                              .setPSampleMask(nullptr)
+                              .setAlphaToCoverageEnable(false)
+                              .setAlphaToOneEnable(false)
+                      )
+                      .setDepthStencilState(
+                          vk::PipelineDepthStencilStateCreateInfo()
+                              .setDepthTestEnable(true)
+                              .setDepthWriteEnable(true)
+                              .setDepthCompareOp(vk::CompareOp::eLess)
+                              .setDepthBoundsTestEnable(false)
+                              .setStencilTestEnable(false)
+                              .setFront({})
+                              .setBack({})
+                              .setMinDepthBounds(0.0)
+                              .setMaxDepthBounds(1.0)
+                      )
+                      .setColorBlendState(
+                          PipelineColorBlendStateCreateInfo()
+                              .setLogicOpEnable(false)
+                              .setLogicOp(vk::LogicOp::eCopy)
+                              .setBlendConstants({0.0f, 0.0f, 0.0f, 0.0f})
+                              .setAttachments({
+                                  vk::PipelineColorBlendAttachmentState()
+                                      .setBlendEnable(false)
+                                      .setColorBlendOp(vk::BlendOp::eAdd)
+                                      .setSrcColorBlendFactor(vk::BlendFactor::eOne)
+                                      .setDstColorBlendFactor(vk::BlendFactor::eZero)
+                                      .setAlphaBlendOp(vk::BlendOp::eAdd)
+                                      .setSrcAlphaBlendFactor(vk::BlendFactor::eOne)
+                                      .setDstAlphaBlendFactor(vk::BlendFactor::eZero)
+                                      .setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA)
+                              })
+                      )
+              );
 
               /*transferQueue = environment.createQueue(
                   device,

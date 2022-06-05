@@ -5,6 +5,7 @@
 
 #include <vulkan/vulkan_raii.hpp>
 
+#include "exqudens/vulkan/PipelineLayoutCreateInfo.hpp"
 #include "exqudens/vulkan/GraphicsPipelineCreateInfo.hpp"
 #include "exqudens/vulkan/Resource.hpp"
 
@@ -17,11 +18,11 @@ namespace exqudens::vulkan {
     vk::PipelineCacheCreateInfo cacheCreateInfo;
     std::shared_ptr<vk::raii::PipelineCache> cache;
 
-    vk::PipelineLayoutCreateInfo layoutCreateInfo;
+    PipelineLayoutCreateInfo layoutCreateInfo;
     std::shared_ptr<vk::raii::PipelineLayout> layout;
 
     std::optional<vk::ComputePipelineCreateInfo> computePipelineCreateInfo;
-    std::optional<vk::GraphicsPipelineCreateInfo> graphicsPipelineCreateInfo;
+    std::optional<GraphicsPipelineCreateInfo> graphicsPipelineCreateInfo;
     std::optional<vk::RayTracingPipelineCreateInfoNV> rayTracingPipelineCreateInfoNV;
 
     vk::raii::PipelineLayout& layoutReference() {
