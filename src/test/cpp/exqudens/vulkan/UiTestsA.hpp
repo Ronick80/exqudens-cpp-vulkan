@@ -65,6 +65,7 @@ namespace exqudens::vulkan {
           RenderPass renderPass = {};
           DescriptorSetLayout descriptorSetLayout = {};
           Pipeline pipeline = {};
+          DescriptorPool descriptorPool = {};
           //Queue transferQueue = {};
           //Queue graphicsQueue = {};
           //Queue presentQueue = {};
@@ -531,6 +532,23 @@ namespace exqudens::vulkan {
                       )
               );
 
+              descriptorPool = environment.createDescriptorPool(
+                  device,
+                  DescriptorPoolCreateInfo()
+                      .setMaxSets(MAX_FRAMES_IN_FLIGHT)
+                      .setPoolSizes({
+                          vk::DescriptorPoolSize()
+                              .setType(vk::DescriptorType::eUniformBuffer)
+                              .setDescriptorCount(MAX_FRAMES_IN_FLIGHT),
+                          vk::DescriptorPoolSize()
+                              .setType(vk::DescriptorType::eCombinedImageSampler)
+                              .setDescriptorCount(MAX_FRAMES_IN_FLIGHT)
+                      })
+              );
+
+              //vk::raii::DescriptorSet a;
+              //vk::raii::DescriptorSets a;
+
               /*transferQueue = environment.createQueue(
                   device,
                   physicalDevice.transferQueueCreateInfos.front().queueFamilyIndex,
@@ -578,6 +596,7 @@ namespace exqudens::vulkan {
               std::cout << std::format("renderPass.id: '{}'", renderPass.id) << std::endl;
               std::cout << std::format("descriptorSetLayout.id: '{}'", descriptorSetLayout.id) << std::endl;
               std::cout << std::format("pipeline.id: '{}'", pipeline.id) << std::endl;
+              std::cout << std::format("descriptorPool.id: '{}'", descriptorPool.id) << std::endl;
               //std::cout << std::format("transferQueue.id: '{}'", transferQueue.id) << std::endl;
               //std::cout << std::format("graphicsQueue.id: '{}'", graphicsQueue.id) << std::endl;
               //std::cout << std::format("presentQueue.id: '{}'", presentQueue.id) << std::endl;

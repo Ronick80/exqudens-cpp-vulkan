@@ -33,6 +33,7 @@
 #include "exqudens/vulkan/RenderPass.hpp"
 #include "exqudens/vulkan/DescriptorSetLayout.hpp"
 #include "exqudens/vulkan/Pipeline.hpp"
+#include "exqudens/vulkan/DescriptorPool.hpp"
 
 namespace exqudens::vulkan {
 
@@ -56,6 +57,7 @@ namespace exqudens::vulkan {
       unsigned int renderPassId = 1;
       unsigned int descriptorSetLayoutId = 1;
       unsigned int pipelineId = 1;
+      unsigned int descriptorPoolId = 1;
       unsigned int surfaceId = 1;
       unsigned int swapChainId = 1;
 
@@ -77,6 +79,7 @@ namespace exqudens::vulkan {
       std::map<unsigned int, std::shared_ptr<RenderPass>> renderPassMap = {};
       std::map<unsigned int, std::shared_ptr<DescriptorSetLayout>> descriptorSetLayoutMap = {};
       std::map<unsigned int, std::shared_ptr<Pipeline>> pipelineMap = {};
+      std::map<unsigned int, std::shared_ptr<DescriptorPool>> descriptorPoolMap = {};
       std::map<unsigned int, std::shared_ptr<Surface>> surfaceMap = {};
       std::map<unsigned int, std::shared_ptr<SwapChain>> swapChainMap = {};
 
@@ -585,6 +588,25 @@ namespace exqudens::vulkan {
           );
           pipelineMap[value->id] = std::shared_ptr<Pipeline>(value);
           return *pipelineMap[value->id];
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      virtual DescriptorPool createDescriptorPool(
+          Device& device,
+          const DescriptorPoolCreateInfo& createInfo
+      ) {
+        try {
+          auto* value = new DescriptorPool;
+          value->id = descriptorPoolId++;
+          value->createInfo = createInfo;
+          value->value = std::make_shared<vk::raii::DescriptorPool>(
+              device.reference(),
+              value->createInfo
+          );
+          descriptorPoolMap[value->id] = std::shared_ptr<DescriptorPool>(value);
+          return *descriptorPoolMap[value->id];
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }
