@@ -534,6 +534,7 @@ namespace exqudens::vulkan {
               descriptorPool = environment.createDescriptorPool(
                   device,
                   DescriptorPoolCreateInfo()
+                      .setFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet)
                       .setMaxSets(MAX_FRAMES_IN_FLIGHT)
                       .setPoolSizes({
                           vk::DescriptorPoolSize()
