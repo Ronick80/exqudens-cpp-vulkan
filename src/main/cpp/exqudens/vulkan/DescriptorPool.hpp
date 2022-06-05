@@ -3,6 +3,7 @@
 #include <vulkan/vulkan_raii.hpp>
 
 #include "exqudens/vulkan/DescriptorPoolCreateInfo.hpp"
+#include "exqudens/vulkan/DescriptorSetAllocateInfo.hpp"
 #include "exqudens/vulkan/Resource.hpp"
 
 namespace exqudens::vulkan {

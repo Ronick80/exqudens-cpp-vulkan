@@ -66,6 +66,7 @@ namespace exqudens::vulkan {
           DescriptorSetLayout descriptorSetLayout = {};
           Pipeline pipeline = {};
           DescriptorPool descriptorPool = {};
+          std::vector<DescriptorSet> descriptorSets = std::vector<DescriptorSet>(MAX_FRAMES_IN_FLIGHT);
           //Queue transferQueue = {};
           //Queue graphicsQueue = {};
           //Queue presentQueue = {};
@@ -445,9 +446,7 @@ namespace exqudens::vulkan {
                   device,
                   vk::PipelineCacheCreateInfo(),
                   PipelineLayoutCreateInfo()
-                      .setSetLayouts({
-                          *descriptorSetLayout.reference()
-                      }),
+                      .setSetLayouts({*descriptorSetLayout.reference()}),
                   {"resources/shader/shader-4.vert.spv", "resources/shader/shader-4.frag.spv"},
                   GraphicsPipelineCreateInfo()
                       .setRenderPass(*renderPass.reference())
@@ -546,8 +545,47 @@ namespace exqudens::vulkan {
                       })
               );
 
-              //vk::raii::DescriptorSet a;
-              //vk::raii::DescriptorSets a;
+              for (auto& descriptorSet : descriptorSets) {
+                descriptorSet = environment.createDescriptorSet(
+                    device,
+                    DescriptorSetAllocateInfo()
+                        .setDescriptorPool(*descriptorPool.reference())
+                        .setSetLayouts({*descriptorSetLayout.reference()})
+                        .setDescriptorSetCount(1)
+                );
+              }
+
+              for (size_t i = 0; i < descriptorSets.size(); i++) {
+                std::vector<vk::DescriptorBufferInfo> writeBufferInfo = {
+                    vk::DescriptorBufferInfo()
+                        .setBuffer(*uniformBuffers[i].reference())
+                        .setOffset(0)
+                        .setRange(sizeof(UniformBufferObject))
+                };
+                vk::WriteDescriptorSet writeBuffer = vk::WriteDescriptorSet()
+                    .setDstSet(*descriptorSets[i].reference())
+                    .setDstBinding(0)
+                    .setDstArrayElement(0)
+                    .setDescriptorCount(1)
+                    .setDescriptorType(vk::DescriptorType::eUniformBuffer)
+                    .setBufferInfo(writeBufferInfo);
+
+                std::vector<vk::DescriptorImageInfo> writeImageInfo = {
+                    vk::DescriptorImageInfo()
+                        .setSampler(*sampler.reference())
+                        .setImageView(*textureImageView.reference())
+                        .setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+                };
+                vk::WriteDescriptorSet writeImage = vk::WriteDescriptorSet()
+                    .setDstSet(*descriptorSets[i].reference())
+                    .setDstBinding(1)
+                    .setDstArrayElement(0)
+                    .setDescriptorCount(1)
+                    .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
+                    .setImageInfo(writeImageInfo);
+
+                device.reference().updateDescriptorSets({writeBuffer, writeImage}, {});
+              }
 
               /*transferQueue = environment.createQueue(
                   device,
@@ -597,6 +635,7 @@ namespace exqudens::vulkan {
               std::cout << std::format("descriptorSetLayout.id: '{}'", descriptorSetLayout.id) << std::endl;
               std::cout << std::format("pipeline.id: '{}'", pipeline.id) << std::endl;
               std::cout << std::format("descriptorPool.id: '{}'", descriptorPool.id) << std::endl;
+              std::ranges::for_each(descriptorSets, [](auto& o1) {std::cout << std::format("descriptorSet.id: '{}'", o1.id) << std::endl;});
               //std::cout << std::format("transferQueue.id: '{}'", transferQueue.id) << std::endl;
               //std::cout << std::format("graphicsQueue.id: '{}'", graphicsQueue.id) << std::endl;
               //std::cout << std::format("presentQueue.id: '{}'", presentQueue.id) << std::endl;

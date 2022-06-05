@@ -34,6 +34,7 @@
 #include "exqudens/vulkan/DescriptorSetLayout.hpp"
 #include "exqudens/vulkan/Pipeline.hpp"
 #include "exqudens/vulkan/DescriptorPool.hpp"
+#include "exqudens/vulkan/DescriptorSet.hpp"
 
 namespace exqudens::vulkan {
 
@@ -58,6 +59,7 @@ namespace exqudens::vulkan {
       unsigned int descriptorSetLayoutId = 1;
       unsigned int pipelineId = 1;
       unsigned int descriptorPoolId = 1;
+      unsigned int descriptorSetId = 1;
       unsigned int surfaceId = 1;
       unsigned int swapChainId = 1;
 
@@ -80,6 +82,7 @@ namespace exqudens::vulkan {
       std::map<unsigned int, std::shared_ptr<DescriptorSetLayout>> descriptorSetLayoutMap = {};
       std::map<unsigned int, std::shared_ptr<Pipeline>> pipelineMap = {};
       std::map<unsigned int, std::shared_ptr<DescriptorPool>> descriptorPoolMap = {};
+      std::map<unsigned int, std::shared_ptr<DescriptorSet>> descriptorSetMap = {};
       std::map<unsigned int, std::shared_ptr<Surface>> surfaceMap = {};
       std::map<unsigned int, std::shared_ptr<SwapChain>> swapChainMap = {};
 
@@ -612,6 +615,26 @@ namespace exqudens::vulkan {
         }
       }
 
+      virtual DescriptorSet createDescriptorSet(
+          Device& device,
+          const DescriptorSetAllocateInfo& createInfo
+      ) {
+        try {
+          auto* value = new DescriptorSet;
+          value->id = descriptorSetId++;
+          value->createInfo = createInfo;
+          vk::raii::DescriptorSets descriptorSets = vk::raii::DescriptorSets(
+              device.reference(),
+              value->createInfo
+          );
+          value->value = std::make_shared<vk::raii::DescriptorSet>(std::move(descriptorSets.front()));
+          descriptorSetMap[value->id] = std::shared_ptr<DescriptorSet>(value);
+          return *descriptorSetMap[value->id];
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
       virtual Surface createSurface(
           Instance& instance,
           VkSurfaceKHR& vkSurface
@@ -619,7 +642,10 @@ namespace exqudens::vulkan {
         try {
           auto* value = new Surface;
           value->id = surfaceId++;
-          value->value = std::make_shared<vk::raii::SurfaceKHR>(*instance.value, vkSurface);
+          value->value = std::make_shared<vk::raii::SurfaceKHR>(
+              *instance.value,
+              vkSurface
+          );
           surfaceMap[value->id] = std::shared_ptr<Surface>(value);
           return *surfaceMap[value->id];
         } catch (...) {
