@@ -115,16 +115,9 @@ if(NOT "" STREQUAL "${NOT_FOUND_PACKAGE_NAMES}")
 endif()
 
 add_library("${PROJECT_NAME}" INTERFACE
-    "src/main/cpp/exqudens/vulkan/raii/ContextInfo.hpp"
-    "src/main/cpp/exqudens/vulkan/raii/Context.hpp"
-    "src/main/cpp/exqudens/vulkan/raii/Instance.hpp"
-    "src/main/cpp/exqudens/vulkan/raii/DebugUtilsMessenger.hpp"
-    "src/main/cpp/exqudens/vulkan/raii/Macros.hpp"
-    "src/main/cpp/exqudens/vulkan/raii/Utility.hpp"
-    "src/main/cpp/exqudens/vulkan/raii/Factory.hpp"
-
     "src/main/cpp/exqudens/vulkan/Resource.hpp"
     "src/main/cpp/exqudens/vulkan/MemoryResource.hpp"
+
     "src/main/cpp/exqudens/vulkan/ContextCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/Context.hpp"
     "src/main/cpp/exqudens/vulkan/InstanceCreateInfo.hpp"
@@ -236,7 +229,7 @@ add_library("test-lib" INTERFACE
     #"src/test/cpp/exqudens/vulkan/ShaderTests.hpp"
     #"src/test/cpp/exqudens/vulkan/FactoryTests.hpp"
     "src/test/cpp/exqudens/vulkan/UiTestsA.hpp"
-    "src/test/cpp/exqudens/vulkan/UiTestsB.hpp"
+    #"src/test/cpp/exqudens/vulkan/UiTestsB.hpp"
     #"src/test/cpp/exqudens/vulkan/UiTestsC.hpp"
     #"src/test/cpp/exqudens/vulkan/UiTestsD.hpp"
     #"src/test/cpp/exqudens/vulkan/UiTestsE.hpp"

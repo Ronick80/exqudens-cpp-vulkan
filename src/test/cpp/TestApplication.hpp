@@ -10,7 +10,7 @@
 //#include "exqudens/vulkan/ShaderTests.hpp"
 //#include "exqudens/vulkan/FactoryTests.hpp"
 #include "exqudens/vulkan/UiTestsA.hpp"
-#include "exqudens/vulkan/UiTestsB.hpp"
+//#include "exqudens/vulkan/UiTestsB.hpp"
 //#include "exqudens/vulkan/UiTestsC.hpp"
 //#include "exqudens/vulkan/UiTestsD.hpp"
 //#include "exqudens/vulkan/UiTestsE.hpp"
