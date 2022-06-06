@@ -161,6 +161,8 @@ add_library("${PROJECT_NAME}" INTERFACE
     "src/main/cpp/exqudens/vulkan/DescriptorSet.hpp"
     "src/main/cpp/exqudens/vulkan/FramebufferCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/Framebuffer.hpp"
+    "src/main/cpp/exqudens/vulkan/CommandPool.hpp"
+    "src/main/cpp/exqudens/vulkan/CommandBuffer.hpp"
 
     "src/main/cpp/exqudens/vulkan/Macros.hpp"
     "src/main/cpp/exqudens/vulkan/Utility.hpp"

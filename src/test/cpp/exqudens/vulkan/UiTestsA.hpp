@@ -69,9 +69,13 @@ namespace exqudens::vulkan {
           std::vector<DescriptorSet> descriptorSets = std::vector<DescriptorSet>(MAX_FRAMES_IN_FLIGHT);
           std::vector<ImageView> swapChainImageViews = {};
           std::vector<Framebuffer> swapChainFramebuffers;
-          //Queue transferQueue = {};
-          //Queue graphicsQueue = {};
-          //Queue presentQueue = {};
+          Queue transferQueue = {};
+          Queue graphicsQueue = {};
+          Queue presentQueue = {};
+          CommandPool transferCommandPool = {};
+          CommandPool graphicsCommandPool = {};
+          CommandBuffer transferCommandBuffer = {};
+          std::vector<CommandBuffer> graphicsCommandBuffers = std::vector<CommandBuffer>(MAX_FRAMES_IN_FLIGHT);
 
         public:
 
@@ -603,7 +607,7 @@ namespace exqudens::vulkan {
                 );
               }
 
-              /*transferQueue = environment.createQueue(
+              transferQueue = environment.createQueue(
                   device,
                   physicalDevice.transferQueueCreateInfos.front().queueFamilyIndex,
                   0
@@ -617,7 +621,38 @@ namespace exqudens::vulkan {
                   device,
                   physicalDevice.presentQueueCreateInfos.front().queueFamilyIndex,
                   0
-              );*/
+              );
+
+              transferCommandPool = environment.createCommandPool(
+                  device,
+                  vk::CommandPoolCreateInfo()
+                      .setFlags(vk::CommandPoolCreateFlagBits::eTransient)
+                      .setQueueFamilyIndex(transferQueue.familyIndex)
+              );
+              graphicsCommandPool = environment.createCommandPool(
+                  device,
+                  vk::CommandPoolCreateInfo()
+                      .setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
+                      .setQueueFamilyIndex(graphicsQueue.familyIndex)
+              );
+
+              transferCommandBuffer = environment.createCommandBuffer(
+                  device,
+                  vk::CommandBufferAllocateInfo()
+                      .setCommandPool(*transferCommandPool.reference())
+                      .setCommandBufferCount(1)
+                      .setLevel(vk::CommandBufferLevel::ePrimary)
+              );
+
+              for (auto& commandBuffer : graphicsCommandBuffers) {
+                commandBuffer = environment.createCommandBuffer(
+                    device,
+                    vk::CommandBufferAllocateInfo()
+                        .setCommandPool(*graphicsCommandPool.reference())
+                        .setCommandBufferCount(1)
+                        .setLevel(vk::CommandBufferLevel::ePrimary)
+                );
+              }
 
               std::cout << std::format("context.createInfo.environmentVariables['VK_LAYER_PATH']: '{}'", context.createInfo.environmentVariables["VK_LAYER_PATH"]) << std::endl;
               std::cout << std::format("context.id: '{}'", context.id) << std::endl;
@@ -649,9 +684,13 @@ namespace exqudens::vulkan {
               std::ranges::for_each(descriptorSets, [](auto& o1) {std::cout << std::format("descriptorSet.id: '{}'", o1.id) << std::endl;});
               std::ranges::for_each(swapChainImageViews, [](const auto& o1) {std::cout << std::format("swapChainImageView.id: '{}'", o1.id) << std::endl;});
               std::ranges::for_each(swapChainFramebuffers, [](const auto& o1) {std::cout << std::format("swapChainFramebuffer.id: '{}'", o1.id) << std::endl;});
-              //std::cout << std::format("transferQueue.id: '{}'", transferQueue.id) << std::endl;
-              //std::cout << std::format("graphicsQueue.id: '{}'", graphicsQueue.id) << std::endl;
-              //std::cout << std::format("presentQueue.id: '{}'", presentQueue.id) << std::endl;
+              std::cout << std::format("transferQueue.id: '{}'", transferQueue.id) << std::endl;
+              std::cout << std::format("graphicsQueue.id: '{}'", graphicsQueue.id) << std::endl;
+              std::cout << std::format("presentQueue.id: '{}'", presentQueue.id) << std::endl;
+              std::cout << std::format("transferCommandPool.id: '{}'", transferCommandPool.id) << std::endl;
+              std::cout << std::format("graphicsCommandPool.id: '{}'", graphicsCommandPool.id) << std::endl;
+              std::cout << std::format("transferCommandBuffer.id: '{}'", transferCommandBuffer.id) << std::endl;
+              std::ranges::for_each(graphicsCommandBuffers, [](const auto& o1) {std::cout << std::format("graphicsCommandBuffer.id: '{}'", o1.id) << std::endl;});
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
             }
