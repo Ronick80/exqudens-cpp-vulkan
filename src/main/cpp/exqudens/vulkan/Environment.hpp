@@ -35,6 +35,7 @@
 #include "exqudens/vulkan/Pipeline.hpp"
 #include "exqudens/vulkan/DescriptorPool.hpp"
 #include "exqudens/vulkan/DescriptorSet.hpp"
+#include "exqudens/vulkan/Framebuffer.hpp"
 
 namespace exqudens::vulkan {
 
@@ -60,6 +61,7 @@ namespace exqudens::vulkan {
       unsigned int pipelineId = 1;
       unsigned int descriptorPoolId = 1;
       unsigned int descriptorSetId = 1;
+      unsigned int framebufferId = 1;
       unsigned int surfaceId = 1;
       unsigned int swapChainId = 1;
 
@@ -83,6 +85,7 @@ namespace exqudens::vulkan {
       std::map<unsigned int, std::shared_ptr<Pipeline>> pipelineMap = {};
       std::map<unsigned int, std::shared_ptr<DescriptorPool>> descriptorPoolMap = {};
       std::map<unsigned int, std::shared_ptr<DescriptorSet>> descriptorSetMap = {};
+      std::map<unsigned int, std::shared_ptr<Framebuffer>> framebufferMap = {};
       std::map<unsigned int, std::shared_ptr<Surface>> surfaceMap = {};
       std::map<unsigned int, std::shared_ptr<SwapChain>> swapChainMap = {};
 
@@ -639,6 +642,25 @@ namespace exqudens::vulkan {
           device.reference().updateDescriptorSets(tmpWrites, {});
           descriptorSetMap[value->id] = std::shared_ptr<DescriptorSet>(value);
           return *descriptorSetMap[value->id];
+        } catch (...) {
+          std::throw_with_nested(std::runtime_error(CALL_INFO()));
+        }
+      }
+
+      virtual Framebuffer createFramebuffer(
+          Device& device,
+          const FramebufferCreateInfo& createInfo
+      ) {
+        try {
+          auto* value = new Framebuffer;
+          value->id = framebufferId++;
+          value->createInfo = createInfo;
+          value->value = std::make_shared<vk::raii::Framebuffer>(
+              device.reference(),
+              value->createInfo
+          );
+          framebufferMap[value->id] = std::shared_ptr<Framebuffer>(value);
+          return *framebufferMap[value->id];
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }

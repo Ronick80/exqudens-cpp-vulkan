@@ -67,10 +67,11 @@ namespace exqudens::vulkan {
           Pipeline pipeline = {};
           DescriptorPool descriptorPool = {};
           std::vector<DescriptorSet> descriptorSets = std::vector<DescriptorSet>(MAX_FRAMES_IN_FLIGHT);
+          std::vector<ImageView> swapChainImageViews = {};
+          std::vector<Framebuffer> swapChainFramebuffers;
           //Queue transferQueue = {};
           //Queue graphicsQueue = {};
           //Queue presentQueue = {};
-          //std::vector<ImageView> swapChainImageViews = {};
 
         public:
 
@@ -580,6 +581,28 @@ namespace exqudens::vulkan {
                 );
               }
 
+              swapChainImageViews = environment.createSwapChainImageViews(
+                  device,
+                  swapChain
+              );
+
+              for (auto& imageView : swapChainImageViews) {
+                swapChainFramebuffers.emplace_back(
+                    environment.createFramebuffer(
+                        device,
+                        FramebufferCreateInfo()
+                            .setRenderPass(*renderPass.reference())
+                            .setWidth(swapChain.createInfo.imageExtent.width)
+                            .setHeight(swapChain.createInfo.imageExtent.height)
+                            .setLayers(1)
+                            .setAttachments({
+                                *imageView.reference(),
+                                *depthImageView.reference()
+                            })
+                    )
+                );
+              }
+
               /*transferQueue = environment.createQueue(
                   device,
                   physicalDevice.transferQueueCreateInfos.front().queueFamilyIndex,
@@ -594,11 +617,6 @@ namespace exqudens::vulkan {
                   device,
                   physicalDevice.presentQueueCreateInfos.front().queueFamilyIndex,
                   0
-              );*/
-
-              /*swapChainImageViews = environment.createSwapChainImageViews(
-                  device,
-                  swapChain
               );*/
 
               std::cout << std::format("context.createInfo.environmentVariables['VK_LAYER_PATH']: '{}'", context.createInfo.environmentVariables["VK_LAYER_PATH"]) << std::endl;
@@ -629,10 +647,11 @@ namespace exqudens::vulkan {
               std::cout << std::format("pipeline.id: '{}'", pipeline.id) << std::endl;
               std::cout << std::format("descriptorPool.id: '{}'", descriptorPool.id) << std::endl;
               std::ranges::for_each(descriptorSets, [](auto& o1) {std::cout << std::format("descriptorSet.id: '{}'", o1.id) << std::endl;});
+              std::ranges::for_each(swapChainImageViews, [](const auto& o1) {std::cout << std::format("swapChainImageView.id: '{}'", o1.id) << std::endl;});
+              std::ranges::for_each(swapChainFramebuffers, [](const auto& o1) {std::cout << std::format("swapChainFramebuffer.id: '{}'", o1.id) << std::endl;});
               //std::cout << std::format("transferQueue.id: '{}'", transferQueue.id) << std::endl;
               //std::cout << std::format("graphicsQueue.id: '{}'", graphicsQueue.id) << std::endl;
               //std::cout << std::format("presentQueue.id: '{}'", presentQueue.id) << std::endl;
-              //std::ranges::for_each(swapChainImageViews, [](const auto& swapChainImageView) {std::cout << std::format("swapChainImageView.id: '{}'", swapChainImageView.id) << std::endl;});
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
             }
