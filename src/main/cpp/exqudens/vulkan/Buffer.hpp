@@ -9,7 +9,6 @@ namespace exqudens::vulkan {
   struct Buffer: MemoryResource<vk::raii::Buffer, vk::raii::DeviceMemory> {
 
     vk::BufferCreateInfo createInfo;
-    vk::DeviceSize size;
 
   };
 

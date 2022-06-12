@@ -379,11 +379,10 @@ namespace exqudens::vulkan {
           );
           vk::MemoryRequirements memoryRequirements = value->value->getMemoryRequirements();
           uint32_t memoryType = memoryTypeIndex(physicalDevice, memoryRequirements.memoryTypeBits, properties);
-          value->size = memoryRequirements.size;
           value->memory = std::make_shared<vk::raii::DeviceMemory>(
               device.reference(),
               vk::MemoryAllocateInfo()
-                  .setAllocationSize(value->size)
+                  .setAllocationSize(memoryRequirements.size)
                   .setMemoryTypeIndex(memoryType)
           );
           value->value->bindMemory(*value->memoryReference(), 0);
@@ -429,11 +428,10 @@ namespace exqudens::vulkan {
           );
           vk::MemoryRequirements memoryRequirements = value->value->getMemoryRequirements();
           uint32_t memoryType = memoryTypeIndex(physicalDevice, memoryRequirements.memoryTypeBits, properties);
-          value->size = memoryRequirements.size;
           value->memory = std::make_shared<vk::raii::DeviceMemory>(
               device.reference(),
               vk::MemoryAllocateInfo()
-                  .setAllocationSize(value->size)
+                  .setAllocationSize(memoryRequirements.size)
                   .setMemoryTypeIndex(memoryType)
           );
           value->value->bindMemory(*value->memoryReference(), 0);

@@ -9,7 +9,6 @@ namespace exqudens::vulkan {
   struct Image: MemoryResource<vk::raii::Image, vk::raii::DeviceMemory> {
 
     vk::ImageCreateInfo createInfo;
-    vk::DeviceSize size;
 
   };
 

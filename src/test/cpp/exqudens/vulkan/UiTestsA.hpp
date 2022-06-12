@@ -298,7 +298,7 @@ namespace exqudens::vulkan {
                   physicalDevice,
                   device,
                   vk::BufferCreateInfo()
-                      .setSize(vertexStagingBuffer.size)
+                      .setSize(vertexStagingBuffer.createInfo.size)
                       .setUsage(vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer)
                       .setSharingMode(vk::SharingMode::eExclusive),
                   vk::MemoryPropertyFlagBits::eDeviceLocal
@@ -317,7 +317,7 @@ namespace exqudens::vulkan {
                   physicalDevice,
                   device,
                   vk::BufferCreateInfo()
-                      .setSize(indexStagingBuffer.size)
+                      .setSize(indexStagingBuffer.createInfo.size)
                       .setUsage(vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer)
                       .setSharingMode(vk::SharingMode::eExclusive),
                   vk::MemoryPropertyFlagBits::eDeviceLocal
@@ -645,16 +645,16 @@ namespace exqudens::vulkan {
                 );
               }
 
-              void* tmpData = textureBuffer.memoryReference().mapMemory(0, textureBuffer.size);
-              std::memcpy(tmpData, tmpImageData.data(), static_cast<size_t>(textureBuffer.size));
+              void* tmpData = textureBuffer.memoryReference().mapMemory(0, textureBuffer.createInfo.size);
+              std::memcpy(tmpData, tmpImageData.data(), static_cast<size_t>(textureBuffer.createInfo.size));
               textureBuffer.memoryReference().unmapMemory();
 
-              tmpData = vertexStagingBuffer.memoryReference().mapMemory(0, vertexStagingBuffer.size);
-              std::memcpy(tmpData, vertexVector.data(), static_cast<size_t>(vertexStagingBuffer.size));
+              tmpData = vertexStagingBuffer.memoryReference().mapMemory(0, vertexStagingBuffer.createInfo.size);
+              std::memcpy(tmpData, vertexVector.data(), static_cast<size_t>(vertexStagingBuffer.createInfo.size));
               vertexStagingBuffer.memoryReference().unmapMemory();
 
-              tmpData = indexStagingBuffer.memoryReference().mapMemory(0, indexStagingBuffer.size);
-              std::memcpy(tmpData, indexVector.data(), static_cast<size_t>(indexStagingBuffer.size));
+              tmpData = indexStagingBuffer.memoryReference().mapMemory(0, indexStagingBuffer.createInfo.size);
+              std::memcpy(tmpData, indexVector.data(), static_cast<size_t>(indexStagingBuffer.createInfo.size));
               indexStagingBuffer.memoryReference().unmapMemory();
 
               transferCommandBuffer.reference().begin({});
@@ -767,6 +767,24 @@ namespace exqudens::vulkan {
                                   .setBaseArrayLayer(0)
                                   .setLayerCount(1)
                           )
+                  }
+              );
+
+              transferCommandBuffer.reference().copyBuffer(
+                  *vertexStagingBuffer.reference(),
+                  *vertexBuffer.reference(),
+                  {
+                      vk::BufferCopy()
+                          .setSize(vertexStagingBuffer.createInfo.size)
+                  }
+              );
+
+              transferCommandBuffer.reference().copyBuffer(
+                  *indexStagingBuffer.reference(),
+                  *indexBuffer.reference(),
+                  {
+                      vk::BufferCopy()
+                          .setSize(indexStagingBuffer.createInfo.size)
                   }
               );
 
