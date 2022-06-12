@@ -18,14 +18,15 @@ namespace exqudens::vulkan {
         const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
         void* data
     ) {
+      Messenger* messenger = nullptr;
+      std::string formatted;
       try {
         auto severity = vk::DebugUtilsMessageSeverityFlagsEXT(cSeverity);
         auto type = vk::DebugUtilsMessageTypeFlagsEXT(cType);
         std::string message(callbackData->pMessage);
-        std::string formatted = vk::to_string(severity) + " " + vk::to_string(type) + ": " + message;
+        formatted = vk::to_string(severity) + " " + vk::to_string(type) + ": " + message;
 
         if (data != nullptr) {
-          Messenger* messenger = nullptr;
           try {
             messenger = reinterpret_cast<Messenger*>(data);
           } catch (...) {
@@ -51,8 +52,18 @@ namespace exqudens::vulkan {
 
         return VK_FALSE;
       } catch (const std::exception& e) {
+        if (messenger != nullptr && messenger->out != nullptr) {
+          *messenger->out << formatted << std::endl;
+        } else {
+          std::cout << formatted << std::endl;
+        }
         std::throw_with_nested(std::runtime_error(CALL_INFO() + ": " + e.what()));
       } catch (...) {
+        if (messenger != nullptr && messenger->out != nullptr) {
+          *messenger->out << formatted << std::endl;
+        } else {
+          std::cout << formatted << std::endl;
+        }
         std::throw_with_nested(std::runtime_error(CALL_INFO()));
       }
     }
