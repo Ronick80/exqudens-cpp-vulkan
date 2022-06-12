@@ -19,7 +19,7 @@ namespace exqudens::vulkan {
         void* data
     ) {
       Messenger* messenger = nullptr;
-      std::string formatted;
+      std::string formatted = "<UNDEFINED>";
       try {
         auto severity = vk::DebugUtilsMessageSeverityFlagsEXT(cSeverity);
         auto type = vk::DebugUtilsMessageTypeFlagsEXT(cType);
