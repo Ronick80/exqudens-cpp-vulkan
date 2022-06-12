@@ -31,7 +31,7 @@ namespace exqudens::vulkan {
 
     protected:
 
-      class Renderer {
+      class TestRenderer {
 
         private:
           inline static const size_t MAX_FRAMES_IN_FLIGHT = 2;
@@ -103,6 +103,16 @@ namespace exqudens::vulkan {
                   0, 1, 2, 2, 3, 0,
                   4, 5, 6, 6, 7, 4
               };
+
+              unsigned int tmpImageWidth, tmpImageHeight, tmpImageDepth;
+              std::vector<unsigned char> tmpImageData;
+              TestUtils::readPng(
+                  std::filesystem::path().append("resources").append("png").append("texture.png").make_preferred().string(),
+                  tmpImageWidth,
+                  tmpImageHeight,
+                  tmpImageDepth,
+                  tmpImageData
+              );
 
               environment = Environment();
 
@@ -226,16 +236,6 @@ namespace exqudens::vulkan {
                       )
               );
 
-              unsigned int tmpImageWidth, tmpImageHeight, tmpImageDepth;
-              std::vector<unsigned char> tmpImageData;
-              TestUtils::readPng(
-                  std::filesystem::path().append("resources").append("png").append("texture.png").make_preferred().string(),
-                  tmpImageWidth,
-                  tmpImageHeight,
-                  tmpImageDepth,
-                  tmpImageData
-              );
-
               textureBuffer = environment.createBuffer(
                   physicalDevice,
                   device,
@@ -245,9 +245,6 @@ namespace exqudens::vulkan {
                       .setSharingMode(vk::SharingMode::eExclusive),
                   vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
               );
-              void* tmpData = textureBuffer.memoryReference().mapMemory(0, textureBuffer.size);
-              std::memcpy(tmpData, tmpImageData.data(), static_cast<size_t>(textureBuffer.size));
-              textureBuffer.memoryReference().unmapMemory();
               textureImage = environment.createImage(
                   physicalDevice,
                   device,
@@ -297,9 +294,6 @@ namespace exqudens::vulkan {
                       .setSharingMode(vk::SharingMode::eExclusive),
                   vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
               );
-              tmpData = vertexStagingBuffer.memoryReference().mapMemory(0, vertexStagingBuffer.size);
-              std::memcpy(tmpData, vertexVector.data(), static_cast<size_t>(vertexStagingBuffer.size));
-              vertexStagingBuffer.memoryReference().unmapMemory();
               vertexBuffer = environment.createBuffer(
                   physicalDevice,
                   device,
@@ -319,9 +313,6 @@ namespace exqudens::vulkan {
                       .setSharingMode(vk::SharingMode::eExclusive),
                   vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
               );
-              tmpData = indexStagingBuffer.memoryReference().mapMemory(0, indexStagingBuffer.size);
-              std::memcpy(tmpData, indexVector.data(), static_cast<size_t>(indexStagingBuffer.size));
-              indexStagingBuffer.memoryReference().unmapMemory();
               indexBuffer = environment.createBuffer(
                   physicalDevice,
                   device,
@@ -654,6 +645,141 @@ namespace exqudens::vulkan {
                 );
               }
 
+              void* tmpData = textureBuffer.memoryReference().mapMemory(0, textureBuffer.size);
+              std::memcpy(tmpData, tmpImageData.data(), static_cast<size_t>(textureBuffer.size));
+              textureBuffer.memoryReference().unmapMemory();
+
+              tmpData = vertexStagingBuffer.memoryReference().mapMemory(0, vertexStagingBuffer.size);
+              std::memcpy(tmpData, vertexVector.data(), static_cast<size_t>(vertexStagingBuffer.size));
+              vertexStagingBuffer.memoryReference().unmapMemory();
+
+              tmpData = indexStagingBuffer.memoryReference().mapMemory(0, indexStagingBuffer.size);
+              std::memcpy(tmpData, indexVector.data(), static_cast<size_t>(indexStagingBuffer.size));
+              indexStagingBuffer.memoryReference().unmapMemory();
+
+              transferCommandBuffer.reference().begin({});
+
+              transferCommandBuffer.reference().pipelineBarrier(
+                  vk::PipelineStageFlagBits::eTopOfPipe,
+                  vk::PipelineStageFlagBits::eEarlyFragmentTests,
+                  vk::DependencyFlags(0),
+                  {},
+                  {},
+                  {
+                    vk::ImageMemoryBarrier()
+                        .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                        .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                        .setImage(*depthImage.reference())
+                        .setOldLayout(vk::ImageLayout::eUndefined)
+                        .setNewLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
+                        .setSrcAccessMask(vk::AccessFlagBits::eNoneKHR)
+                        .setDstAccessMask(vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite)
+                        .setSubresourceRange(
+                            vk::ImageSubresourceRange()
+                                .setAspectMask(
+                                    depthImage.createInfo.format == vk::Format::eD32SfloatS8Uint
+                                    || depthImage.createInfo.format == vk::Format::eD24UnormS8Uint
+                                    ? vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil
+                                    : vk::ImageAspectFlagBits::eDepth
+                                )
+                                .setBaseMipLevel(0)
+                                .setLevelCount(1)
+                                .setBaseArrayLayer(0)
+                                .setLayerCount(1)
+                        )
+                  }
+              );
+
+              transferCommandBuffer.reference().pipelineBarrier(
+                  vk::PipelineStageFlagBits::eTopOfPipe,
+                  vk::PipelineStageFlagBits::eTransfer,
+                  vk::DependencyFlags(0),
+                  {},
+                  {},
+                  {
+                      vk::ImageMemoryBarrier()
+                          .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                          .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                          .setImage(*textureImage.reference())
+                          .setOldLayout(vk::ImageLayout::eUndefined)
+                          .setNewLayout(vk::ImageLayout::eTransferDstOptimal)
+                          .setSrcAccessMask(vk::AccessFlagBits::eNoneKHR)
+                          .setDstAccessMask(vk::AccessFlagBits::eTransferWrite)
+                          .setSubresourceRange(
+                              vk::ImageSubresourceRange()
+                                  .setAspectMask(vk::ImageAspectFlagBits::eColor)
+                                  .setBaseMipLevel(0)
+                                  .setLevelCount(1)
+                                  .setBaseArrayLayer(0)
+                                  .setLayerCount(1)
+                          )
+                  }
+              );
+              transferCommandBuffer.reference().copyBufferToImage(
+                  *textureBuffer.reference(),
+                  *textureImage.reference(),
+                  vk::ImageLayout::eTransferDstOptimal,
+                  {
+                      vk::BufferImageCopy()
+                          .setBufferOffset(0)
+                          .setBufferRowLength(0)
+                          .setImageOffset(
+                              vk::Offset3D()
+                                  .setX(0)
+                                  .setY(0)
+                                  .setZ(0)
+                          )
+                          .setImageExtent(
+                              vk::Extent3D()
+                                  .setWidth(textureImage.createInfo.extent.width)
+                                  .setHeight(textureImage.createInfo.extent.height)
+                                  .setDepth(1)
+                          )
+                          .setImageSubresource(
+                              vk::ImageSubresourceLayers()
+                                  .setAspectMask(vk::ImageAspectFlagBits::eColor)
+                                  .setMipLevel(0)
+                                  .setBaseArrayLayer(0)
+                                  .setLayerCount(1)
+                          )
+                  }
+              );
+              transferCommandBuffer.reference().pipelineBarrier(
+                  vk::PipelineStageFlagBits::eTransfer,
+                  vk::PipelineStageFlagBits::eFragmentShader,
+                  vk::DependencyFlags(0),
+                  {},
+                  {},
+                  {
+                      vk::ImageMemoryBarrier()
+                          .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                          .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                          .setImage(*textureImage.reference())
+                          .setOldLayout(vk::ImageLayout::eTransferDstOptimal)
+                          .setNewLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+                          .setSrcAccessMask(vk::AccessFlagBits::eTransferWrite)
+                          .setDstAccessMask(vk::AccessFlagBits::eShaderRead)
+                          .setSubresourceRange(
+                              vk::ImageSubresourceRange()
+                                  .setAspectMask(vk::ImageAspectFlagBits::eColor)
+                                  .setBaseMipLevel(0)
+                                  .setLevelCount(1)
+                                  .setBaseArrayLayer(0)
+                                  .setLayerCount(1)
+                          )
+                  }
+              );
+
+              transferCommandBuffer.reference().end();
+              transferQueue.reference().submit(
+                  {
+                    vk::SubmitInfo()
+                      .setCommandBufferCount(1)
+                      .setPCommandBuffers(&(*transferCommandBuffer.reference()))
+                  }
+              );
+              transferQueue.reference().waitIdle();
+
               std::cout << std::format("context.createInfo.environmentVariables['VK_LAYER_PATH']: '{}'", context.createInfo.environmentVariables["VK_LAYER_PATH"]) << std::endl;
               std::cout << std::format("context.id: '{}'", context.id) << std::endl;
               std::cout << std::format("instance.id: '{}'", instance.id) << std::endl;
@@ -727,7 +853,7 @@ namespace exqudens::vulkan {
         public:
 
           std::vector<std::string> arguments = {};
-          Renderer* renderer = nullptr;
+          TestRenderer* renderer = nullptr;
 
           TestUiApplication(const int& argc, char** argv) {
             try {
@@ -759,7 +885,7 @@ namespace exqudens::vulkan {
               glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
               std::vector<const char*> glfwInstanceRequiredExtensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
-              renderer = new Renderer();
+              renderer = new TestRenderer();
               renderer->create(
                   arguments,
                   glfwInstanceRequiredExtensions,
