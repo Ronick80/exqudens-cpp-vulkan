@@ -6,6 +6,7 @@
 #include <optional>
 #include <vector>
 #include <limits>
+#include <chrono>
 #include <algorithm>
 #include <iostream>
 #include <format>
@@ -211,7 +212,7 @@ namespace exqudens::vulkan {
                   .setDevice(device.value)
                   .setCreateInfo(
                       vk::CommandPoolCreateInfo()
-                          .setFlags(vk::CommandPoolCreateFlagBits::eTransient | vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
+                          .setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
                           .setQueueFamilyIndex(transferQueue.familyIndex)
                   )
               .build();
@@ -433,7 +434,13 @@ namespace exqudens::vulkan {
               std::ranges::for_each(renderFinishedSemaphores, [](auto& o1) {std::cout << std::format("renderFinishedSemaphore: '{}'", (bool) o1.value) << std::endl;});
 
               for (auto& inFlightFence : inFlightFences) {
-                inFlightFence = Fence::builder().setDevice(device.value).build();
+                inFlightFence = Fence::builder()
+                    .setDevice(device.value)
+                    .setCreateInfo(
+                        vk::FenceCreateInfo()
+                            .setFlags(vk::FenceCreateFlagBits::eSignaled)
+                    )
+                .build();
               }
               std::ranges::for_each(inFlightFences, [](auto& o1) {std::cout << std::format("inFlightFence: '{}'", (bool) o1.value) << std::endl;});
 
@@ -504,8 +511,38 @@ namespace exqudens::vulkan {
               std::memcpy(tmpData, indexVector.data(), static_cast<size_t>(indexStagingBuffer.createInfo.size));
               indexStagingBuffer.memoryReference().unmapMemory();
 
-              transferCommandBuffer.reference().reset();
               transferCommandBuffer.reference().begin({});
+
+              transferCommandBuffer.reference().pipelineBarrier(
+                  vk::PipelineStageFlagBits::eTopOfPipe,
+                  vk::PipelineStageFlagBits::eEarlyFragmentTests,
+                  vk::DependencyFlags(0),
+                  {},
+                  {},
+                  {
+                      vk::ImageMemoryBarrier()
+                          .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                          .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                          .setImage(*depthImage.reference())
+                          .setOldLayout(vk::ImageLayout::eUndefined)
+                          .setNewLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
+                          .setSrcAccessMask(vk::AccessFlagBits::eNoneKHR)
+                          .setDstAccessMask(vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite)
+                          .setSubresourceRange(
+                              vk::ImageSubresourceRange()
+                                  .setAspectMask(
+                                      depthImage.createInfo.format == vk::Format::eD32SfloatS8Uint
+                                      || depthImage.createInfo.format == vk::Format::eD24UnormS8Uint
+                                      ? vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil
+                                      : vk::ImageAspectFlagBits::eDepth
+                                  )
+                                  .setBaseMipLevel(0)
+                                  .setLevelCount(1)
+                                  .setBaseArrayLayer(0)
+                                  .setLayerCount(1)
+                          )
+                  }
+              );
 
               transferCommandBuffer.reference().pipelineBarrier(
                   vk::PipelineStageFlagBits::eTopOfPipe,
@@ -876,7 +913,30 @@ namespace exqudens::vulkan {
               }
               std::ranges::for_each(swapchainFramebuffers, [](const auto& o1) {std::cout << std::format("swapchainFramebuffer: '{}'", (bool) o1.value) << std::endl;});
 
-              transferCommandBuffer.reference().reset();
+              std::cout << std::format("{} ... done", CALL_INFO()) << std::endl;
+            } catch (...) {
+              std::throw_with_nested(std::runtime_error(CALL_INFO()));
+            }
+          }
+
+          void reCreateSwapchain(int width, int height) {
+            try {
+              std::cout << std::format("{} ... call", CALL_INFO()) << std::endl;
+
+              device.reference().waitIdle();
+
+              std::ranges::for_each(swapchainFramebuffers, [](auto& o1) {o1.value.reset();});
+              swapchainFramebuffers.clear();
+              pipeline.value.reset();
+              renderPass.value.reset();
+              depthImageView.value.reset();
+              depthImage.value.reset();
+              std::ranges::for_each(swapchainImageViews, [](auto& o1) {o1.value.reset();});
+              swapchainImageViews.clear();
+              swapchain.value.reset();
+
+              createSwapchain(width, height);
+
               transferCommandBuffer.reference().begin({});
 
               transferCommandBuffer.reference().pipelineBarrier(
@@ -926,30 +986,8 @@ namespace exqudens::vulkan {
             }
           }
 
-          void reCreateSwapchain(int width, int height) {
-            try {
-              std::cout << std::format("{} ... call", CALL_INFO()) << std::endl;
-
-              device.reference().waitIdle();
-
-              std::ranges::for_each(swapchainFramebuffers, [](auto& o1) {o1.value.reset();});
-              pipeline.value.reset();
-              renderPass.value.reset();
-              depthImageView.value.reset();
-              depthImage.value.reset();
-              std::ranges::for_each(swapchainImageViews, [](auto& o1) {o1.value.reset();});
-              swapchain.value.reset();
-
-              createSwapchain(width, height);
-
-              std::cout << std::format("{} ... done", CALL_INFO()) << std::endl;
-            } catch (...) {
-              std::throw_with_nested(std::runtime_error(CALL_INFO()));
-            }
-          }
-
           void drawFrame(int width, int height) {
-            /*try {
+            try {
               vk::Result result = device.reference().waitForFences(
                   {*inFlightFences[currentFrame].reference()},
                   true,
@@ -959,22 +997,22 @@ namespace exqudens::vulkan {
                 throw std::runtime_error(CALL_INFO() + ": failed to 'device.waitForFences(...)'!");
               }
 
-              std::vector<uint32_t> imageIndices = {UINT32_MAX};
+              std::vector<uint32_t> imageIndices = {};
               {
                 std::pair<vk::Result, uint32_t> pair = swapchain
                     .reference()
                     .acquireNextImage(UINT64_MAX, *imageAvailableSemaphores[currentFrame].reference());
                 result = pair.first;
-                imageIndices[0] = pair.second;
+                imageIndices.emplace_back(pair.second);
               }
               if (vk::Result::eErrorOutOfDateKHR == result) {
-                reCreateSwapChain(width, height);
+                reCreateSwapchain(width, height);
                 return;
               } else if (vk::Result::eSuccess != result && vk::Result::eSuboptimalKHR != result) {
                 throw std::runtime_error("failed to 'swapChain.acquireNextImage(...)'!");
               }
 
-              updateUniformBuffer(currentFrame);
+              updateUniformBuffer();
               device.reference().resetFences({*inFlightFences[currentFrame].reference()});
               graphicsCommandBuffers[currentFrame].reference().reset();
 
@@ -996,7 +1034,7 @@ namespace exqudens::vulkan {
               graphicsCommandBuffers[currentFrame].reference().beginRenderPass(
                   vk::RenderPassBeginInfo()
                       .setRenderPass(*renderPass.reference())
-                      .setFramebuffer(*swapChainFramebuffers[imageIndices[0]].reference())
+                      .setFramebuffer(*swapchainFramebuffers[imageIndices.front()].reference())
                       .setRenderArea(
                           vk::Rect2D()
                               .setOffset(
@@ -1010,13 +1048,11 @@ namespace exqudens::vulkan {
                   vk::SubpassContents::eInline
               );
 
-              // TODO
               graphicsCommandBuffers[currentFrame].reference().bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline.reference());
               graphicsCommandBuffers[currentFrame].reference().bindVertexBuffers(0, {*vertexBuffer.reference()}, {0});
               graphicsCommandBuffers[currentFrame].reference().bindIndexBuffer(*indexBuffer.reference(), 0, vk::IndexType::eUint16);
               graphicsCommandBuffers[currentFrame].reference().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *pipeline.layoutReference(), 0, {*descriptorSets[currentFrame].reference()}, {});
               graphicsCommandBuffers[currentFrame].reference().drawIndexed(indexVector.size(), 1, 0, 0, 0);
-              // TODO
 
               graphicsCommandBuffers[currentFrame].reference().endRenderPass();
               graphicsCommandBuffers[currentFrame].reference().end();
@@ -1026,13 +1062,16 @@ namespace exqudens::vulkan {
               std::vector<vk::Semaphore> signalSemaphores = {*renderFinishedSemaphores[currentFrame].reference()};
               std::vector<vk::CommandBuffer> commandBuffers = {*graphicsCommandBuffers[currentFrame].reference()};
 
-              graphicsQueue.reference().submit({
-                  vk::SubmitInfo()
-                      .setWaitDstStageMask(waitDstStageMask)
-                      .setWaitSemaphores(waitSemaphores)
-                      .setSignalSemaphores(signalSemaphores)
-                      .setCommandBuffers(commandBuffers)
-              });
+              graphicsQueue.reference().submit(
+                  {
+                      vk::SubmitInfo()
+                          .setWaitDstStageMask(waitDstStageMask)
+                          .setWaitSemaphores(waitSemaphores)
+                          .setSignalSemaphores(signalSemaphores)
+                          .setCommandBuffers(commandBuffers)
+                  },
+                  *inFlightFences[currentFrame].reference()
+              );
 
               std::vector<vk::SwapchainKHR> swapchains = {*swapchain.reference()};
 
@@ -1044,7 +1083,7 @@ namespace exqudens::vulkan {
               );
               if (vk::Result::eErrorOutOfDateKHR == result || vk::Result::eSuboptimalKHR == result || resized) {
                 resized = false;
-                reCreateSwapChain(width, height);
+                reCreateSwapchain(width, height);
               } else if (vk::Result::eSuccess != result) {
                 throw std::runtime_error("failed to 'swapChain.acquireNextImage(...)'!");
               }
@@ -1052,27 +1091,37 @@ namespace exqudens::vulkan {
               currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
-            }*/
+            }
           }
 
           void waitIdle() {
-            /*try {
-              device.reference().waitIdle();
-            } catch (...) {
-              std::throw_with_nested(std::runtime_error(CALL_INFO()));
-            }*/
-          }
-
-          void destroy() {
             try {
-              // TODO
+              device.reference().waitIdle();
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
             }
           }
 
-          void updateUniformBuffer(size_t currentFrame) {
-            //
+          void updateUniformBuffer() {
+            try {
+              static auto startTime = std::chrono::high_resolution_clock::now();
+
+              auto currentTime = std::chrono::high_resolution_clock::now();
+              float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+              UniformBufferObject ubo = {};
+              ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+              ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+              ubo.proj = glm::perspective(glm::radians(45.0f), (float) swapchain.createInfo.imageExtent.width / (float) swapchain.createInfo.imageExtent.height, 0.1f, 10.0f);
+              ubo.proj[1][1] *= -1;
+
+              Buffer& buffer = uniformBuffers[currentFrame];
+              void* tmpData = buffer.memoryReference().mapMemory(0, buffer.createInfo.size);
+              std::memcpy(tmpData, &ubo, static_cast<size_t>(buffer.createInfo.size));
+              buffer.memoryReference().unmapMemory();
+            } catch (...) {
+              std::throw_with_nested(std::runtime_error(CALL_INFO()));
+            }
           }
 
       };
@@ -1102,12 +1151,12 @@ namespace exqudens::vulkan {
 
               glfwInit();
               glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-              glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+              //glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
               GLFWwindow* window = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
 
-              //glfwSetWindowUserPointer(window, this);
-              //glfwSetFramebufferSizeCallback(window, frameBufferResizeCallback);
+              glfwSetWindowUserPointer(window, this);
+              glfwSetFramebufferSizeCallback(window, frameBufferResizeCallback);
 
               uint32_t glfwExtensionCount = 0;
               const char** glfwExtensions;
@@ -1144,14 +1193,14 @@ namespace exqudens::vulkan {
             }
           }
 
-          /*static void frameBufferResizeCallback(GLFWwindow* window, int width, int height) {
+          static void frameBufferResizeCallback(GLFWwindow* window, int width, int height) {
             try {
               auto* app = reinterpret_cast<TestUiApplication*>(glfwGetWindowUserPointer(window));
               app->renderer->resized = true;
             } catch (...) {
               std::throw_with_nested(std::runtime_error(CALL_INFO()));
             }
-          }*/
+          }
 
       };
 
