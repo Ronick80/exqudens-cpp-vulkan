@@ -7,20 +7,20 @@
 #include <vulkan/vulkan_raii.hpp>
 
 #include "exqudens/vulkan/Macros.hpp"
-#include "exqudens/vulkan/DescriptorSetLayoutCreateInfo.hpp"
+#include "exqudens/vulkan/SwapchainCreateInfoKHR.hpp"
 
 namespace exqudens::vulkan {
 
-  struct DescriptorSetLayout {
+  struct Swapchain {
 
     class Builder;
 
     static Builder builder();
 
-    DescriptorSetLayoutCreateInfo createInfo;
-    std::shared_ptr<vk::raii::DescriptorSetLayout> value;
+    SwapchainCreateInfoKHR createInfo;
+    std::shared_ptr<vk::raii::SwapchainKHR> value;
 
-    vk::raii::DescriptorSetLayout& reference() {
+    vk::raii::SwapchainKHR& reference() {
       try {
         if (!value) {
           throw std::runtime_error(CALL_INFO() + ": value is not initialized!");
@@ -33,30 +33,30 @@ namespace exqudens::vulkan {
 
   };
 
-  class DescriptorSetLayout::Builder {
+  class Swapchain::Builder {
 
     private:
 
       std::weak_ptr<vk::raii::Device> device;
-      std::optional<DescriptorSetLayoutCreateInfo> createInfo;
+      std::optional<SwapchainCreateInfoKHR> createInfo;
 
     public:
 
-      DescriptorSetLayout::Builder& setDevice(const std::weak_ptr<vk::raii::Device>& val) {
+      Swapchain::Builder& setDevice(const std::weak_ptr<vk::raii::Device>& val) {
         device = val;
         return *this;
       }
 
-      DescriptorSetLayout::Builder& setCreateInfo(const DescriptorSetLayoutCreateInfo& val) {
+      Swapchain::Builder& setCreateInfo(const SwapchainCreateInfoKHR& val) {
         createInfo = val;
         return *this;
       }
 
-      DescriptorSetLayout build() {
+      Swapchain build() {
         try {
-          DescriptorSetLayout target = {};
+          Swapchain target = {};
           target.createInfo = createInfo.value();
-          target.value = std::make_shared<vk::raii::DescriptorSetLayout>(
+          target.value = std::make_shared<vk::raii::SwapchainKHR>(
               *device.lock(),
               target.createInfo
           );
@@ -68,7 +68,7 @@ namespace exqudens::vulkan {
 
   };
 
-  DescriptorSetLayout::Builder DescriptorSetLayout::builder() {
+  Swapchain::Builder Swapchain::builder() {
     return {};
   }
 

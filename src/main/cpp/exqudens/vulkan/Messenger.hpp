@@ -8,6 +8,8 @@
 
 #include <vulkan/vulkan_raii.hpp>
 
+#include "exqudens/vulkan/MessengerCreateInfo.hpp"
+
 namespace exqudens::vulkan {
 
   struct Messenger {
@@ -35,12 +37,18 @@ namespace exqudens::vulkan {
             if (messenger->toStringFunction) {
               formatted = messenger->toStringFunction(severity, type, message);
             }
-            if (messenger->exceptionSeverity.has_value() && severity >= messenger->exceptionSeverity.value()) {
+            if (
+                messenger->exceptionSeverity.has_value()
+                && severity >= messenger->exceptionSeverity.value()
+            ) {
               throw std::runtime_error(formatted);
             }
-            if (messenger->outSeverity.has_value() && severity >= messenger->outSeverity.value()) {
-              if (messenger->out != nullptr) {
-                *messenger->out << formatted << std::endl;
+            if (
+                messenger->outSeverity.has_value()
+                && severity >= messenger->outSeverity.value()
+            ) {
+              if (messenger->value != nullptr) {
+                *messenger->value << formatted << std::endl;
                 return VK_FALSE;
               } else {
                 std::cout << formatted << std::endl;
@@ -52,15 +60,15 @@ namespace exqudens::vulkan {
 
         return VK_FALSE;
       } catch (const std::exception& e) {
-        if (messenger != nullptr && messenger->out != nullptr) {
-          *messenger->out << formatted << std::endl;
+        if (messenger != nullptr && messenger->value != nullptr) {
+          *messenger->value << formatted << std::endl;
         } else {
           std::cout << formatted << std::endl;
         }
         std::throw_with_nested(std::runtime_error(CALL_INFO() + ": " + e.what()));
       } catch (...) {
-        if (messenger != nullptr && messenger->out != nullptr) {
-          *messenger->out << formatted << std::endl;
+        if (messenger != nullptr && messenger->value != nullptr) {
+          *messenger->value << formatted << std::endl;
         } else {
           std::cout << formatted << std::endl;
         }
@@ -68,7 +76,6 @@ namespace exqudens::vulkan {
       }
     }
 
-    unsigned int id;
     std::optional<vk::DebugUtilsMessageSeverityFlagsEXT> exceptionSeverity;
     std::optional<vk::DebugUtilsMessageSeverityFlagsEXT> outSeverity;
     std::function<std::string(
@@ -76,7 +83,18 @@ namespace exqudens::vulkan {
         vk::DebugUtilsMessageTypeFlagsEXT,
         std::string
     )> toStringFunction;
-    std::ostream* out;
+    std::ostream* value;
+
+    Messenger(
+        std::ostream& out,
+        const MessengerCreateInfo& createInfo
+    ):
+        exceptionSeverity(createInfo.exceptionSeverity),
+        outSeverity(createInfo.outSeverity),
+        toStringFunction(createInfo.toStringFunction),
+        value(&out)
+    {
+    }
 
   };
 

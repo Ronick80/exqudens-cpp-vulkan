@@ -115,21 +115,18 @@ if(NOT "" STREQUAL "${NOT_FOUND_PACKAGE_NAMES}")
 endif()
 
 add_library("${PROJECT_NAME}" INTERFACE
-    "src/main/cpp/exqudens/vulkan/Resource.hpp"
-    "src/main/cpp/exqudens/vulkan/MemoryResource.hpp"
+    "src/main/cpp/exqudens/vulkan/all.hpp"
 
-    "src/main/cpp/exqudens/vulkan/ContextCreateInfo.hpp"
-    "src/main/cpp/exqudens/vulkan/Context.hpp"
+    "src/main/cpp/exqudens/vulkan/Macros.hpp"
+    "src/main/cpp/exqudens/vulkan/Utility.hpp"
+
     "src/main/cpp/exqudens/vulkan/InstanceCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/Instance.hpp"
+    "src/main/cpp/exqudens/vulkan/MessengerCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/Messenger.hpp"
-    "src/main/cpp/exqudens/vulkan/DebugUtilsMessenger.hpp"
-    "src/main/cpp/exqudens/vulkan/Surface.hpp"
     "src/main/cpp/exqudens/vulkan/PhysicalDeviceCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/PhysicalDevice.hpp"
     "src/main/cpp/exqudens/vulkan/Device.hpp"
-    "src/main/cpp/exqudens/vulkan/SwapChain.hpp"
-    "src/main/cpp/exqudens/vulkan/Queue.hpp"
     "src/main/cpp/exqudens/vulkan/Image.hpp"
     "src/main/cpp/exqudens/vulkan/ImageView.hpp"
     "src/main/cpp/exqudens/vulkan/Buffer.hpp"
@@ -154,12 +151,12 @@ add_library("${PROJECT_NAME}" INTERFACE
     "src/main/cpp/exqudens/vulkan/DescriptorSet.hpp"
     "src/main/cpp/exqudens/vulkan/FramebufferCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/Framebuffer.hpp"
+    "src/main/cpp/exqudens/vulkan/Queue.hpp"
     "src/main/cpp/exqudens/vulkan/CommandPool.hpp"
     "src/main/cpp/exqudens/vulkan/CommandBuffer.hpp"
-
-    "src/main/cpp/exqudens/vulkan/Macros.hpp"
-    "src/main/cpp/exqudens/vulkan/Utility.hpp"
-    "src/main/cpp/exqudens/vulkan/Environment.hpp"
+    "src/main/cpp/exqudens/vulkan/Surface.hpp"
+    "src/main/cpp/exqudens/vulkan/SwapchainCreateInfoKHR.hpp"
+    "src/main/cpp/exqudens/vulkan/Swapchain.hpp"
 )
 target_include_directories("${PROJECT_NAME}" INTERFACE
     "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/generated/main>"

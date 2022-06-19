@@ -20,9 +20,10 @@ namespace exqudens::vulkan {
     private:
 
       inline static unsigned int currentId = 1;
-      unsigned int id = 0;
 
     public:
+
+      unsigned int id = 0;
 
       MyClassA() {
         std::cout << std::format("{}", CALL_INFO()) << std::endl;
@@ -30,16 +31,30 @@ namespace exqudens::vulkan {
         currentId++;
       }
 
-      MyClassA& setId(const unsigned int& id) {
-        this->id = id;
-        return *this;
-      }
-
-      unsigned int getId() {
-        return id;
-      }
-
       ~MyClassA() {
+        std::cout << std::format("{}: id: '{}'", CALL_INFO(), id) << std::endl;
+      }
+
+  };
+
+  class MyClassB {
+
+    private:
+
+      inline static unsigned int currentId = 1;
+
+    public:
+
+      unsigned int id = 0;
+      std::shared_ptr<MyClassA> value = {};
+
+      MyClassB() {
+        std::cout << std::format("{}", CALL_INFO()) << std::endl;
+        id = currentId;
+        currentId++;
+      }
+
+      ~MyClassB() {
         std::cout << std::format("{}: id: '{}'", CALL_INFO(), id) << std::endl;
       }
 
@@ -51,17 +66,21 @@ namespace exqudens::vulkan {
 
       unsigned int instanceId = 1;
 
-      std::map<unsigned int, std::shared_ptr<MyClassA>> instanceMap = {};
+      std::map<unsigned int, std::shared_ptr<MyClassB>> instanceMap = {};
 
     public:
 
-      MyClassA& createInstance() {
-        auto* instance = new MyClassA();
-        std::cout << "AAA" << std::endl;
-        instance->setId(instanceId++);
-        instanceMap[instance->getId()] = std::shared_ptr<MyClassA>(instance);
-        std::cout << "BBB" << std::endl;
-        return *instanceMap[instance->getId()];
+      MyClassB& createInstance(const unsigned int& id = 0) {
+        auto* instance = new MyClassB();
+        if (id != 0 && instanceMap.contains(id)) {
+          instanceMap.erase(id);
+          instance->id = id;
+        } else {
+          instance->id = instanceId++;
+        }
+        instance->value = std::make_shared<MyClassA>();
+        instanceMap[instance->id] = std::shared_ptr<MyClassB>(instance);
+        return *instanceMap[instance->id];
       }
 
   };
@@ -70,9 +89,13 @@ namespace exqudens::vulkan {
 
     protected:
 
+      std::string previousPath = {};
+
       void SetUp() override {
         try {
           std::cout << std::format("{}", CALL_INFO()) << std::endl;
+          previousPath = TestUtils::getEnvironmentVariable("PATH").value_or("");
+          TestUtils::setEnvironmentVariable("PATH", TestUtils::getExecutableDir());
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }
@@ -81,6 +104,7 @@ namespace exqudens::vulkan {
       void TearDown() override {
         try {
           std::cout << std::format("{}", CALL_INFO()) << std::endl;
+          TestUtils::setEnvironmentVariable("PATH", previousPath);
         } catch (...) {
           std::throw_with_nested(std::runtime_error(CALL_INFO()));
         }
@@ -90,42 +114,21 @@ namespace exqudens::vulkan {
 
   TEST_F(OtherTests, test1) {
     try {
-      GTEST_SKIP() << "Skipping test: '" << __FUNCTION__ << "'";
+      //GTEST_SKIP() << "Skipping test: '" << __FUNCTION__ << "'";
       MyEnvironment environment;
 
-      MyClassA& instance = environment.createInstance();
-      std::cout << "CCC" << std::endl;
+      MyClassB instance1 = environment.createInstance();
+      unsigned int instance1Id = instance1.id;
+      std::cout << std::format("instance1Id: '{}'", instance1Id) << std::endl;
+      std::cout << std::format("instance1.value.id: '{}'", instance1.value->id) << std::endl;
 
-      ASSERT_EQ(1, instance.getId());
-    } catch (const std::exception& e) {
-      FAIL() << TestUtils::toString(e);
-    }
-  }
+      instance1 = {};
+      std::cout << std::format("instance1 cleared") << std::endl;
 
-  TEST_F(OtherTests, test2) {
-    try {
-      GTEST_SKIP() << "Skipping test: '" << __FUNCTION__ << "'";
-      unsigned int index = 1;
-      std::vector<std::string> names = std::vector<std::string>(5);
-      std::generate_n(names.begin(), names.size(), [&index]() { return std::string("aaa: ") + std::to_string(index++); });
-      std::ranges::for_each(names, [](auto && o1) { std::cout << o1 << std::endl; });
-    } catch (const std::exception& e) {
-      FAIL() << TestUtils::toString(e);
-    }
-  }
-
-  TEST_F(OtherTests, test3) {
-    try {
-      //GTEST_SKIP() << "Skipping test: '" << __FUNCTION__ << "'";
-      std::shared_ptr<MyClassA> a;
-      a = std::make_shared<MyClassA>();
-      std::cout << std::format("a.id: '{}'", a->getId()) << std::endl;
-      a.reset();
-      std::cout << std::format("deleted") << std::endl;
-      a = std::make_shared<MyClassA>();
-      std::cout << std::format("a.id: '{}'", a->getId()) << std::endl;
-      a.reset();
-      std::cout << std::format("deleted") << std::endl;
+      instance1 = environment.createInstance(instance1Id);
+      instance1Id = instance1.id;
+      std::cout << std::format("instance1.id: '{}'", instance1.id) << std::endl;
+      std::cout << std::format("instance1.value.id: '{}'", instance1.value->id) << std::endl;
     } catch (const std::exception& e) {
       FAIL() << TestUtils::toString(e);
     }

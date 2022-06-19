@@ -13,7 +13,7 @@ namespace exqudens::vulkan {
     vk::PhysicalDeviceFeatures features;
     std::vector<vk::QueueFlagBits> queueTypes;
     std::optional<vk::SurfaceKHR> surface;
-    float queuePriorities;
+    float queuePriority;
 
     PhysicalDeviceCreateInfo& setEnabledExtensionNames(const std::vector<const char*>& value) {
       enabledExtensionNames = value;
@@ -35,8 +35,8 @@ namespace exqudens::vulkan {
       return *this;
     }
 
-    PhysicalDeviceCreateInfo& setQueuePriorities(const float& value) {
-      queuePriorities = value;
+    PhysicalDeviceCreateInfo& setQueuePriority(const float& value) {
+      queuePriority = value;
       return *this;
     }
 

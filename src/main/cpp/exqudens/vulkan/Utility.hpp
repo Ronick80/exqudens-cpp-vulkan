@@ -12,8 +12,7 @@
 #include <vulkan/vulkan.hpp>
 
 #include "exqudens/vulkan/Macros.hpp"
-#include "exqudens/vulkan/PhysicalDevice.hpp"
-#include "exqudens/vulkan/Surface.hpp"
+#include "exqudens/vulkan/SwapchainCreateInfoKHR.hpp"
 
 namespace exqudens::vulkan {
 
@@ -21,7 +20,7 @@ namespace exqudens::vulkan {
 
     public:
 
-      virtual void setEnvironmentVariable(const std::string& name, const std::string& value) {
+      static void setEnvironmentVariable(const std::string& name, const std::string& value) {
         try {
 #if defined(_WINDOWS)
           _putenv_s(name.c_str(), value.c_str());
@@ -31,7 +30,7 @@ namespace exqudens::vulkan {
         }
       }
 
-      virtual std::optional<std::string> getEnvironmentVariable(const std::string& name) {
+      static std::optional<std::string> getEnvironmentVariable(const std::string& name) {
         try {
           std::optional<std::string> value;
 #if defined(_WINDOWS)
@@ -51,7 +50,7 @@ namespace exqudens::vulkan {
         }
       }
 
-      virtual std::string toString(
+      static std::string toString(
           vk::DebugUtilsMessageSeverityFlagsEXT severity,
           vk::DebugUtilsMessageTypeFlagsEXT type,
           const std::string& message
@@ -63,7 +62,7 @@ namespace exqudens::vulkan {
         }
       }
 
-      virtual std::vector<char> readFile(const std::string& path) {
+      static std::vector<char> readFile(const std::string& path) {
         try {
           std::ifstream file(path, std::ios::ate | std::ios::binary);
 
@@ -85,11 +84,13 @@ namespace exqudens::vulkan {
         }
       }
 
-      virtual vk::SwapchainCreateInfoKHR swapChainCreateInfo(
-          PhysicalDevice& physicalDevice,
-          Surface& surface,
-          uint32_t& width,
-          uint32_t& height
+      static SwapchainCreateInfoKHR swapChainCreateInfo(
+          vk::raii::PhysicalDevice& physicalDevice,
+          vk::raii::SurfaceKHR& surface,
+          const uint32_t& width,
+          const uint32_t& height,
+          const uint32_t& graphicsQueueFamilyIndex,
+          const uint32_t& presentQueueFamilyIndex
       ) {
         try {
           std::optional<vk::SurfaceFormatKHR> surfaceFormat;
@@ -98,8 +99,10 @@ namespace exqudens::vulkan {
           std::optional<vk::Extent2D> surfaceExtent;
           std::optional<vk::SurfaceTransformFlagBitsKHR> surfaceTransform;
           std::optional<vk::CompositeAlphaFlagBitsKHR> surfaceCompositeAlpha;
+          std::optional<vk::SharingMode> imageSharingMode;
+          std::vector<uint32_t> queueFamilyIndices;
 
-          std::vector<vk::SurfaceFormatKHR> surfaceFormats = physicalDevice.value->getSurfaceFormatsKHR(*(*surface.value));
+          std::vector<vk::SurfaceFormatKHR> surfaceFormats = physicalDevice.getSurfaceFormatsKHR(*surface);
           if (surfaceFormats.size() == 1 && surfaceFormats.front() == vk::Format::eUndefined) {
             surfaceFormat = surfaceFormats.front();
           } else {
@@ -111,7 +114,7 @@ namespace exqudens::vulkan {
             }
           }
 
-          std::vector<vk::PresentModeKHR> surfacePresentModes = physicalDevice.value->getSurfacePresentModesKHR(*(*surface.value));
+          std::vector<vk::PresentModeKHR> surfacePresentModes = physicalDevice.getSurfacePresentModesKHR(*surface);
           surfacePresentMode = vk::PresentModeKHR::eFifo;
           for (const vk::PresentModeKHR& p : surfacePresentModes) {
             if (vk::PresentModeKHR::eMailbox == p) {
@@ -120,7 +123,7 @@ namespace exqudens::vulkan {
             }
           }
 
-          surfaceCapabilities = physicalDevice.value->getSurfaceCapabilitiesKHR(*(*surface.value));
+          surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface);
 
           if (surfaceCapabilities.value().currentExtent.width == std::numeric_limits<uint32_t>::max()) {
             surfaceExtent = vk::Extent2D()
@@ -128,6 +131,13 @@ namespace exqudens::vulkan {
                 .setHeight(std::clamp(height, surfaceCapabilities.value().minImageExtent.height, surfaceCapabilities.value().maxImageExtent.height));
           } else {
             surfaceExtent = surfaceCapabilities.value().currentExtent;
+          }
+
+          if (graphicsQueueFamilyIndex != presentQueueFamilyIndex) {
+            imageSharingMode = vk::SharingMode::eConcurrent;
+            queueFamilyIndices = {graphicsQueueFamilyIndex, presentQueueFamilyIndex};
+          } else {
+            imageSharingMode = vk::SharingMode::eExclusive;
           }
 
           if (surfaceCapabilities.value().supportedTransforms & vk::SurfaceTransformFlagBitsKHR::eIdentity) {
@@ -146,17 +156,17 @@ namespace exqudens::vulkan {
             surfaceCompositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
           }
 
-          return vk::SwapchainCreateInfoKHR()
+          return SwapchainCreateInfoKHR()
               .setFlags({})
-              .setSurface(*(*surface.value))
+              .setSurface(*surface)
               .setMinImageCount(surfaceCapabilities.value().minImageCount)
               .setImageFormat(surfaceFormat.value().format)
               .setImageColorSpace(surfaceFormat.value().colorSpace)
               .setImageExtent(surfaceExtent.value())
               .setImageArrayLayers(1)
               .setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
-              .setImageSharingMode(vk::SharingMode::eExclusive)
-              .setQueueFamilyIndices({})
+              .setImageSharingMode(imageSharingMode.value())
+              .setQueueFamilyIndices(queueFamilyIndices)
               .setPreTransform(surfaceTransform.value())
               .setCompositeAlpha(surfaceCompositeAlpha.value())
               .setPresentMode(surfacePresentMode.value())
@@ -167,15 +177,15 @@ namespace exqudens::vulkan {
         }
       }
 
-      virtual vk::Format imageDepthFormat(
-          PhysicalDevice& physicalDevice,
+      static vk::Format imageDepthFormat(
+          vk::raii::PhysicalDevice& physicalDevice,
           const std::vector<vk::Format>& formats,
           const vk::ImageTiling& tiling,
           const vk::FormatFeatureFlags& features
       ) {
         try {
           for (const vk::Format& format : formats) {
-            vk::FormatProperties properties = physicalDevice.value->getFormatProperties(format);
+            vk::FormatProperties properties = physicalDevice.getFormatProperties(format);
             if (vk::ImageTiling::eLinear ==  tiling && (properties.linearTilingFeatures & features) == features) {
               return format;
             } else if (vk::ImageTiling::eOptimal == tiling && (properties.optimalTilingFeatures & features) == features) {
@@ -188,8 +198,8 @@ namespace exqudens::vulkan {
         }
       }
 
-      virtual vk::Format imageDepthFormat(
-          PhysicalDevice& physicalDevice
+      static vk::Format imageDepthFormat(
+          vk::raii::PhysicalDevice& physicalDevice
       ) {
         try {
           return imageDepthFormat(
@@ -203,13 +213,13 @@ namespace exqudens::vulkan {
         }
       }
 
-      virtual uint32_t memoryTypeIndex(
-          PhysicalDevice& physicalDevice,
+      static uint32_t memoryTypeIndex(
+          vk::raii::PhysicalDevice& physicalDevice,
           const uint32_t& typeBits,
           const vk::MemoryPropertyFlags& requirementsMask
       ) {
         try {
-          vk::PhysicalDeviceMemoryProperties memoryProperties = physicalDevice.value->getMemoryProperties();
+          vk::PhysicalDeviceMemoryProperties memoryProperties = physicalDevice.getMemoryProperties();
           for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++) {
             if (
                 (typeBits & 1)
