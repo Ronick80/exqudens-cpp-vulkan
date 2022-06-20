@@ -513,36 +513,7 @@ namespace exqudens::vulkan {
 
               transferCommandBuffer.reference().begin({});
 
-              transferCommandBuffer.reference().pipelineBarrier(
-                  vk::PipelineStageFlagBits::eTopOfPipe,
-                  vk::PipelineStageFlagBits::eEarlyFragmentTests,
-                  vk::DependencyFlags(0),
-                  {},
-                  {},
-                  {
-                      vk::ImageMemoryBarrier()
-                          .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-                          .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-                          .setImage(*depthImage.reference())
-                          .setOldLayout(vk::ImageLayout::eUndefined)
-                          .setNewLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
-                          .setSrcAccessMask(vk::AccessFlagBits::eNoneKHR)
-                          .setDstAccessMask(vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite)
-                          .setSubresourceRange(
-                              vk::ImageSubresourceRange()
-                                  .setAspectMask(
-                                      depthImage.createInfo.format == vk::Format::eD32SfloatS8Uint
-                                      || depthImage.createInfo.format == vk::Format::eD24UnormS8Uint
-                                      ? vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil
-                                      : vk::ImageAspectFlagBits::eDepth
-                                  )
-                                  .setBaseMipLevel(0)
-                                  .setLevelCount(1)
-                                  .setBaseArrayLayer(0)
-                                  .setLayerCount(1)
-                          )
-                  }
-              );
+              insertDepthImagePipelineBarrier(transferCommandBuffer.reference());
 
               transferCommandBuffer.reference().pipelineBarrier(
                   vk::PipelineStageFlagBits::eTopOfPipe,
@@ -919,27 +890,9 @@ namespace exqudens::vulkan {
             }
           }
 
-          void reCreateSwapchain(int width, int height) {
+          void insertDepthImagePipelineBarrier(vk::raii::CommandBuffer& commandBuffer) {
             try {
-              std::cout << std::format("{} ... call", CALL_INFO()) << std::endl;
-
-              device.reference().waitIdle();
-
-              std::ranges::for_each(swapchainFramebuffers, [](auto& o1) {o1.value.reset();});
-              swapchainFramebuffers.clear();
-              pipeline.value.reset();
-              renderPass.value.reset();
-              depthImageView.value.reset();
-              depthImage.value.reset();
-              std::ranges::for_each(swapchainImageViews, [](auto& o1) {o1.value.reset();});
-              swapchainImageViews.clear();
-              swapchain.value.reset();
-
-              createSwapchain(width, height);
-
-              transferCommandBuffer.reference().begin({});
-
-              transferCommandBuffer.reference().pipelineBarrier(
+              commandBuffer.pipelineBarrier(
                   vk::PipelineStageFlagBits::eTopOfPipe,
                   vk::PipelineStageFlagBits::eEarlyFragmentTests,
                   vk::DependencyFlags(0),
@@ -969,6 +922,32 @@ namespace exqudens::vulkan {
                           )
                   }
               );
+            } catch (...) {
+              std::throw_with_nested(std::runtime_error(CALL_INFO()));
+            }
+          }
+
+          void reCreateSwapchain(int width, int height) {
+            try {
+              std::cout << std::format("{} ... call", CALL_INFO()) << std::endl;
+
+              device.reference().waitIdle();
+
+              std::ranges::for_each(swapchainFramebuffers, [](auto& o1) {o1.value.reset();});
+              swapchainFramebuffers.clear();
+              pipeline.value.reset();
+              renderPass.value.reset();
+              depthImageView.value.reset();
+              depthImage.value.reset();
+              std::ranges::for_each(swapchainImageViews, [](auto& o1) {o1.value.reset();});
+              swapchainImageViews.clear();
+              swapchain.value.reset();
+
+              createSwapchain(width, height);
+
+              transferCommandBuffer.reference().begin({});
+
+              insertDepthImagePipelineBarrier(transferCommandBuffer.reference());
 
               transferCommandBuffer.reference().end();
               transferQueue.reference().submit(
