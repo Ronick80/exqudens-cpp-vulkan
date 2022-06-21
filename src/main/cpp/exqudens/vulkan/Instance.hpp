@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <optional>
 #include <memory>
 #include <stdexcept>
@@ -8,7 +9,6 @@
 
 #include "exqudens/vulkan/Macros.hpp"
 #include "exqudens/vulkan/Utility.hpp"
-#include "exqudens/vulkan/InstanceCreateInfo.hpp"
 #include "exqudens/vulkan/MessengerCreateInfo.hpp"
 #include "exqudens/vulkan/Messenger.hpp"
 
@@ -21,7 +21,10 @@ namespace exqudens::vulkan {
     static Builder builder();
 
     std::shared_ptr<vk::raii::Context> context;
-    InstanceCreateInfo createInfo;
+    std::vector<const char*> enabledLayerNames;
+    std::vector<const char*> enabledExtensionNames;
+    vk::ApplicationInfo applicationInfo;
+    vk::InstanceCreateInfo createInfo;
     std::shared_ptr<vk::raii::Instance> value;
     MessengerCreateInfo messengerCreateInfo;
     std::shared_ptr<Messenger> messenger;
@@ -78,14 +81,52 @@ namespace exqudens::vulkan {
 
     private:
 
-      std::optional<InstanceCreateInfo> createInfo;
+      std::vector<const char*> enabledLayerNames;
+      std::vector<const char*> enabledExtensionNames;
+      std::optional<vk::ApplicationInfo> applicationInfo;
+      std::optional<vk::InstanceCreateInfo> createInfo;
       std::optional<MessengerCreateInfo> messengerCreateInfo;
       std::optional<vk::DebugUtilsMessengerCreateInfoEXT> debugUtilsMessengerCreateInfo;
       std::ostream* out;
 
     public:
 
-      Instance::Builder& setCreateInfo(const InstanceCreateInfo& val) {
+      Instance::Builder& addEnabledLayerName(const char* val) {
+        enabledLayerNames.emplace_back(val);
+        return *this;
+      }
+
+      Instance::Builder& addEnabledLayerName(const std::string& val) {
+        enabledLayerNames.emplace_back(val.c_str());
+        return *this;
+      }
+
+      Instance::Builder& setEnabledLayerNames(const std::vector<const char*>& val) {
+        enabledLayerNames = val;
+        return *this;
+      }
+
+      Instance::Builder& addEnabledExtensionName(const char* val) {
+        enabledExtensionNames.emplace_back(val);
+        return *this;
+      }
+
+      Instance::Builder& addEnabledExtensionName(const std::string& val) {
+        enabledExtensionNames.emplace_back(val.c_str());
+        return *this;
+      }
+
+      Instance::Builder& setEnabledExtensionNames(const std::vector<const char*>& val) {
+        enabledExtensionNames = val;
+        return *this;
+      }
+
+      Instance::Builder& setApplicationInfo(const vk::ApplicationInfo& val) {
+        applicationInfo = val;
+        return *this;
+      }
+
+      Instance::Builder& setCreateInfo(const vk::InstanceCreateInfo& val) {
         createInfo = val;
         return *this;
       }
@@ -109,7 +150,13 @@ namespace exqudens::vulkan {
         try {
           Instance target = {};
           target.context = std::make_shared<vk::raii::Context>();
-          target.createInfo = createInfo.value();
+          target.enabledLayerNames = enabledLayerNames;
+          target.enabledExtensionNames = enabledExtensionNames;
+          target.applicationInfo = applicationInfo.value();
+          target.createInfo = createInfo.value_or(vk::InstanceCreateInfo());
+          target.createInfo.setPEnabledLayerNames(target.enabledLayerNames);
+          target.createInfo.setPEnabledExtensionNames(target.enabledExtensionNames);
+          target.createInfo.setPApplicationInfo(&target.applicationInfo);
           target.value = std::make_shared<vk::raii::Instance>(
               target.contextReference(),
               target.createInfo

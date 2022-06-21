@@ -120,11 +120,9 @@ add_library("${PROJECT_NAME}" INTERFACE
     "src/main/cpp/exqudens/vulkan/Macros.hpp"
     "src/main/cpp/exqudens/vulkan/Utility.hpp"
 
-    "src/main/cpp/exqudens/vulkan/InstanceCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/Instance.hpp"
     "src/main/cpp/exqudens/vulkan/MessengerCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/Messenger.hpp"
-    "src/main/cpp/exqudens/vulkan/PhysicalDeviceCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/PhysicalDevice.hpp"
     "src/main/cpp/exqudens/vulkan/Device.hpp"
     "src/main/cpp/exqudens/vulkan/Image.hpp"

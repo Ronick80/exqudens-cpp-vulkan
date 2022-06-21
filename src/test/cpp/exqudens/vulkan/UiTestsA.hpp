@@ -125,24 +125,20 @@ namespace exqudens::vulkan {
               enabledExtensionNames.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
               instance = Instance::builder()
-                  .setCreateInfo(
-                      InstanceCreateInfo()
-                          .setEnabledLayerNames({"VK_LAYER_KHRONOS_validation"})
-                          .setEnabledExtensionNames(enabledExtensionNames)
-                          .setApplicationInfo(
-                              vk::ApplicationInfo()
-                                  .setPApplicationName("Exqudens Application")
-                                  .setApplicationVersion(VK_MAKE_VERSION(1, 0, 0))
-                                  .setPEngineName("Exqudens Engine")
-                                  .setEngineVersion(VK_MAKE_VERSION(1, 0, 0))
-                                  .setApiVersion(VK_API_VERSION_1_0)
-                          )
+                  .addEnabledLayerName("VK_LAYER_KHRONOS_validation")
+                  .setEnabledExtensionNames(enabledExtensionNames)
+                  .setApplicationInfo(
+                      vk::ApplicationInfo()
+                          .setPApplicationName("Exqudens Application")
+                          .setApplicationVersion(VK_MAKE_VERSION(1, 0, 0))
+                          .setPEngineName("Exqudens Engine")
+                          .setEngineVersion(VK_MAKE_VERSION(1, 0, 0))
+                          .setApiVersion(VK_API_VERSION_1_0)
                   )
                   .setMessengerCreateInfo(
                       MessengerCreateInfo()
                           .setExceptionSeverity(vk::DebugUtilsMessageSeverityFlagBitsEXT::eError)
                           .setOutSeverity(vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose)
-                          .setOutSeverity(vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning)
                           .setToStringFunction(&Utility::toString)
                   )
                   .setDebugUtilsMessengerCreateInfo(
@@ -169,14 +165,13 @@ namespace exqudens::vulkan {
 
               physicalDevice = PhysicalDevice::builder()
                   .setInstance(instance.value)
-                  .setCreateInfo(
-                      PhysicalDeviceCreateInfo()
-                          .setEnabledExtensionNames({VK_KHR_SWAPCHAIN_EXTENSION_NAME})
-                          .setFeatures(vk::PhysicalDeviceFeatures().setSamplerAnisotropy(true))
-                          .setQueueTypes({vk::QueueFlagBits::eCompute, vk::QueueFlagBits::eTransfer, vk::QueueFlagBits::eGraphics})
-                          .setSurface(*surface.reference())
-                          .setQueuePriority(1)
-                  )
+                  .setSurface(surface.value)
+                  .addEnabledExtensionName(VK_KHR_SWAPCHAIN_EXTENSION_NAME)
+                  .setFeatures(vk::PhysicalDeviceFeatures().setSamplerAnisotropy(true))
+                  .addQueueType(vk::QueueFlagBits::eCompute)
+                  .addQueueType(vk::QueueFlagBits::eTransfer)
+                  .addQueueType(vk::QueueFlagBits::eGraphics)
+                  .setQueuePriority(1.0f)
               .build();
               std::cout << std::format("physicalDevice: '{}'", (bool) physicalDevice.value) << std::endl;
 
@@ -185,9 +180,9 @@ namespace exqudens::vulkan {
                   .setCreateInfo(
                       vk::DeviceCreateInfo()
                           .setQueueCreateInfos(physicalDevice.uniqueQueueCreateInfos)
-                          .setPEnabledFeatures(&physicalDevice.createInfo.features)
-                          .setPEnabledExtensionNames(physicalDevice.createInfo.enabledExtensionNames)
-                          .setPEnabledLayerNames(instance.createInfo.enabledLayerNames)
+                          .setPEnabledFeatures(&physicalDevice.features)
+                          .setPEnabledExtensionNames(physicalDevice.enabledExtensionNames)
+                          .setPEnabledLayerNames(instance.enabledLayerNames)
                   )
               .build();
               std::cout << std::format("device: '{}'", (bool) device.value) << std::endl;
@@ -417,8 +412,8 @@ namespace exqudens::vulkan {
                           .setBorderColor(vk::BorderColor::eIntOpaqueBlack)
                           .setUnnormalizedCoordinates(false)
                           .setCompareEnable(false)
-                          .setAnisotropyEnable(physicalDevice.createInfo.features.samplerAnisotropy)
-                          .setMaxAnisotropy(physicalDevice.createInfo.features.samplerAnisotropy ? physicalDevice.reference().getProperties().limits.maxSamplerAnisotropy : 0)
+                          .setAnisotropyEnable(physicalDevice.features.samplerAnisotropy)
+                          .setMaxAnisotropy(physicalDevice.features.samplerAnisotropy ? physicalDevice.reference().getProperties().limits.maxSamplerAnisotropy : 0)
                   )
               .build();
               std::cout << std::format("sampler: '{}'", (bool) sampler.value) << std::endl;
