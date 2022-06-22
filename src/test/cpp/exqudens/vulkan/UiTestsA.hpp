@@ -715,53 +715,52 @@ namespace exqudens::vulkan {
               std::cout << std::format("depthImageView: '{}'", (bool) depthImageView.value) << std::endl;
 
               renderPass = RenderPass::builder()
-                  .setCreateInfo(
-                      RenderPassCreateInfo()
-                          .setAttachments({
-                              vk::AttachmentDescription()
-                                  .setFormat(swapchain.createInfo.imageFormat)
-                                  .setSamples(vk::SampleCountFlagBits::e1)
-                                  .setLoadOp(vk::AttachmentLoadOp::eClear)
-                                  .setStencilLoadOp(vk::AttachmentLoadOp::eClear)
-                                  .setStoreOp(vk::AttachmentStoreOp::eDontCare)
-                                  .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
-                                  .setInitialLayout(vk::ImageLayout::eUndefined)
-                                  .setFinalLayout(vk::ImageLayout::ePresentSrcKHR),
-                              vk::AttachmentDescription()
-                                  .setFormat(depthImage.createInfo.format)
-                                  .setSamples(vk::SampleCountFlagBits::e1)
-                                  .setLoadOp(vk::AttachmentLoadOp::eClear)
-                                  .setStencilLoadOp(vk::AttachmentLoadOp::eClear)
-                                  .setStoreOp(vk::AttachmentStoreOp::eDontCare)
-                                  .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
-                                  .setInitialLayout(vk::ImageLayout::eUndefined)
-                                  .setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
-                          })
-                          .setSubpasses({
-                              SubpassDescription()
-                                  .setColorAttachments({
-                                      vk::AttachmentReference()
-                                          .setAttachment(0)
-                                          .setLayout(vk::ImageLayout::eColorAttachmentOptimal)
-                                  })
-                                  .setDepthStencilAttachment({
-                                      vk::AttachmentReference()
-                                          .setAttachment(1)
-                                          .setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
-                                  })
-                                  .setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
-                          })
-                          .setDependencies({
-                              vk::SubpassDependency()
-                                  .setSrcSubpass(VK_SUBPASS_EXTERNAL)
-                                  .setDstSubpass(0)
-                                  .setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests)
-                                  .setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests)
-                                  .setSrcAccessMask(vk::AccessFlagBits::eNoneKHR)
-                                  .setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite)
-                          })
-                  )
                   .setDevice(device.value)
+                  .addAttachment(
+                      vk::AttachmentDescription()
+                          .setFormat(swapchain.createInfo.imageFormat)
+                          .setSamples(vk::SampleCountFlagBits::e1)
+                          .setLoadOp(vk::AttachmentLoadOp::eClear)
+                          .setStencilLoadOp(vk::AttachmentLoadOp::eClear)
+                          .setStoreOp(vk::AttachmentStoreOp::eDontCare)
+                          .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+                          .setInitialLayout(vk::ImageLayout::eUndefined)
+                          .setFinalLayout(vk::ImageLayout::ePresentSrcKHR)
+                  )
+                  .addAttachment(
+                      vk::AttachmentDescription()
+                          .setFormat(depthImage.createInfo.format)
+                          .setSamples(vk::SampleCountFlagBits::e1)
+                          .setLoadOp(vk::AttachmentLoadOp::eClear)
+                          .setStencilLoadOp(vk::AttachmentLoadOp::eClear)
+                          .setStoreOp(vk::AttachmentStoreOp::eDontCare)
+                          .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+                          .setInitialLayout(vk::ImageLayout::eUndefined)
+                          .setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
+                  )
+                  .addSubpass(
+                      SubpassDescription()
+                          .setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
+                          .addColorAttachment(
+                              vk::AttachmentReference()
+                                  .setAttachment(0)
+                                  .setLayout(vk::ImageLayout::eColorAttachmentOptimal)
+                          )
+                          .setDepthStencilAttachment(
+                              vk::AttachmentReference()
+                                  .setAttachment(1)
+                                  .setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
+                          )
+                  )
+                  .addDependency(
+                      vk::SubpassDependency()
+                          .setSrcSubpass(VK_SUBPASS_EXTERNAL)
+                          .setDstSubpass(0)
+                          .setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests)
+                          .setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests)
+                          .setSrcAccessMask(vk::AccessFlagBits::eNoneKHR)
+                          .setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite)
+                  )
               .build();
               std::cout << std::format("renderPass: '{}'", (bool) renderPass.value) << std::endl;
 
