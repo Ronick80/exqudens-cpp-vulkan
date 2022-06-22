@@ -7,7 +7,6 @@
 #include <vulkan/vulkan_raii.hpp>
 
 #include "exqudens/vulkan/Macros.hpp"
-#include "exqudens/vulkan/DescriptorSetLayoutCreateInfo.hpp"
 
 namespace exqudens::vulkan {
 
@@ -17,7 +16,8 @@ namespace exqudens::vulkan {
 
     static Builder builder();
 
-    DescriptorSetLayoutCreateInfo createInfo;
+    std::vector<vk::DescriptorSetLayoutBinding> bindings;
+    vk::DescriptorSetLayoutCreateInfo createInfo;
     std::shared_ptr<vk::raii::DescriptorSetLayout> value;
 
     vk::raii::DescriptorSetLayout& reference() {
@@ -38,7 +38,8 @@ namespace exqudens::vulkan {
     private:
 
       std::weak_ptr<vk::raii::Device> device;
-      std::optional<DescriptorSetLayoutCreateInfo> createInfo;
+      std::vector<vk::DescriptorSetLayoutBinding> bindings;
+      std::optional<vk::DescriptorSetLayoutCreateInfo> createInfo;
 
     public:
 
@@ -47,7 +48,17 @@ namespace exqudens::vulkan {
         return *this;
       }
 
-      DescriptorSetLayout::Builder& setCreateInfo(const DescriptorSetLayoutCreateInfo& val) {
+      DescriptorSetLayout::Builder& addBinding(const vk::DescriptorSetLayoutBinding& val) {
+        bindings.emplace_back(val);
+        return *this;
+      }
+
+      DescriptorSetLayout::Builder& setBindings(const std::vector<vk::DescriptorSetLayoutBinding>& val) {
+        bindings = val;
+        return *this;
+      }
+
+      DescriptorSetLayout::Builder& setCreateInfo(const vk::DescriptorSetLayoutCreateInfo& val) {
         createInfo = val;
         return *this;
       }
@@ -55,7 +66,9 @@ namespace exqudens::vulkan {
       DescriptorSetLayout build() {
         try {
           DescriptorSetLayout target = {};
-          target.createInfo = createInfo.value();
+          target.bindings = bindings;
+          target.createInfo = createInfo.value_or(vk::DescriptorSetLayoutCreateInfo());
+          target.createInfo.setBindings(target.bindings);
           target.value = std::make_shared<vk::raii::DescriptorSetLayout>(
               *device.lock(),
               target.createInfo

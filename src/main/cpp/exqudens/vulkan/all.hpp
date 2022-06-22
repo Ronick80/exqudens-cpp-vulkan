@@ -17,7 +17,6 @@
 #include "exqudens/vulkan/SubpassDescription.hpp"
 #include "exqudens/vulkan/RenderPassCreateInfo.hpp"
 #include "exqudens/vulkan/RenderPass.hpp"
-#include "exqudens/vulkan/DescriptorSetLayoutCreateInfo.hpp"
 #include "exqudens/vulkan/DescriptorSetLayout.hpp"
 #include "exqudens/vulkan/PipelineLayoutCreateInfo.hpp"
 #include "exqudens/vulkan/PipelineVertexInputStateCreateInfo.hpp"

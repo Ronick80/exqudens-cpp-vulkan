@@ -248,20 +248,19 @@ namespace exqudens::vulkan {
 
               descriptorSetLayout = DescriptorSetLayout::builder()
                   .setDevice(device.value)
-                  .setCreateInfo(
-                      DescriptorSetLayoutCreateInfo()
-                          .setBindings({
-                              vk::DescriptorSetLayoutBinding()
-                                  .setBinding(0)
-                                  .setDescriptorType(vk::DescriptorType::eUniformBuffer)
-                                  .setDescriptorCount(1)
-                                  .setStageFlags(vk::ShaderStageFlagBits::eVertex),
-                              vk::DescriptorSetLayoutBinding()
-                                  .setBinding(1)
-                                  .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
-                                  .setDescriptorCount(1)
-                                  .setStageFlags(vk::ShaderStageFlagBits::eFragment)
-                          })
+                  .addBinding(
+                      vk::DescriptorSetLayoutBinding()
+                          .setBinding(0)
+                          .setDescriptorType(vk::DescriptorType::eUniformBuffer)
+                          .setDescriptorCount(1)
+                          .setStageFlags(vk::ShaderStageFlagBits::eVertex)
+                  )
+                  .addBinding(
+                      vk::DescriptorSetLayoutBinding()
+                          .setBinding(1)
+                          .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
+                          .setDescriptorCount(1)
+                          .setStageFlags(vk::ShaderStageFlagBits::eFragment)
                   )
               .build();
               std::cout << std::format("descriptorSetLayout: '{}'", (bool) descriptorSetLayout.value) << std::endl;
