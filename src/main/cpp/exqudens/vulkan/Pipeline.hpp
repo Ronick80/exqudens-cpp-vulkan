@@ -140,6 +140,11 @@ namespace exqudens::vulkan {
         return *this;
       }
 
+      Pipeline::Builder& addPath(const std::string& val) {
+        paths.emplace_back(val);
+        return *this;
+      }
+
       Pipeline::Builder& setPaths(const std::vector<std::string>& val) {
         paths = val;
         return *this;

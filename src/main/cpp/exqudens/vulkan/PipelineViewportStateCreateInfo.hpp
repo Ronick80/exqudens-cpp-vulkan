@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include <vulkan/vulkan_structs.hpp>
+#include <vulkan/vulkan_raii.hpp>
 
 namespace exqudens::vulkan {
 

@@ -768,10 +768,8 @@ namespace exqudens::vulkan {
 
               pipeline = Pipeline::builder()
                   .setDevice(device.value)
-                  .setPaths({
-                      "resources/shader/shader-4.vert.spv",
-                      "resources/shader/shader-4.frag.spv"
-                  })
+                  .addPath("resources/shader/shader-4.vert.spv")
+                  .addPath("resources/shader/shader-4.frag.spv")
                   .addSetLayout(*descriptorSetLayout.reference())
                   .setGraphicsCreateInfo(
                       GraphicsPipelineCreateInfo()

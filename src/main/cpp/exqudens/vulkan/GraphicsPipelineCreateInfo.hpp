@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <optional>
 
-#include <vulkan/vulkan_structs.hpp>
+#include <vulkan/vulkan_raii.hpp>
 
 #include "exqudens/vulkan/PipelineVertexInputStateCreateInfo.hpp"
 #include "exqudens/vulkan/PipelineViewportStateCreateInfo.hpp"
