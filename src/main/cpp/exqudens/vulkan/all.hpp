@@ -24,7 +24,6 @@
 #include "exqudens/vulkan/GraphicsPipelineCreateInfo.hpp"
 #include "exqudens/vulkan/Pipeline.hpp"
 #include "exqudens/vulkan/DescriptorPool.hpp"
-#include "exqudens/vulkan/DescriptorSetAllocateInfo.hpp"
 #include "exqudens/vulkan/WriteDescriptorSet.hpp"
 #include "exqudens/vulkan/DescriptorSet.hpp"
 #include "exqudens/vulkan/FramebufferCreateInfo.hpp"

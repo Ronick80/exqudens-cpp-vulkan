@@ -8,7 +8,6 @@
 #include <vulkan/vulkan_raii.hpp>
 
 #include "exqudens/vulkan/Macros.hpp"
-#include "exqudens/vulkan/DescriptorSetAllocateInfo.hpp"
 #include "exqudens/vulkan/WriteDescriptorSet.hpp"
 
 namespace exqudens::vulkan {
@@ -19,7 +18,8 @@ namespace exqudens::vulkan {
 
     static Builder builder();
 
-    DescriptorSetAllocateInfo createInfo;
+    std::vector<vk::DescriptorSetLayout> setLayouts;
+    vk::DescriptorSetAllocateInfo createInfo;
     std::vector<WriteDescriptorSet> writes;
     std::shared_ptr<vk::raii::DescriptorSet> value;
 
@@ -41,7 +41,8 @@ namespace exqudens::vulkan {
     private:
 
       std::weak_ptr<vk::raii::Device> device;
-      std::optional<DescriptorSetAllocateInfo> createInfo;
+      std::vector<vk::DescriptorSetLayout> setLayouts;
+      std::optional<vk::DescriptorSetAllocateInfo> createInfo;
       std::vector<WriteDescriptorSet> writes;
 
     public:
@@ -51,7 +52,17 @@ namespace exqudens::vulkan {
         return *this;
       }
 
-      DescriptorSet::Builder& setCreateInfo(const DescriptorSetAllocateInfo& val) {
+      DescriptorSet::Builder& addSetLayout(const vk::DescriptorSetLayout& val) {
+        setLayouts.emplace_back(val);
+        return *this;
+      }
+
+      DescriptorSet::Builder& setSetLayouts(const std::vector<vk::DescriptorSetLayout>& val) {
+        setLayouts = val;
+        return *this;
+      }
+
+      DescriptorSet::Builder& setCreateInfo(const vk::DescriptorSetAllocateInfo& val) {
         createInfo = val;
         return *this;
       }
@@ -64,7 +75,9 @@ namespace exqudens::vulkan {
       DescriptorSet build() {
         try {
           DescriptorSet target = {};
+          target.setLayouts = setLayouts;
           target.createInfo = createInfo.value();
+          target.createInfo.setSetLayouts(target.setLayouts);
           vk::raii::DescriptorSets values = vk::raii::DescriptorSets(
               *device.lock(),
               target.createInfo

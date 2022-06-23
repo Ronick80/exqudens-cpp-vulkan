@@ -461,10 +461,10 @@ namespace exqudens::vulkan {
               for (size_t i = 0 ; i < descriptorSets.size(); i++) {
                 descriptorSets[i] = DescriptorSet::builder()
                     .setDevice(device.value)
+                    .addSetLayout(*descriptorSetLayout.reference())
                     .setCreateInfo(
-                        DescriptorSetAllocateInfo()
+                        vk::DescriptorSetAllocateInfo()
                             .setDescriptorPool(*descriptorPool.reference())
-                            .setSetLayouts({*descriptorSetLayout.reference()})
                             .setDescriptorSetCount(1)
                     )
                     .setWrites({
