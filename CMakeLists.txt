@@ -140,7 +140,6 @@ add_library("${PROJECT_NAME}" INTERFACE
     "src/main/cpp/exqudens/vulkan/PipelineColorBlendStateCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/GraphicsPipelineCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/Pipeline.hpp"
-    "src/main/cpp/exqudens/vulkan/DescriptorPoolCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/DescriptorPool.hpp"
     "src/main/cpp/exqudens/vulkan/DescriptorSetAllocateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/WriteDescriptorSet.hpp"

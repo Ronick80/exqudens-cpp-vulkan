@@ -440,18 +440,20 @@ namespace exqudens::vulkan {
 
               descriptorPool = DescriptorPool::builder()
                   .setDevice(device.value)
+                  .addPoolSize(
+                      vk::DescriptorPoolSize()
+                          .setType(vk::DescriptorType::eUniformBuffer)
+                          .setDescriptorCount(MAX_FRAMES_IN_FLIGHT)
+                  )
+                  .addPoolSize(
+                      vk::DescriptorPoolSize()
+                          .setType(vk::DescriptorType::eCombinedImageSampler)
+                          .setDescriptorCount(MAX_FRAMES_IN_FLIGHT)
+                  )
                   .setCreateInfo(
-                      DescriptorPoolCreateInfo()
+                      vk::DescriptorPoolCreateInfo()
                           .setFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet)
                           .setMaxSets(MAX_FRAMES_IN_FLIGHT)
-                          .setPoolSizes({
-                              vk::DescriptorPoolSize()
-                                  .setType(vk::DescriptorType::eUniformBuffer)
-                                  .setDescriptorCount(MAX_FRAMES_IN_FLIGHT),
-                              vk::DescriptorPoolSize()
-                                  .setType(vk::DescriptorType::eCombinedImageSampler)
-                                  .setDescriptorCount(MAX_FRAMES_IN_FLIGHT)
-                          })
                   )
               .build();
               std::cout << std::format("descriptorPool: '{}'", (bool) descriptorPool.value) << std::endl;

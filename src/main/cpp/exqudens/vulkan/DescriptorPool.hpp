@@ -7,8 +7,6 @@
 #include <vulkan/vulkan_raii.hpp>
 
 #include "exqudens/vulkan/Macros.hpp"
-#include "exqudens/vulkan/DescriptorPoolCreateInfo.hpp"
-#include "exqudens/vulkan/DescriptorSetAllocateInfo.hpp"
 
 namespace exqudens::vulkan {
 
@@ -18,7 +16,8 @@ namespace exqudens::vulkan {
 
     static Builder builder();
 
-    DescriptorPoolCreateInfo createInfo;
+    std::vector<vk::DescriptorPoolSize> poolSizes;
+    vk::DescriptorPoolCreateInfo createInfo;
     std::shared_ptr<vk::raii::DescriptorPool> value;
 
     vk::raii::DescriptorPool& reference() {
@@ -39,7 +38,8 @@ namespace exqudens::vulkan {
     private:
 
       std::weak_ptr<vk::raii::Device> device;
-      std::optional<DescriptorPoolCreateInfo> createInfo;
+      std::vector<vk::DescriptorPoolSize> poolSizes;
+      std::optional<vk::DescriptorPoolCreateInfo> createInfo;
 
     public:
 
@@ -48,7 +48,17 @@ namespace exqudens::vulkan {
         return *this;
       }
 
-      DescriptorPool::Builder& setCreateInfo(const DescriptorPoolCreateInfo& val) {
+      DescriptorPool::Builder& addPoolSize(const vk::DescriptorPoolSize& val) {
+        poolSizes.emplace_back(val);
+        return *this;
+      }
+
+      DescriptorPool::Builder& setPoolSizes(const std::vector<vk::DescriptorPoolSize>& val) {
+        poolSizes = val;
+        return *this;
+      }
+
+      DescriptorPool::Builder& setCreateInfo(const vk::DescriptorPoolCreateInfo& val) {
         createInfo = val;
         return *this;
       }
@@ -56,7 +66,9 @@ namespace exqudens::vulkan {
       DescriptorPool build() {
         try {
           DescriptorPool target = {};
+          target.poolSizes = poolSizes;
           target.createInfo = createInfo.value();
+          target.createInfo.setPoolSizes(target.poolSizes);
           //target.createInfo.setFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet);
           target.value = std::make_shared<vk::raii::DescriptorPool>(
               *device.lock(),

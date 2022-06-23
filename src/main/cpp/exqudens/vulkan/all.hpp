@@ -23,7 +23,6 @@
 #include "exqudens/vulkan/PipelineColorBlendStateCreateInfo.hpp"
 #include "exqudens/vulkan/GraphicsPipelineCreateInfo.hpp"
 #include "exqudens/vulkan/Pipeline.hpp"
-#include "exqudens/vulkan/DescriptorPoolCreateInfo.hpp"
 #include "exqudens/vulkan/DescriptorPool.hpp"
 #include "exqudens/vulkan/DescriptorSetAllocateInfo.hpp"
 #include "exqudens/vulkan/WriteDescriptorSet.hpp"
