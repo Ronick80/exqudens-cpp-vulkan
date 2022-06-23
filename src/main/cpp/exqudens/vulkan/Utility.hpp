@@ -12,7 +12,6 @@
 #include <vulkan/vulkan.hpp>
 
 #include "exqudens/vulkan/Macros.hpp"
-#include "exqudens/vulkan/SwapchainCreateInfoKHR.hpp"
 
 namespace exqudens::vulkan {
 
@@ -84,13 +83,11 @@ namespace exqudens::vulkan {
         }
       }
 
-      static SwapchainCreateInfoKHR swapChainCreateInfo(
+      static vk::SwapchainCreateInfoKHR swapChainCreateInfo(
           vk::raii::PhysicalDevice& physicalDevice,
           vk::raii::SurfaceKHR& surface,
           const uint32_t& width,
-          const uint32_t& height,
-          const uint32_t& graphicsQueueFamilyIndex,
-          const uint32_t& presentQueueFamilyIndex
+          const uint32_t& height
       ) {
         try {
           std::optional<vk::SurfaceFormatKHR> surfaceFormat;
@@ -99,8 +96,6 @@ namespace exqudens::vulkan {
           std::optional<vk::Extent2D> surfaceExtent;
           std::optional<vk::SurfaceTransformFlagBitsKHR> surfaceTransform;
           std::optional<vk::CompositeAlphaFlagBitsKHR> surfaceCompositeAlpha;
-          std::optional<vk::SharingMode> imageSharingMode;
-          std::vector<uint32_t> queueFamilyIndices;
 
           std::vector<vk::SurfaceFormatKHR> surfaceFormats = physicalDevice.getSurfaceFormatsKHR(*surface);
           if (surfaceFormats.size() == 1 && surfaceFormats.front() == vk::Format::eUndefined) {
@@ -133,13 +128,6 @@ namespace exqudens::vulkan {
             surfaceExtent = surfaceCapabilities.value().currentExtent;
           }
 
-          if (graphicsQueueFamilyIndex != presentQueueFamilyIndex) {
-            imageSharingMode = vk::SharingMode::eConcurrent;
-            queueFamilyIndices = {graphicsQueueFamilyIndex, presentQueueFamilyIndex};
-          } else {
-            imageSharingMode = vk::SharingMode::eExclusive;
-          }
-
           if (surfaceCapabilities.value().supportedTransforms & vk::SurfaceTransformFlagBitsKHR::eIdentity) {
             surfaceTransform = vk::SurfaceTransformFlagBitsKHR::eIdentity;
           } else {
@@ -156,7 +144,7 @@ namespace exqudens::vulkan {
             surfaceCompositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
           }
 
-          return SwapchainCreateInfoKHR()
+          return vk::SwapchainCreateInfoKHR()
               .setFlags({})
               .setSurface(*surface)
               .setMinImageCount(surfaceCapabilities.value().minImageCount)
@@ -165,8 +153,6 @@ namespace exqudens::vulkan {
               .setImageExtent(surfaceExtent.value())
               .setImageArrayLayers(1)
               .setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
-              .setImageSharingMode(imageSharingMode.value())
-              .setQueueFamilyIndices(queueFamilyIndices)
               .setPreTransform(surfaceTransform.value())
               .setCompositeAlpha(surfaceCompositeAlpha.value())
               .setPresentMode(surfacePresentMode.value())

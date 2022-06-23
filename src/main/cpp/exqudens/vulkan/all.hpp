@@ -31,5 +31,4 @@
 #include "exqudens/vulkan/CommandPool.hpp"
 #include "exqudens/vulkan/CommandBuffer.hpp"
 #include "exqudens/vulkan/Surface.hpp"
-#include "exqudens/vulkan/SwapchainCreateInfoKHR.hpp"
 #include "exqudens/vulkan/Swapchain.hpp"

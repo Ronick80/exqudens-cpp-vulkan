@@ -148,7 +148,6 @@ add_library("${PROJECT_NAME}" INTERFACE
     "src/main/cpp/exqudens/vulkan/CommandPool.hpp"
     "src/main/cpp/exqudens/vulkan/CommandBuffer.hpp"
     "src/main/cpp/exqudens/vulkan/Surface.hpp"
-    "src/main/cpp/exqudens/vulkan/SwapchainCreateInfoKHR.hpp"
     "src/main/cpp/exqudens/vulkan/Swapchain.hpp"
 )
 target_include_directories("${PROJECT_NAME}" INTERFACE

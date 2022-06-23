@@ -631,14 +631,14 @@ namespace exqudens::vulkan {
 
               swapchain = Swapchain::builder()
                   .setDevice(device.value)
+                  .addGraphicsQueueFamilyIndex(physicalDevice.graphicsQueueCreateInfos.front().queueFamilyIndex)
+                  .addPresentQueueFamilyIndex(physicalDevice.presentQueueCreateInfos.front().queueFamilyIndex)
                   .setCreateInfo(
                       Utility::swapChainCreateInfo(
                           physicalDevice.reference(),
                           surface.reference(),
                           width,
-                          height,
-                          physicalDevice.graphicsQueueCreateInfos.front().queueFamilyIndex,
-                          physicalDevice.presentQueueCreateInfos.front().queueFamilyIndex
+                          height
                       )
                   )
               .build();
