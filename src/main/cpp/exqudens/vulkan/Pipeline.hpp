@@ -9,7 +9,6 @@
 
 #include <vulkan/vulkan_raii.hpp>
 
-#include "exqudens/vulkan/PipelineLayoutCreateInfo.hpp"
 #include "exqudens/vulkan/GraphicsPipelineCreateInfo.hpp"
 
 namespace exqudens::vulkan {
@@ -20,7 +19,9 @@ namespace exqudens::vulkan {
 
     static Builder builder();
 
-    PipelineLayoutCreateInfo layoutCreateInfo;
+    std::vector<vk::DescriptorSetLayout> setLayouts;
+    std::vector<vk::PushConstantRange> pushConstantRanges;
+    vk::PipelineLayoutCreateInfo layoutCreateInfo;
     std::shared_ptr<vk::raii::PipelineLayout> layout;
 
     vk::PipelineCacheCreateInfo cacheCreateInfo;
@@ -73,7 +74,9 @@ namespace exqudens::vulkan {
 
       std::weak_ptr<vk::raii::Device> device;
       std::function<std::vector<char>(const std::string&)> readFileFunction;
-      std::optional<PipelineLayoutCreateInfo> layoutCreateInfo;
+      std::vector<vk::DescriptorSetLayout> setLayouts;
+      std::vector<vk::PushConstantRange> pushConstantRanges;
+      std::optional<vk::PipelineLayoutCreateInfo> layoutCreateInfo;
       std::optional<vk::PipelineCacheCreateInfo> cacheCreateInfo;
       std::optional<vk::ComputePipelineCreateInfo> computeCreateInfo;
       std::optional<GraphicsPipelineCreateInfo> graphicsCreateInfo;
@@ -92,7 +95,27 @@ namespace exqudens::vulkan {
         return *this;
       }
 
-      Pipeline::Builder& setLayoutCreateInfo(const PipelineLayoutCreateInfo& val) {
+      Pipeline::Builder& addSetLayout(const vk::DescriptorSetLayout& val) {
+        setLayouts.emplace_back(val);
+        return *this;
+      }
+
+      Pipeline::Builder& setSetLayouts(const std::vector<vk::DescriptorSetLayout>& val) {
+        setLayouts = val;
+        return *this;
+      }
+
+      Pipeline::Builder& addPushConstantRange(const vk::PushConstantRange& val) {
+        pushConstantRanges.emplace_back(val);
+        return *this;
+      }
+
+      Pipeline::Builder& setPushConstantRanges(const std::vector<vk::PushConstantRange>& val) {
+        pushConstantRanges = val;
+        return *this;
+      }
+
+      Pipeline::Builder& setLayoutCreateInfo(const vk::PipelineLayoutCreateInfo& val) {
         layoutCreateInfo = val;
         return *this;
       }
@@ -129,7 +152,11 @@ namespace exqudens::vulkan {
           }
 
           Pipeline target = {};
-          target.layoutCreateInfo = layoutCreateInfo.value();
+          target.setLayouts = setLayouts;
+          target.pushConstantRanges = pushConstantRanges;
+          target.layoutCreateInfo = layoutCreateInfo.value_or(vk::PipelineLayoutCreateInfo());
+          target.layoutCreateInfo.setSetLayouts(target.setLayouts);
+          target.layoutCreateInfo.setPushConstantRanges(target.pushConstantRanges);
           target.layout = std::make_shared<vk::raii::PipelineLayout>(
               *device.lock(),
               target.layoutCreateInfo

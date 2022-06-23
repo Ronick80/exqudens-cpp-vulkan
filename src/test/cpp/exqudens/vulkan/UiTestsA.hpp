@@ -772,10 +772,7 @@ namespace exqudens::vulkan {
                       "resources/shader/shader-4.vert.spv",
                       "resources/shader/shader-4.frag.spv"
                   })
-                  .setLayoutCreateInfo(
-                      PipelineLayoutCreateInfo()
-                          .setSetLayouts({*descriptorSetLayout.reference()})
-                  )
+                  .addSetLayout(*descriptorSetLayout.reference())
                   .setGraphicsCreateInfo(
                       GraphicsPipelineCreateInfo()
                           .setRenderPass(*renderPass.reference())
