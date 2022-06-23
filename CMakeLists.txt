@@ -143,7 +143,6 @@ add_library("${PROJECT_NAME}" INTERFACE
     "src/main/cpp/exqudens/vulkan/DescriptorPool.hpp"
     "src/main/cpp/exqudens/vulkan/WriteDescriptorSet.hpp"
     "src/main/cpp/exqudens/vulkan/DescriptorSet.hpp"
-    "src/main/cpp/exqudens/vulkan/FramebufferCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/Framebuffer.hpp"
     "src/main/cpp/exqudens/vulkan/Queue.hpp"
     "src/main/cpp/exqudens/vulkan/CommandPool.hpp"

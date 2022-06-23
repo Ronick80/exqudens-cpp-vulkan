@@ -866,13 +866,14 @@ namespace exqudens::vulkan {
                 swapchainFramebuffers.emplace_back(
                     Framebuffer::builder()
                         .setDevice(device.value)
+                        .addAttachment(*imageView.reference())
+                        .addAttachment(*depthImageView.reference())
                         .setCreateInfo(
-                            FramebufferCreateInfo()
+                            vk::FramebufferCreateInfo()
                                 .setRenderPass(*renderPass.reference())
                                 .setWidth(swapchain.createInfo.imageExtent.width)
                                 .setHeight(swapchain.createInfo.imageExtent.height)
                                 .setLayers(1)
-                                .setAttachments({*imageView.reference(), *depthImageView.reference()})
                         )
                     .build()
                 );

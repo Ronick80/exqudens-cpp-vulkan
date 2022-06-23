@@ -26,7 +26,6 @@
 #include "exqudens/vulkan/DescriptorPool.hpp"
 #include "exqudens/vulkan/WriteDescriptorSet.hpp"
 #include "exqudens/vulkan/DescriptorSet.hpp"
-#include "exqudens/vulkan/FramebufferCreateInfo.hpp"
 #include "exqudens/vulkan/Framebuffer.hpp"
 #include "exqudens/vulkan/Queue.hpp"
 #include "exqudens/vulkan/CommandPool.hpp"

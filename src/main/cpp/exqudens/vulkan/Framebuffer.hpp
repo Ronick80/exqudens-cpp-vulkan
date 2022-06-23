@@ -7,7 +7,6 @@
 #include <vulkan/vulkan_raii.hpp>
 
 #include "exqudens/vulkan/Macros.hpp"
-#include "exqudens/vulkan/FramebufferCreateInfo.hpp"
 
 namespace exqudens::vulkan {
 
@@ -17,7 +16,8 @@ namespace exqudens::vulkan {
 
     static Builder builder();
 
-    FramebufferCreateInfo createInfo;
+    std::vector<vk::ImageView> attachments;
+    vk::FramebufferCreateInfo createInfo;
     std::shared_ptr<vk::raii::Framebuffer> value;
 
     vk::raii::Framebuffer& reference() {
@@ -38,7 +38,8 @@ namespace exqudens::vulkan {
     private:
 
       std::weak_ptr<vk::raii::Device> device;
-      std::optional<FramebufferCreateInfo> createInfo;
+      std::vector<vk::ImageView> attachments;
+      std::optional<vk::FramebufferCreateInfo> createInfo;
 
     public:
 
@@ -47,7 +48,17 @@ namespace exqudens::vulkan {
         return *this;
       }
 
-      Framebuffer::Builder& setCreateInfo(const FramebufferCreateInfo& val) {
+      Framebuffer::Builder& addAttachment(const vk::ImageView& val) {
+        attachments.emplace_back(val);
+        return *this;
+      }
+
+      Framebuffer::Builder& setAttachments(const std::vector<vk::ImageView>& val) {
+        attachments = val;
+        return *this;
+      }
+
+      Framebuffer::Builder& setCreateInfo(const vk::FramebufferCreateInfo& val) {
         createInfo = val;
         return *this;
       }
@@ -55,7 +66,9 @@ namespace exqudens::vulkan {
       Framebuffer build() {
         try {
           Framebuffer target = {};
+          target.attachments = attachments;
           target.createInfo = createInfo.value();
+          target.createInfo.setAttachments(target.attachments);
           target.value = std::make_shared<vk::raii::Framebuffer>(
               *device.lock(),
               target.createInfo
