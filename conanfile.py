@@ -12,7 +12,7 @@ class ConanConfiguration(ConanFile):
         "glm/0.9.9.8",
         "gtest/1.11.0",
         "lodepng/cci.20200615",
-        "glfw/3.3.4"
+        "glfw/3.3.7"
     ]
     requires = [
         "vulkan/1.2.182.0"

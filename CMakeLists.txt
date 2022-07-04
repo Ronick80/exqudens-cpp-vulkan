@@ -85,7 +85,7 @@ foreach(
     list(APPEND CMAKE_PREFIX_PATH "${cmakePackagePath}")
 
     if("gtest" STREQUAL "${conanPackageName}")
-        file(REMOVE "${CONAN_INSTALL_PREFIX}/FindGTest.cmake")
+        file(REMOVE "${CONAN_INSTALL_PREFIX}/Find${cmakePackageName}.cmake")
         list(APPEND NOT_FOUND_PACKAGE_NAMES "${cmakePackageName}")
         find_package("${cmakePackageName}" "${cmakePackageVersion}" EXACT QUIET CONFIG)
     elseif("vulkan" STREQUAL "${conanPackageName}")
@@ -99,8 +99,9 @@ foreach(
         list(APPEND NOT_FOUND_PACKAGE_NAMES "${cmakePackageName}")
         find_package("${cmakePackageName}" QUIET)
     elseif("glfw" STREQUAL "${conanPackageName}")
+        file(REMOVE "${CONAN_INSTALL_PREFIX}/Find${cmakePackageName}.cmake")
         list(APPEND NOT_FOUND_PACKAGE_NAMES "${cmakePackageName}")
-        find_package("${cmakePackageName}" "${cmakePackageVersion}" EXACT QUIET)
+        find_package("${cmakePackageName}" "${cmakePackageVersion}" EXACT QUIET CONFIG)
     else()
         list(APPEND NOT_FOUND_PACKAGE_NAMES "${cmakePackageName}")
         find_package("${cmakePackageName}" "${cmakePackageVersion}" EXACT QUIET CONFIG)
@@ -234,7 +235,7 @@ target_link_libraries("test-lib" INTERFACE
     "GTest::gtest_main"
     "glm::glm"
     "lodepng::lodepng"
-    "glfw::glfw"
+    "glfw"
 )
 set_target_properties("test-lib" PROPERTIES
     CXX_STANDARD 23
