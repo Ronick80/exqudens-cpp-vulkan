@@ -49,71 +49,79 @@ if(NOT EXISTS "${CONAN_INSTALL_PREFIX}")
         COMMAND_ERROR_IS_FATAL ANY
     )
 endif()
-if(NOT EXISTS "${CONAN_INSTALL_PREFIX}/conan-packages.cmake")
-    message(FATAL_ERROR "Not exists: '${CONAN_INSTALL_PREFIX}/conan-packages.cmake'!")
-endif()
-include("${CONAN_INSTALL_PREFIX}/conan-packages.cmake")
+#if(NOT EXISTS "${CONAN_INSTALL_PREFIX}/conan-packages.cmake")
+#    message(FATAL_ERROR "Not exists: '${CONAN_INSTALL_PREFIX}/conan-packages.cmake'!")
+#endif()
+#include("${CONAN_INSTALL_PREFIX}/conan-packages.cmake")
 set(CMAKE_MODULE_PATH "${CONAN_INSTALL_PREFIX}")
-foreach(
-    conanPackageName
-    cmakePackageName
-    cmakePackageVersion
-    cmakePackagePath
-    IN ZIP_LISTS
-    "${PROJECT_NAME}_CONAN_PACKAGE_NAMES"
-    "${PROJECT_NAME}_CMAKE_PACKAGE_NAMES"
-    "${PROJECT_NAME}_CMAKE_PACKAGE_VERSIONS"
-    "${PROJECT_NAME}_CMAKE_PACKAGE_PATHS"
-)
-    if(
-        "" STREQUAL "${conanPackageName}"
-        OR "" STREQUAL "${cmakePackageName}"
-        OR "" STREQUAL "${cmakePackageVersion}"
-        OR "" STREQUAL "${cmakePackagePath}"
-    )
-        string(JOIN " " errorMessage
-            "Empty value 'conanPackageName': '${conanPackageName}'"
-            "or 'cmakePackageName': '${cmakePackageName}'"
-            "or 'cmakePackageVersion': '${cmakePackageVersion}'"
-            "or 'cmakePackagePath': '${cmakePackagePath}'!"
-        )
-        message(FATAL_ERROR "${errorMessage}")
-    elseif(NOT IS_DIRECTORY "${cmakePackagePath}")
-        message(FATAL_ERROR "Not is directory 'cmakePackagePath': '${cmakePackagePath}'!")
-    endif()
+#foreach(
+#    conanPackageName
+#    cmakePackageName
+#    cmakePackageVersion
+#    cmakePackagePath
+#    IN ZIP_LISTS
+#    "${PROJECT_NAME}_CONAN_PACKAGE_NAMES"
+#    "${PROJECT_NAME}_CMAKE_PACKAGE_NAMES"
+#    "${PROJECT_NAME}_CMAKE_PACKAGE_VERSIONS"
+#    "${PROJECT_NAME}_CMAKE_PACKAGE_PATHS"
+#)
+#    if(
+#        "" STREQUAL "${conanPackageName}"
+#        OR "" STREQUAL "${cmakePackageName}"
+#        OR "" STREQUAL "${cmakePackageVersion}"
+#        OR "" STREQUAL "${cmakePackagePath}"
+#    )
+#        string(JOIN " " errorMessage
+#            "Empty value 'conanPackageName': '${conanPackageName}'"
+#            "or 'cmakePackageName': '${cmakePackageName}'"
+#            "or 'cmakePackageVersion': '${cmakePackageVersion}'"
+#            "or 'cmakePackagePath': '${cmakePackagePath}'!"
+#        )
+#        message(FATAL_ERROR "${errorMessage}")
+#    elseif(NOT IS_DIRECTORY "${cmakePackagePath}")
+#        message(FATAL_ERROR "Not is directory 'cmakePackagePath': '${cmakePackagePath}'!")
+#    endif()
+#
+#    list(APPEND CMAKE_PREFIX_PATH "${cmakePackagePath}")
+#
+#    if("gtest" STREQUAL "${conanPackageName}")
+#        file(REMOVE "${CONAN_INSTALL_PREFIX}/Find${cmakePackageName}.cmake")
+#        list(APPEND NOT_FOUND_PACKAGE_NAMES "${cmakePackageName}")
+#        find_package("${cmakePackageName}" "${cmakePackageVersion}" EXACT QUIET CONFIG)
+#    elseif("vulkan" STREQUAL "${conanPackageName}")
+#        list(APPEND NOT_FOUND_PACKAGE_NAMES "${cmakePackageName}")
+#        find_package("${cmakePackageName}" "${cmakePackageVersion}" EXACT QUIET)
+#        find_program(GLSLC_COMMAND NAMES "glslc.exe" "glslc" PATHS "${cmakePackagePath}/bin")
+#    elseif("glm" STREQUAL "${conanPackageName}")
+#        list(APPEND NOT_FOUND_PACKAGE_NAMES "${cmakePackageName}")
+#        find_package("${cmakePackageName}" "${cmakePackageVersion}" EXACT QUIET)
+#    elseif("lodepng" STREQUAL "${conanPackageName}")
+#        list(APPEND NOT_FOUND_PACKAGE_NAMES "${cmakePackageName}")
+#        find_package("${cmakePackageName}" QUIET)
+#    elseif("glfw" STREQUAL "${conanPackageName}")
+#        file(REMOVE "${CONAN_INSTALL_PREFIX}/Find${cmakePackageName}.cmake")
+#        list(APPEND NOT_FOUND_PACKAGE_NAMES "${cmakePackageName}")
+#        find_package("${cmakePackageName}" "${cmakePackageVersion}" EXACT QUIET CONFIG)
+#    else()
+#        list(APPEND NOT_FOUND_PACKAGE_NAMES "${cmakePackageName}")
+#        find_package("${cmakePackageName}" "${cmakePackageVersion}" EXACT QUIET CONFIG)
+#    endif()
+#endforeach()
+#set_not_found_package_names(NOT_FOUND_PACKAGE_NAMES ${NOT_FOUND_PACKAGE_NAMES})
+#if(NOT "" STREQUAL "${NOT_FOUND_PACKAGE_NAMES}")
+#    foreach(package ${NOT_FOUND_PACKAGE_NAMES})
+#        message(WARNING "${package}_FOUND: '${${package}_FOUND}'")
+#    endforeach()
+#    return()
+#endif()
 
-    list(APPEND CMAKE_PREFIX_PATH "${cmakePackagePath}")
+find_package("glfw3")
+find_package("opengl_system")
+find_package("Vulkan")
+find_package("GTest")
+find_package("glm")
+find_package("lodepng")
 
-    if("gtest" STREQUAL "${conanPackageName}")
-        file(REMOVE "${CONAN_INSTALL_PREFIX}/Find${cmakePackageName}.cmake")
-        list(APPEND NOT_FOUND_PACKAGE_NAMES "${cmakePackageName}")
-        find_package("${cmakePackageName}" "${cmakePackageVersion}" EXACT QUIET CONFIG)
-    elseif("vulkan" STREQUAL "${conanPackageName}")
-        list(APPEND NOT_FOUND_PACKAGE_NAMES "${cmakePackageName}")
-        find_package("${cmakePackageName}" "${cmakePackageVersion}" EXACT QUIET)
-        find_program(GLSLC_COMMAND NAMES "glslc.exe" "glslc" PATHS "${cmakePackagePath}/bin")
-    elseif("glm" STREQUAL "${conanPackageName}")
-        list(APPEND NOT_FOUND_PACKAGE_NAMES "${cmakePackageName}")
-        find_package("${cmakePackageName}" "${cmakePackageVersion}" EXACT QUIET)
-    elseif("lodepng" STREQUAL "${conanPackageName}")
-        list(APPEND NOT_FOUND_PACKAGE_NAMES "${cmakePackageName}")
-        find_package("${cmakePackageName}" QUIET)
-    elseif("glfw" STREQUAL "${conanPackageName}")
-        file(REMOVE "${CONAN_INSTALL_PREFIX}/Find${cmakePackageName}.cmake")
-        list(APPEND NOT_FOUND_PACKAGE_NAMES "${cmakePackageName}")
-        find_package("${cmakePackageName}" "${cmakePackageVersion}" EXACT QUIET CONFIG)
-    else()
-        list(APPEND NOT_FOUND_PACKAGE_NAMES "${cmakePackageName}")
-        find_package("${cmakePackageName}" "${cmakePackageVersion}" EXACT QUIET CONFIG)
-    endif()
-endforeach()
-set_not_found_package_names(NOT_FOUND_PACKAGE_NAMES ${NOT_FOUND_PACKAGE_NAMES})
-if(NOT "" STREQUAL "${NOT_FOUND_PACKAGE_NAMES}")
-    foreach(package ${NOT_FOUND_PACKAGE_NAMES})
-        message(WARNING "${package}_FOUND: '${${package}_FOUND}'")
-    endforeach()
-    return()
-endif()
 
 add_library("${PROJECT_NAME}" INTERFACE
     "src/main/cpp/exqudens/vulkan/all.hpp"
