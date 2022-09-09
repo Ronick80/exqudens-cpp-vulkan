@@ -112,7 +112,7 @@ function(set_msvc_path var vswhereCommand compilerVersion)
     endif()
 
     if("17" STREQUAL "${compilerVersion}" OR "2022" STREQUAL "${compilerVersion}")
-        set(vswhereVersionArgs "-version" "[17.0, 18.0)")
+        set(vswhereVersionArgs "-version" "[16.0, 17.0)")
     elseif("16" STREQUAL "${compilerVersion}" OR "2019" STREQUAL "${compilerVersion}")
         set(vswhereVersionArgs "-version" "[16.0, 17.0)")
     elseif("15" STREQUAL "${compilerVersion}" OR "2017" STREQUAL "${compilerVersion}")
@@ -349,7 +349,7 @@ function(
 
         # compiler.version
         if("${cmakeCxxCompilerVersion}" VERSION_GREATER_EQUAL "19.30" AND "${cmakeCxxCompilerVersion}" VERSION_LESS "19.40")
-            set(value "${value}" "--settings" "compiler.version=17")
+            set(value "${value}" "--settings" "compiler.version=16")
         elseif("${cmakeCxxCompilerVersion}" VERSION_GREATER_EQUAL "19.20" AND "${cmakeCxxCompilerVersion}" VERSION_LESS "19.30")
             set(value "${value}" "--settings" "compiler.version=16")
         elseif("${cmakeCxxCompilerVersion}" VERSION_GREATER_EQUAL "19.10" AND "${cmakeCxxCompilerVersion}" VERSION_LESS "19.20")
