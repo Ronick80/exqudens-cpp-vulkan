@@ -15,7 +15,7 @@ class ConanConfiguration(ConanFile):
         "glfw/3.3.7"
     ]
     requires = [
-        "vulkan/1.2.182.0"
+        "vulkan/1.3.224.1"
     ]
     generators = "cmake_find_package"
 
