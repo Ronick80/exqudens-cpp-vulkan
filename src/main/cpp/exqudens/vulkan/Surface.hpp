@@ -14,7 +14,7 @@ namespace exqudens::vulkan {
 
     class Builder;
 
-    static Builder builder();
+    inline static Builder builder();
 
     std::shared_ptr<vk::raii::SurfaceKHR> value;
 

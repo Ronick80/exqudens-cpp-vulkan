@@ -18,7 +18,7 @@ namespace exqudens::vulkan {
 
     class Builder;
 
-    static Builder builder();
+    inline static Builder builder();
 
     std::shared_ptr<vk::raii::Context> context;
     std::vector<const char*> enabledLayerNames;

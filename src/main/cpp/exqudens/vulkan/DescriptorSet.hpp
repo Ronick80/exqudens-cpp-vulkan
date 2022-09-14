@@ -16,7 +16,7 @@ namespace exqudens::vulkan {
 
     class Builder;
 
-    static Builder builder();
+    inline static Builder builder();
 
     std::vector<vk::DescriptorSetLayout> setLayouts;
     vk::DescriptorSetAllocateInfo createInfo;

@@ -14,7 +14,7 @@ namespace exqudens::vulkan {
 
     class Builder;
 
-    static Builder builder();
+    inline static Builder builder();
 
     vk::SamplerCreateInfo createInfo;
     std::shared_ptr<vk::raii::Sampler> value;

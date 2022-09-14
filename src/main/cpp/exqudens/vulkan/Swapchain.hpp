@@ -16,7 +16,7 @@ namespace exqudens::vulkan {
 
     class Builder;
 
-    static Builder builder();
+    inline static Builder builder();
 
     std::vector<uint32_t> queueFamilyIndices;
     vk::SwapchainCreateInfoKHR createInfo;

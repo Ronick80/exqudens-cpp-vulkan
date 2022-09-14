@@ -18,7 +18,7 @@ namespace exqudens::vulkan {
 
     class Builder;
 
-    static Builder builder();
+    inline static Builder builder();
 
     std::vector<const char*> enabledExtensionNames;
     vk::PhysicalDeviceFeatures features;

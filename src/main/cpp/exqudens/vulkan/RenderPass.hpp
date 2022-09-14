@@ -16,7 +16,7 @@ namespace exqudens::vulkan {
 
     class Builder;
 
-    static Builder builder();
+    inline static Builder builder();
 
     std::vector<vk::AttachmentDescription> attachments;
     std::vector<SubpassDescription> subpasses;
