@@ -10,15 +10,16 @@
 
 namespace exqudens::vulkan {
 
-  struct Surface {
+  struct QueryPool {
 
     class Builder;
 
     inline static Builder builder();
 
-    std::shared_ptr<vk::raii::SurfaceKHR> value;
+    vk::QueryPoolCreateInfo createInfo;
+    std::shared_ptr<vk::raii::QueryPool> value;
 
-    vk::raii::SurfaceKHR& reference() {
+    vk::raii::QueryPool& reference() {
       try {
         if (!value) {
           throw std::runtime_error(CALL_INFO() + ": value is not initialized!");
@@ -31,31 +32,32 @@ namespace exqudens::vulkan {
 
   };
 
-  class Surface::Builder {
+  class QueryPool::Builder {
 
     private:
 
-      std::weak_ptr<vk::raii::Instance> instance;
-      VkSurfaceKHR vkSurface;
+      std::weak_ptr<vk::raii::Device> device;
+      std::optional<vk::QueryPoolCreateInfo> createInfo;
 
     public:
 
-      Surface::Builder& setInstance(const std::weak_ptr<vk::raii::Instance>& val) {
-        instance = val;
+      QueryPool::Builder& setDevice(const std::weak_ptr<vk::raii::Device>& val) {
+        device = val;
         return *this;
       }
 
-      Surface::Builder& setVkSurface(const VkSurfaceKHR& val) {
-        vkSurface = val;
+      QueryPool::Builder& setCreateInfo(const vk::QueryPoolCreateInfo& val) {
+        createInfo = val;
         return *this;
       }
 
-      Surface build() {
+      QueryPool build() {
         try {
-          Surface target = {};
-          target.value = std::make_shared<vk::raii::SurfaceKHR>(
-              *instance.lock(),
-              vkSurface
+          QueryPool target = {};
+          target.createInfo = createInfo.value();
+          target.value = std::make_shared<vk::raii::QueryPool>(
+              *device.lock(),
+              target.createInfo
           );
           return target;
         } catch (...) {
@@ -65,7 +67,7 @@ namespace exqudens::vulkan {
 
   };
 
-  Surface::Builder Surface::builder() {
+  QueryPool::Builder QueryPool::builder() {
     return {};
   }
 

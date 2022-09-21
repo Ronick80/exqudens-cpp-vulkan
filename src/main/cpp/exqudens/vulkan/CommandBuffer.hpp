@@ -14,7 +14,7 @@ namespace exqudens::vulkan {
 
     class Builder;
 
-    static Builder builder();
+    inline static Builder builder();
 
     vk::CommandBufferAllocateInfo createInfo;
     std::shared_ptr<vk::raii::CommandBuffer> value;

@@ -14,7 +14,7 @@ namespace exqudens::vulkan {
 
     class Builder;
 
-    static Builder builder();
+    inline static Builder builder();
 
     std::vector<vk::ImageView> attachments;
     vk::FramebufferCreateInfo createInfo;

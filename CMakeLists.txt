@@ -124,6 +124,7 @@ add_library("${PROJECT_NAME}" INTERFACE
     "src/main/cpp/exqudens/vulkan/Instance.hpp"
     "src/main/cpp/exqudens/vulkan/MessengerCreateInfo.hpp"
     "src/main/cpp/exqudens/vulkan/Messenger.hpp"
+    "src/main/cpp/exqudens/vulkan/QueueRequirement.hpp"
     "src/main/cpp/exqudens/vulkan/PhysicalDevice.hpp"
     "src/main/cpp/exqudens/vulkan/Device.hpp"
     "src/main/cpp/exqudens/vulkan/Image.hpp"
@@ -147,6 +148,7 @@ add_library("${PROJECT_NAME}" INTERFACE
     "src/main/cpp/exqudens/vulkan/Queue.hpp"
     "src/main/cpp/exqudens/vulkan/CommandPool.hpp"
     "src/main/cpp/exqudens/vulkan/CommandBuffer.hpp"
+    "src/main/cpp/exqudens/vulkan/QueryPool.hpp"
     "src/main/cpp/exqudens/vulkan/Surface.hpp"
     "src/main/cpp/exqudens/vulkan/Swapchain.hpp"
 )

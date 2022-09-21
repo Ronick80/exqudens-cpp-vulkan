@@ -14,7 +14,7 @@ namespace exqudens::vulkan {
 
     class Builder;
 
-    static Builder builder();
+    inline static Builder builder();
 
     vk::SemaphoreCreateInfo createInfo;
     std::shared_ptr<vk::raii::Semaphore> value;

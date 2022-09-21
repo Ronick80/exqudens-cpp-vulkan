@@ -17,7 +17,7 @@ namespace exqudens::vulkan {
 
     class Builder;
 
-    static Builder builder();
+    inline static Builder builder();
 
     std::vector<vk::DescriptorSetLayout> setLayouts;
     std::vector<vk::PushConstantRange> pushConstantRanges;
