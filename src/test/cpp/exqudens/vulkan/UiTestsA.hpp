@@ -61,6 +61,7 @@ namespace exqudens::vulkan {
           Image depthImage = {};
           ImageView depthImageView = {};
           RenderPass renderPass = {};
+          std::map<std::string, std::pair<vk::ShaderModuleCreateInfo, std::shared_ptr<vk::raii::ShaderModule>>> shaders;
           Pipeline pipeline = {};
           std::vector<Framebuffer> swapchainFramebuffers = {};
           Buffer textureBuffer = {};
@@ -81,8 +82,27 @@ namespace exqudens::vulkan {
 
           size_t currentFrame = 0;
           uint8_t timeDiffCounter = 0;
+          float physicalDeviceTimestampPeriod = 0;
 
         public:
+
+          vk::PipelineShaderStageCreateInfo createStage(const std::string& path) {
+            std::vector<char> bytes = Utility::readFile(path);
+            if (bytes.empty()) {
+              throw std::runtime_error(CALL_INFO() + ": '" + path + "' failed to create shader module bytes is empty!");
+            }
+            vk::ShaderModuleCreateInfo shaderCreateInfo = vk::ShaderModuleCreateInfo()
+                .setCodeSize(bytes.size())
+                .setPCode(reinterpret_cast<const uint32_t*>(bytes.data()));
+            shaders[path] = std::make_pair(
+                shaderCreateInfo,
+                std::make_shared<vk::raii::ShaderModule>(device.reference(), shaderCreateInfo)
+            );
+            return vk::PipelineShaderStageCreateInfo()
+                .setPName("main")
+                .setModule(*(*shaders[path].second))
+                .setStage(path.ends_with(".vert.spv") ? vk::ShaderStageFlagBits::eVertex : vk::ShaderStageFlagBits::eFragment);
+          }
 
           void create(
               const std::vector<std::string>& arguments,
@@ -178,6 +198,9 @@ namespace exqudens::vulkan {
                   .setQueuePriority(1.0f)
               .build();
               std::cout << std::format("physicalDevice: '{}'", (bool) physicalDevice.value) << std::endl;
+
+              physicalDeviceTimestampPeriod = physicalDevice.reference().getProperties().limits.timestampPeriod;
+              std::cout << std::format("physicalDeviceTimestampPeriod: '{}'", physicalDeviceTimestampPeriod) << std::endl;
 
               device = Device::builder()
                   .setPhysicalDevice(physicalDevice.value)
@@ -784,7 +807,8 @@ namespace exqudens::vulkan {
 
               pipeline = Pipeline::builder()
                   .setDevice(device.value)
-                  .addPath("resources/shader/shader-4.vert.spv")
+                  //.addPath("resources/shader/shader-4.vert.spv")
+                  .addStage(createStage("resources/shader/shader-4.vert.spv"))
                   .addPath("resources/shader/shader-4.frag.spv")
                   .addSetLayout(*descriptorSetLayout.reference())
                   .setGraphicsCreateInfo(
@@ -1050,7 +1074,8 @@ namespace exqudens::vulkan {
               if (vk::Result::eNotReady == queryResults.first || vk::Result::eSuccess == queryResults.first) {
                 if (vk::Result::eSuccess == queryResults.first) {
                   if (timeDiffCounter == 9) {
-                    std::cout << std::format("timeDiff: {}", queryResults.second[1] - queryResults.second[0]) << std::endl;
+                    float timeDiff = physicalDevice.reference().getProperties().limits.timestampPeriod * ((float) queryResults.second[1] - queryResults.second[0]);
+                    std::cout << std::format("timeDiff: {}", timeDiff) << std::endl;
                     timeDiffCounter = 0;
                   } else {
                     timeDiffCounter++;
