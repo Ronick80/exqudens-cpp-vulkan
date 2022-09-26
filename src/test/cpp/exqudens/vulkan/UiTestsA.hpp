@@ -61,6 +61,7 @@ namespace exqudens::vulkan {
           Image depthImage = {};
           ImageView depthImageView = {};
           RenderPass renderPass = {};
+          std::map<std::string, std::pair<vk::ShaderModuleCreateInfo, std::shared_ptr<vk::raii::ShaderModule>>> shaders;
           Pipeline pipeline = {};
           std::vector<Framebuffer> swapchainFramebuffers = {};
           Buffer textureBuffer = {};
@@ -77,10 +78,31 @@ namespace exqudens::vulkan {
           std::vector<Fence> inFlightFences = std::vector<Fence>(MAX_FRAMES_IN_FLIGHT);
           DescriptorPool descriptorPool = {};
           std::vector<DescriptorSet> descriptorSets = std::vector<DescriptorSet>(MAX_FRAMES_IN_FLIGHT);
+          QueryPool queryPool = {};
 
           size_t currentFrame = 0;
+          uint8_t timeDiffCounter = 0;
+          float physicalDeviceTimestampPeriod = 0;
 
         public:
+
+          vk::PipelineShaderStageCreateInfo createStage(const std::string& path) {
+            std::vector<char> bytes = Utility::readFile(path);
+            if (bytes.empty()) {
+              throw std::runtime_error(CALL_INFO() + ": '" + path + "' failed to create shader module bytes is empty!");
+            }
+            vk::ShaderModuleCreateInfo shaderCreateInfo = vk::ShaderModuleCreateInfo()
+                .setCodeSize(bytes.size())
+                .setPCode(reinterpret_cast<const uint32_t*>(bytes.data()));
+            shaders[path] = std::make_pair(
+                shaderCreateInfo,
+                std::make_shared<vk::raii::ShaderModule>(device.reference(), shaderCreateInfo)
+            );
+            return vk::PipelineShaderStageCreateInfo()
+                .setPName("main")
+                .setModule(*(*shaders[path].second))
+                .setStage(path.ends_with(".vert.spv") ? vk::ShaderStageFlagBits::eVertex : vk::ShaderStageFlagBits::eFragment);
+          }
 
           void create(
               const std::vector<std::string>& arguments,
@@ -123,6 +145,7 @@ namespace exqudens::vulkan {
 
               std::vector<const char*> enabledExtensionNames = glfwInstanceRequiredExtensions;
               enabledExtensionNames.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+              enabledExtensionNames.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
               instance = Instance::builder()
                   .addEnabledLayerName("VK_LAYER_KHRONOS_validation")
@@ -167,13 +190,17 @@ namespace exqudens::vulkan {
                   .setInstance(instance.value)
                   .setSurface(surface.value)
                   .addEnabledExtensionName(VK_KHR_SWAPCHAIN_EXTENSION_NAME)
+                  .addEnabledExtensionName(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME)
                   .setFeatures(vk::PhysicalDeviceFeatures().setSamplerAnisotropy(true))
-                  .addQueueType(vk::QueueFlagBits::eCompute)
-                  .addQueueType(vk::QueueFlagBits::eTransfer)
-                  .addQueueType(vk::QueueFlagBits::eGraphics)
+                  .addQueueRequirement(vk::QueueFlagBits::eCompute)
+                  .addQueueRequirement(vk::QueueFlagBits::eTransfer)
+                  .addQueueRequirement(vk::QueueFlagBits::eGraphics, true)
                   .setQueuePriority(1.0f)
               .build();
               std::cout << std::format("physicalDevice: '{}'", (bool) physicalDevice.value) << std::endl;
+
+              physicalDeviceTimestampPeriod = physicalDevice.reference().getProperties().limits.timestampPeriod;
+              std::cout << std::format("physicalDeviceTimestampPeriod: '{}'", physicalDeviceTimestampPeriod) << std::endl;
 
               device = Device::builder()
                   .setPhysicalDevice(physicalDevice.value)
@@ -183,6 +210,7 @@ namespace exqudens::vulkan {
                           .setPEnabledFeatures(&physicalDevice.features)
                           .setPEnabledExtensionNames(physicalDevice.enabledExtensionNames)
                           .setPEnabledLayerNames(instance.enabledLayerNames)
+                          .setPNext(physicalDevice.hostQueryResetFeatures.has_value() ? &physicalDevice.hostQueryResetFeatures.value() : nullptr)
                   )
               .build();
               std::cout << std::format("device: '{}'", (bool) device.value) << std::endl;
@@ -495,6 +523,17 @@ namespace exqudens::vulkan {
               }
               std::ranges::for_each(descriptorSets, [](auto& o1) {std::cout << std::format("descriptorSet: '{}'", (bool) o1.value) << std::endl;});
 
+              queryPool = QueryPool::builder()
+                  .setDevice(device.value)
+                  .setCreateInfo(
+                      vk::QueryPoolCreateInfo()
+                          /*.setPipelineStatistics(vk::QueryPipelineStatisticFlagBits::eVertexShaderInvocations)*/
+                          .setQueryType(vk::QueryType::eTimestamp)
+                          .setQueryCount(2)
+                  )
+              .build();
+              std::cout << std::format("queryPool: '{}'", (bool) queryPool.value) << std::endl;
+
               void* tmpData = textureBuffer.memoryReference().mapMemory(0, textureBuffer.createInfo.size);
               std::memcpy(tmpData, tmpImageData.data(), static_cast<size_t>(textureBuffer.createInfo.size));
               textureBuffer.memoryReference().unmapMemory();
@@ -768,7 +807,8 @@ namespace exqudens::vulkan {
 
               pipeline = Pipeline::builder()
                   .setDevice(device.value)
-                  .addPath("resources/shader/shader-4.vert.spv")
+                  //.addPath("resources/shader/shader-4.vert.spv")
+                  .addStage(createStage("resources/shader/shader-4.vert.spv"))
                   .addPath("resources/shader/shader-4.frag.spv")
                   .addSetLayout(*descriptorSetLayout.reference())
                   .setGraphicsCreateInfo(
@@ -1001,6 +1041,8 @@ namespace exqudens::vulkan {
                       )
               };
 
+              graphicsCommandBuffers[currentFrame].reference().writeTimestamp(vk::PipelineStageFlagBits::eAllCommands, *queryPool.reference(), 0);
+
               graphicsCommandBuffers[currentFrame].reference().beginRenderPass(
                   vk::RenderPassBeginInfo()
                       .setRenderPass(*renderPass.reference())
@@ -1025,6 +1067,26 @@ namespace exqudens::vulkan {
               graphicsCommandBuffers[currentFrame].reference().drawIndexed(indexVector.size(), 1, 0, 0, 0);
 
               graphicsCommandBuffers[currentFrame].reference().endRenderPass();
+
+              graphicsCommandBuffers[currentFrame].reference().writeTimestamp(vk::PipelineStageFlagBits::eAllCommands, *queryPool.reference(), 1);
+
+              std::pair<vk::Result, std::vector<uint64_t>> queryResults = queryPool.reference().getResults<uint64_t>(0, 1, sizeof(uint64_t), sizeof(uint64_t));
+              if (vk::Result::eNotReady == queryResults.first || vk::Result::eSuccess == queryResults.first) {
+                if (vk::Result::eSuccess == queryResults.first) {
+                  if (timeDiffCounter == 9) {
+                    float timeDiff = physicalDevice.reference().getProperties().limits.timestampPeriod * ((float) queryResults.second[1] - queryResults.second[0]);
+                    std::cout << std::format("timeDiff: {}", timeDiff) << std::endl;
+                    timeDiffCounter = 0;
+                  } else {
+                    timeDiffCounter++;
+                  }
+                }
+              } else {
+                throw std::runtime_error("failed to 'queryPool.getResults(...)'!");
+              }
+
+              queryPool.reference().reset(0, 2);
+
               graphicsCommandBuffers[currentFrame].reference().end();
 
               std::vector<vk::PipelineStageFlags> waitDstStageMask = {vk::PipelineStageFlagBits::eColorAttachmentOutput};

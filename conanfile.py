@@ -57,7 +57,7 @@ class ConanConfiguration(ConanFile):
 
             content += 'set("${PROJECT_NAME}_CMAKE_PACKAGE_VERSIONS"\n'
             for dep_name, dep in self.deps_cpp_info.dependencies:
-                content += '    "' + dep.version + '" # ' + dep_name + '\n'
+                content += '    "' + str(dep.version) + '" # ' + dep_name + '\n'
             content += ')\n'
 
             content += 'set("${PROJECT_NAME}_CMAKE_PACKAGE_PATHS"\n'

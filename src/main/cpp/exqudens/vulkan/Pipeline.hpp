@@ -30,7 +30,8 @@ namespace exqudens::vulkan {
     std::optional<vk::ComputePipelineCreateInfo> computeCreateInfo;
     std::optional<GraphicsPipelineCreateInfo> graphicsCreateInfo;
     std::optional<vk::RayTracingPipelineCreateInfoNV> rayTracingCreateInfo;
-    std::map<std::string, std::pair<vk::ShaderModuleCreateInfo, std::shared_ptr<vk::raii::ShaderModule>>> shaders;
+    //std::map<std::string, std::pair<vk::ShaderModuleCreateInfo, std::shared_ptr<vk::raii::ShaderModule>>> shaders;
+    std::vector<vk::PipelineShaderStageCreateInfo> stages;
     std::shared_ptr<vk::raii::Pipeline> value;
 
     vk::raii::PipelineLayout& layoutReference() {
@@ -81,6 +82,7 @@ namespace exqudens::vulkan {
       std::optional<vk::ComputePipelineCreateInfo> computeCreateInfo;
       std::optional<GraphicsPipelineCreateInfo> graphicsCreateInfo;
       std::optional<vk::RayTracingPipelineCreateInfoNV> rayTracingCreateInfo;
+      std::vector<vk::PipelineShaderStageCreateInfo> stages;
       std::vector<std::string> paths;
 
     public:
@@ -140,6 +142,16 @@ namespace exqudens::vulkan {
         return *this;
       }
 
+      Pipeline::Builder& addStage(const vk::PipelineShaderStageCreateInfo& val) {
+        stages.emplace_back(val);
+        return *this;
+      }
+
+      Pipeline::Builder& setStages(const std::vector<vk::PipelineShaderStageCreateInfo>& val) {
+        stages = val;
+        return *this;
+      }
+
       Pipeline::Builder& addPath(const std::string& val) {
         paths.emplace_back(val);
         return *this;
@@ -174,10 +186,10 @@ namespace exqudens::vulkan {
           target.computeCreateInfo = computeCreateInfo;
           target.graphicsCreateInfo = graphicsCreateInfo;
           target.rayTracingCreateInfo = rayTracingCreateInfo;
+          std::map<std::string, std::pair<vk::ShaderModuleCreateInfo, std::shared_ptr<vk::raii::ShaderModule>>> shaders;
           if (graphicsCreateInfo) {
-            std::vector<vk::PipelineShaderStageCreateInfo> stages;
             for (const std::string& path : paths) {
-              if (!target.shaders.contains(path)) {
+              if (!shaders.contains(path)) {
                 std::vector<char> bytes = readFileFunction(path);
                 if (bytes.empty()) {
                   throw std::runtime_error(CALL_INFO() + ": '" + path + "' failed to create shader module bytes is empty!");
@@ -185,13 +197,13 @@ namespace exqudens::vulkan {
                 vk::ShaderModuleCreateInfo shaderCreateInfo = vk::ShaderModuleCreateInfo()
                     .setCodeSize(bytes.size())
                     .setPCode(reinterpret_cast<const uint32_t*>(bytes.data()));
-                target.shaders[path] = std::make_pair(
+                shaders[path] = std::make_pair(
                     shaderCreateInfo,
                     std::make_shared<vk::raii::ShaderModule>(*device.lock(), shaderCreateInfo)
                 );
                 vk::PipelineShaderStageCreateInfo stage = vk::PipelineShaderStageCreateInfo();
                 stage.setPName("main");
-                stage.setModule(*(*target.shaders[path].second));
+                stage.setModule(*(*shaders[path].second));
                 if (path.ends_with(".vert.spv")) {
                   stage.setStage(vk::ShaderStageFlagBits::eVertex);
                 } else if (path.ends_with(".frag.spv")) {
@@ -202,7 +214,8 @@ namespace exqudens::vulkan {
                 stages.emplace_back(stage);
               }
             }
-            target.graphicsCreateInfo.value().setStages(stages);
+            target.stages = stages;
+            target.graphicsCreateInfo.value().setStages(target.stages);
             target.graphicsCreateInfo.value().setLayout(*target.layoutReference());
             target.value = std::make_shared<vk::raii::Pipeline>(
                 *device.lock(),

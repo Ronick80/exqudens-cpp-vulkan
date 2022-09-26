@@ -11,6 +11,7 @@
 #include <vulkan/vulkan_raii.hpp>
 
 #include "exqudens/vulkan/Macros.hpp"
+#include "exqudens/vulkan/QueueRequirement.hpp"
 
 namespace exqudens::vulkan {
 
@@ -22,7 +23,8 @@ namespace exqudens::vulkan {
 
     std::vector<const char*> enabledExtensionNames;
     vk::PhysicalDeviceFeatures features;
-    std::vector<vk::QueueFlagBits> queueTypes;
+    std::optional<vk::PhysicalDeviceHostQueryResetFeatures> hostQueryResetFeatures;
+    std::vector<QueueRequirement> queueRequirements;
     std::vector<float> queuePriorities;
     std::vector<vk::DeviceQueueCreateInfo> computeQueueCreateInfos;
     std::vector<vk::DeviceQueueCreateInfo> transferQueueCreateInfos;
@@ -51,7 +53,7 @@ namespace exqudens::vulkan {
       std::weak_ptr<vk::raii::Instance> instance;
       std::vector<const char*> enabledExtensionNames;
       std::optional<vk::PhysicalDeviceFeatures> features;
-      std::vector<vk::QueueFlagBits> queueTypes;
+      std::vector<QueueRequirement> queueRequirements;
       std::optional<vk::SurfaceKHR> surface;
       std::vector<float> queuePriorities;
 
@@ -82,13 +84,23 @@ namespace exqudens::vulkan {
         return *this;
       }
 
-      PhysicalDevice::Builder& addQueueType(const vk::QueueFlagBits& val) {
-        queueTypes.emplace_back(val);
+      PhysicalDevice::Builder& addQueueRequirement(const vk::QueueFlagBits& type) {
+        queueRequirements.emplace_back(QueueRequirement().setType(type).setTimestampRequired(false));
         return *this;
       }
 
-      PhysicalDevice::Builder& setQueueTypes(const std::vector<vk::QueueFlagBits>& val) {
-        queueTypes = val;
+      PhysicalDevice::Builder& addQueueRequirement(const vk::QueueFlagBits& type, const bool& timestampRequired) {
+        queueRequirements.emplace_back(QueueRequirement().setType(type).setTimestampRequired(timestampRequired));
+        return *this;
+      }
+
+      PhysicalDevice::Builder& addQueueRequirement(const QueueRequirement& val) {
+        queueRequirements.emplace_back(val);
+        return *this;
+      }
+
+      PhysicalDevice::Builder& setQueueRequirements(const std::vector<QueueRequirement>& val) {
+        queueRequirements = val;
         return *this;
       }
 
@@ -113,7 +125,7 @@ namespace exqudens::vulkan {
           PhysicalDevice target = {};
           target.enabledExtensionNames = enabledExtensionNames;
           target.features = features.value_or(vk::PhysicalDeviceFeatures());
-          target.queueTypes = queueTypes;
+          target.queueRequirements = queueRequirements;
           target.queuePriorities = queuePriorities;
           std::vector<vk::raii::PhysicalDevice> values = vk::raii::PhysicalDevices(
               *instance.lock()
@@ -125,6 +137,7 @@ namespace exqudens::vulkan {
             bool swapChainAdequate = true;
             bool anisotropyAdequate = true;
 
+            std::optional<vk::PhysicalDeviceHostQueryResetFeatures> tmpHostQueryResetFeatures = {};
             std::vector<vk::DeviceQueueCreateInfo> tmpComputeQueueCreateInfos = {};
             std::vector<vk::DeviceQueueCreateInfo> tmpTransferQueueCreateInfos = {};
             std::vector<vk::DeviceQueueCreateInfo> tmpGraphicsQueueCreateInfos = {};
@@ -132,15 +145,25 @@ namespace exqudens::vulkan {
             std::map<uint32_t, vk::DeviceQueueCreateInfo> queueCreateInfoMap = {};
 
             std::vector<vk::QueueFamilyProperties> queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
-            for (const vk::QueueFlagBits& queueType : target.queueTypes) {
+            for (const QueueRequirement& queueRequirement : target.queueRequirements) {
+              vk::QueueFlagBits queueType = queueRequirement.type;
+              bool queueTimestampRequired = queueRequirement.timestampRequired;
+
               std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos = {};
               for (size_t i = 0; i < queueFamilyProperties.size(); i++) {
-                if (queueFamilyProperties[i].queueFlags & queueType) {
+
+                bool queueTypeAdequate = (bool) (queueFamilyProperties[i].queueFlags & queueType);
+                bool queueTimestampAdequate = !queueTimestampRequired || queueFamilyProperties[i].timestampValidBits > 0;
+
+                if (queueTypeAdequate && queueTimestampAdequate) {
                   vk::DeviceQueueCreateInfo queueCreateInfo = vk::DeviceQueueCreateInfo()
                       .setQueueFamilyIndex(static_cast<uint32_t>(i))
                       .setQueuePriorities(target.queuePriorities);
                   queueCreateInfos.emplace_back(queueCreateInfo);
                   queueCreateInfoMap.try_emplace(queueCreateInfo.queueFamilyIndex, queueCreateInfo);
+                  if (queueTimestampRequired) {
+                    tmpHostQueryResetFeatures = vk::PhysicalDeviceHostQueryResetFeatures().setHostQueryReset(true);
+                  }
                 }
               }
               if (queueCreateInfos.empty()) {
@@ -211,6 +234,7 @@ namespace exqudens::vulkan {
               continue;
             }
 
+            target.hostQueryResetFeatures = tmpHostQueryResetFeatures;
             target.computeQueueCreateInfos = tmpComputeQueueCreateInfos;
             target.transferQueueCreateInfos = tmpTransferQueueCreateInfos;
             target.graphicsQueueCreateInfos = tmpGraphicsQueueCreateInfos;
