@@ -105,12 +105,12 @@ namespace exqudens::vulkan {
               target.createInfo
           );
           vk::MemoryRequirements memoryRequirements = target.reference().getMemoryRequirements();
+          target.memoryCreateInfo = memoryCreateInfo.value();
           uint32_t memoryType = memoryTypeIndexFunction(
               *physicalDevice.lock(),
               memoryRequirements.memoryTypeBits,
               target.memoryCreateInfo
           );
-          target.memoryCreateInfo = memoryCreateInfo.value();
           target.memory = std::make_shared<vk::raii::DeviceMemory>(
               *device.lock(),
               vk::MemoryAllocateInfo()
